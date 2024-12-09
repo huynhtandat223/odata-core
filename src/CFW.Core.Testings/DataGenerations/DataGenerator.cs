@@ -1,5 +1,6 @@
 ﻿using CFW.Core.Testings.DataGenerations.ObjectGenerators;
 using CFW.Core.Utils;
+using System.Collections;
 using System.Reflection;
 
 namespace CFW.Core.Testings.DataGenerations;
@@ -92,5 +93,19 @@ public class DataGenerator
         }
 
         return result.ToList();
+    }
+
+    public static IList CreateList(Type type, int count = 1)
+    {
+        var listType = typeof(List<>).MakeGenericType(type);
+        var resultList = (IList)Activator.CreateInstance(listType)!;
+
+        for (int i = 0; i < count; i++)
+        {
+            var instance = Create(type);
+            resultList.Add(instance);
+        }
+
+        return resultList;
     }
 }

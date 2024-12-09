@@ -35,7 +35,15 @@ public static class ServicesCollectionExtensions
 
             foreach (var routing in containerGroup)
             {
-                routing.RoutingInfo.EntityType = routing.ViewModelType;
+                var viewModelType = routing.ViewModelType;
+                var odataInterface = viewModelType.GetInterfaces()
+                    .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
+                if (odataInterface is null)
+                {
+                    throw new InvalidOperationException("ViewModel must implement IODataViewModel<T>");
+                }
+
+                routing.RoutingInfo.EntityType = viewModelType;
                 routing.RoutingInfo.KeyType = routing.ViewModelType.GetInterfaces()
                     .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>))
                     .Select(x => x.GetGenericArguments().First())

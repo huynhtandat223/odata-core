@@ -94,7 +94,7 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , CancellationToken cancellationToken)
     {
         var updatedModel = await handler.Patch(key, delta, cancellationToken);
-        return Ok(updatedModel);
+        return Updated(updatedModel);
     }
 
     public async Task<ActionResult> Delete(TKey key
@@ -102,6 +102,6 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , CancellationToken cancellationToken)
     {
         await handler.Delete(key, cancellationToken);
-        return Ok();
+        return Ok(key);
     }
 }

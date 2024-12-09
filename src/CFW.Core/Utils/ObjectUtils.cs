@@ -39,6 +39,36 @@ public static class ObjectUtils
         return JsonSerializer.Serialize(source, _serializerOptions);
     }
 
+    public static object? GetPropertyValue(this object target, string propName)
+    {
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        var property = target.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+        if (property is null)
+            throw new InvalidOperationException($"Property {propName} not found in {target.GetType().Name}");
+
+        return property.GetValue(target);
+    }
+
+    public static T SetPropertyValue<T>(this T target, string propName, object? value)
+    {
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        var property = target.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+        if (property is null)
+            throw new InvalidOperationException($"Property {propName} not found in {target.GetType().Name}");
+
+        property.SetValue(target, value, null);
+
+        return target;
+    }
+
     public static T SetPropertyValue<T, TValue>(this T target, Expression<Func<T, TValue>> memberLambda, TValue value)
     {
         if (target is null)

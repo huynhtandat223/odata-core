@@ -29,10 +29,14 @@ public class PrimaryTypeGenerator : IObjectGenerator
     private static Dictionary<Type, Func<object>> _primaryTypeGenerators = new Dictionary<Type, Func<object>>()
     {
         { typeof(string), () => _faker.Random.Word() },
-        { typeof(int), () => _faker.Random.Int() },
+        { typeof(int), () => _faker.Random.Int(min: 0) },
         { typeof(long), () => _faker.Random.Long() },
         { typeof(decimal), () => _faker.Random.Decimal() },
         { typeof(bool), () => _faker.Random.Bool() },
+        { typeof(int?), () => _faker.Random.Int(min: 0) },
+        { typeof(long?), () => _faker.Random.Long() },
+        { typeof(decimal?), () => _faker.Random.Decimal() },
+        { typeof(bool?), () => _faker.Random.Bool() },
         { typeof(DateTime), () => _faker.Date.Past() },
         { typeof(DateTimeOffset), () => _faker.Date.PastOffset() },
         { typeof(DateTime?), () => _faker.Date.Past() },

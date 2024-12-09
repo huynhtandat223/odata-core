@@ -18,15 +18,23 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
     {
-        if (model is IEntity<TKey>)
-        {
-            _db.Set<TODataViewModel>().Add(model);
-            await _db.SaveChangesAsync(cancellationToken);
+        var dbEntity = _db.Set<TODataViewModel>().Add(model);
 
-            return model;
+        var childPropEntities = _db.ChangeTracker.Entries()
+            .Where(x => x.State == EntityState.Added
+                && x.Entity is IEntity<TKey> entity && !entity.Id!.Equals(dbEntity.Entity.Id))
+            .ToList();
+
+        foreach (var childPropEntity in childPropEntities)
+        {
+            var existingValues = await childPropEntity.GetDatabaseValuesAsync(cancellationToken);
+            if (existingValues is not null)
+                childPropEntity.State = EntityState.Unchanged;
         }
 
-        throw new NotImplementedException();
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return dbEntity.Entity;
     }
 
     public Task<IQueryable> Query(ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken)
