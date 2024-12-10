@@ -6,7 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
-namespace CFW.ODataCore.Tests.Tests;
+namespace CFW.ODataCore.Tests.TestCases.EntitySetsCreation;
 
 public class EntitySetsCreateTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -17,41 +17,27 @@ public class EntitySetsCreateTests : IClassFixture<WebApplicationFactory<Program
         _factory = factory;
     }
 
+    public static IEnumerable<object?[]> ResourceWithOneComplexTypeProp =>
+            new List<object?[]>
+            {
+                new object?[] { typeof(Product), nameof(Product.Category), null },
+                new object?[] { typeof(Product), nameof(Product.Category), Guid.NewGuid() }
+            };
+
     [Theory]
-    [InlineData("odata-api/categories", typeof(Category), null)]
-    [InlineData("odata-api/customers", typeof(Customer), 0)]
-    public async Task Create_NoCollectionProperty_ShouldSuccess(string baseUrl, Type resourceType, object? idValue)
+    [MemberData(nameof(ResourceWithOneComplexTypeProp))]
+    public async Task Create_MainEntityContainsNewComplexProperty_Should_InsertAllOfResourceSuccess(Type resourceType
+        , string complexPropName, object? complexPropValue)
     {
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-
-        // Act
-        var expectedEntity = DataGenerator.Create(resourceType)
-            .SetPropertyValue(idProp, idValue);
-
-        var resp = await client.PostAsJsonAsync(baseUrl, expectedEntity);
-
-        // Assert
-        resp.IsSuccessStatusCode.Should().BeTrue();
-        var actual = await resp.Content.ReadFromJsonAsync(resourceType);
-        actual.Should().NotBeNull();
-        expectedEntity.Should().BeEquivalentTo(actual, o => o.Excluding(x => x.Name == idProp));
-
-        var dbEntity = await client.GetFromJsonAsync($"{baseUrl}/{actual!.GetPropertyValue(idProp)}", resourceType);
-        expectedEntity.Should().BeEquivalentTo(dbEntity, o => o.Excluding(x => x.Name == idProp));
-    }
-
-    [Theory]
-    [InlineData("odata-api/products", typeof(Product), nameof(Product.Category))]
-    public async Task Create_ContainsNewComplexProperty_ShouldSuccess(string baseUrl, Type resourceType, string complexPropName)
-    {
-        // Arrange
-        var client = _factory.CreateClient();
-        var idProp = nameof(IODataViewModel<object>.Id);
+        var baseUrl = resourceType.GetBaseUrl();
 
         // Act
         var expectedEntity = DataGenerator.Create(resourceType);
+        var navigationProp = expectedEntity.GetPropertyValue(complexPropName);
+        navigationProp.SetPropertyValue(idProp, complexPropValue);
 
         var resp = await client.PostAsJsonAsync(baseUrl, expectedEntity);
         resp.IsSuccessStatusCode.Should().BeTrue();
@@ -60,19 +46,31 @@ public class EntitySetsCreateTests : IClassFixture<WebApplicationFactory<Program
         var dbEntity = await client.GetFromJsonAsync($"{baseUrl}/{actual!.GetPropertyValue(idProp)}?$expand={complexPropName}", resourceType);
 
         // Assert
-        expectedEntity.Should().BeEquivalentTo(dbEntity);
+        expectedEntity.Should().BeEquivalentTo(dbEntity, o => o.Excluding(x => x.Name == idProp));
+
+        //compare complex property
+        var childProp = dbEntity!.GetPropertyValue(complexPropName);
+        childProp.Should().NotBeNull();
+        var idPropValue = childProp!.GetPropertyValue(idProp);
+        var navigationPropType = navigationProp!.GetType();
+        var complexPropUrl = navigationPropType.GetBaseUrl();
+        var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
+        childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
 
     [Theory]
-    [InlineData("odata-api/products", typeof(Product), nameof(Product.Category), typeof(Category), "odata-api/categories")]
-    public async Task Create_ContainsExistingComplexProperty_ShouldSuccess(string baseUrl, Type resourceType
-        , string complexPropName, Type complexPropType, string complexPropUrl)
+    [InlineData(typeof(Product), nameof(Product.Category))]
+    public async Task Create_MainEntityContainsExistingComplexProperty_Should_InsertOnlyMainEntitySuccess(Type resourceType
+        , string complexPropName)
     {
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
+        var baseUrl = resourceType.GetBaseUrl();
 
         //Create complex property
+        var complexPropType = resourceType.GetProperty(complexPropName)!.PropertyType;
+        var complexPropUrl = complexPropType.GetBaseUrl();
         var complexProp = DataGenerator.Create(complexPropType);
         var dbComplexPropValueResp = await client.PostAsJsonAsync(complexPropUrl, complexProp);
         dbComplexPropValueResp.IsSuccessStatusCode.Should().BeTrue();

@@ -49,15 +49,15 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
     private IEdmModel? _edmModel;
 
-    public IEdmModel EdmModel
+    public IEdmModel Build()
     {
-        get
-        {
-            if (_edmModel == null)
-                _edmModel = _modelBuilder.GetEdmModel();
-            return _edmModel;
-        }
+        _edmModel = _modelBuilder.GetEdmModel();
+        _edmModel.MarkAsImmutable();
+        return _edmModel;
     }
+
+    public IEdmModel EdmModel => _edmModel ?? throw new InvalidOperationException();
+
 
     // IApplicationPartTypeProvider implementation
     public IEnumerable<TypeInfo> Types => _entityMetadataList.Select(x => x.ControllerType);

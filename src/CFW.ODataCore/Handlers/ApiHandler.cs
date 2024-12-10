@@ -1,5 +1,4 @@
-﻿using CFW.Core.Entities;
-using CFW.ODataCore.Core;
+﻿using CFW.ODataCore.Core;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
@@ -18,18 +17,16 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
     {
-        var dbEntity = _db.Set<TODataViewModel>().Add(model);
+        var dbEntity = _db.Add(model);
 
-        var childPropEntities = _db.ChangeTracker.Entries()
-            .Where(x => x.State == EntityState.Added
-                && x.Entity is IEntity<TKey> entity && !entity.Id!.Equals(dbEntity.Entity.Id))
-            .ToList();
-
-        foreach (var childPropEntity in childPropEntities)
+        var navigations = dbEntity.Navigations.OfType<Microsoft.EntityFrameworkCore.ChangeTracking.ReferenceEntry>().ToList();
+        foreach (var navigation in navigations)
         {
-            var existingValues = await childPropEntity.GetDatabaseValuesAsync(cancellationToken);
-            if (existingValues is not null)
-                childPropEntity.State = EntityState.Unchanged;
+            var existingNavigation = await navigation.TargetEntry!.GetDatabaseValuesAsync(cancellationToken);
+            if (existingNavigation is not null)
+                navigation.TargetEntry.State = EntityState.Modified;
+            else
+                navigation.TargetEntry.State = EntityState.Added;
         }
 
         await _db.SaveChangesAsync(cancellationToken);

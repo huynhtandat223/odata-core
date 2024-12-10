@@ -12,9 +12,9 @@ public static class ServicesCollectionExtensions
         , string defaultRoutePrefix = "odata-api")
     {
         var odataRoutings = assemblies.SelectMany(x => x.GetTypes())
-            .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
-            .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
-            .ToList();
+                .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
+                .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
+                .ToList();
 
         if (odataRoutings.Any(x => x.RoutingInfo.Name.IsNullOrWhiteSpace()))
         {

@@ -7,10 +7,11 @@ namespace CFW.ODataCore.Core;
 
 public class ODataContainerCollection
 {
-    private static readonly Lazy<ODataContainerCollection> _instance
-        = new Lazy<ODataContainerCollection>(() => new ODataContainerCollection());
 
-    public static ODataContainerCollection Instance => _instance.Value;
+    private static ThreadLocal<ODataContainerCollection> instance
+        = new ThreadLocal<ODataContainerCollection>(() => new ODataContainerCollection());
+
+    public static ODataContainerCollection Instance => instance.Value!;
 
     private List<ODataMetadataContainer> _containers = new();
 
@@ -37,6 +38,8 @@ public class ODataContainerCollection
 
             foreach (var metadataContainer in Instance.MetadataContainers)
             {
+                var model = metadataContainer.Build();
+
                 options.AddRouteComponents(
                     routePrefix: metadataContainer.RoutePrefix
                     , model: metadataContainer.EdmModel);
