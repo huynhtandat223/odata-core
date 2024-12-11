@@ -21,11 +21,9 @@ public static class ObjectUtils
             return (TTarget)enumResult;
         }
 
-        string sourceStr = source switch
-        {
-            string str => str,
-            _ => JsonSerializer.Serialize(source, _serializerOptions)
-        };
+        var sourceStr = source is string str
+            ? str
+            : source.ToJsonString();
 
         if (string.IsNullOrEmpty(sourceStr))
             return default!;
@@ -36,7 +34,15 @@ public static class ObjectUtils
 
     public static string ToJsonString(this object source)
     {
-        return JsonSerializer.Serialize(source, _serializerOptions);
+        return JsonSerializer.Serialize(source);
+    }
+
+    public static object? ToType(this string? value, Type type)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException();
+
+        return JsonSerializer.Deserialize(value, type, _serializerOptions);
     }
 
     public static object? GetPropertyValue(this object target, string propName)

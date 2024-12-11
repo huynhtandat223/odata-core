@@ -24,4 +24,19 @@ public static class CollectionUtils
 
         return false;
     }
+
+    public static List<T> Random<T>(this IEnumerable<T> source, int count)
+    {
+        var list = new List<T>(source);
+        var random = new Random();
+        var result = new List<T>();
+        while (result.Count < count || list.Count == 0)
+        {
+            var index = random.Next(list.Count);
+            result.Add(list[index]);
+            list.RemoveAt(index);
+        }
+
+        return result;
+    }
 }

@@ -1,10 +1,24 @@
-﻿namespace CFW.Core.Results;
+﻿using Microsoft.AspNetCore.Mvc;
 
-public record Result
+namespace CFW.Core.Results;
+
+public class Result
 {
-    public bool Success { get; init; }
+    public bool IsSuccess { get; set; }
 
-    public string? Message { get; init; }
+    public string? Message { get; set; }
 
-    public Exception? Exception { get; init; }
+    public Exception? Exception { get; set; }
+
+    public ActionResult ToActionResult()
+    {
+        return IsSuccess
+            ? new OkResult()
+            : new BadRequestObjectResult(Message);
+    }
+}
+
+public class Result<T> : Result
+{
+    public T? Data { get; set; }
 }

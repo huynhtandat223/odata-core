@@ -104,7 +104,7 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , [FromServices] ApiHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
-        await handler.Delete(key, cancellationToken);
-        return Ok(key);
+        var result = await handler.Delete(key, cancellationToken);
+        return result.ToActionResult();
     }
 }

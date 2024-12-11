@@ -12,18 +12,7 @@ public class JsonType<TModel> where TModel : new()
 
     private List<string> _includedProperties = new List<string>();
 
-    public JsonType(TModel model)
-    {
-        _model = model;
-    }
-
-    public JsonType(string jsonString)
-    {
-        _jsonString = jsonString;
-        _model = jsonString.JsonConvert<TModel>();
-    }
-
-    public JsonType(Expression<Func<TModel, object>> selector)
+    public JsonType(Expression<Func<TModel>> selector)
     {
         if (selector.Body is not MemberInitExpression memberInitExpression)
             throw new InvalidOperationException("Only support new expression");
@@ -34,10 +23,9 @@ public class JsonType<TModel> where TModel : new()
 
         try
         {
-            _model = new TModel();
             var compiled = selector.Compile();
-            var newModel = compiled.Invoke(_model);
-            _model = (TModel)newModel;
+            var newModel = compiled.Invoke();
+            _model = newModel;
         }
         catch (Exception ex)
         {
@@ -46,21 +34,11 @@ public class JsonType<TModel> where TModel : new()
 
     }
 
-    public JsonType(TModel model, Expression<Func<TModel, object>> selector)
-    {
-        if (selector.Body is not NewExpression newExpression)
-            throw new InvalidOperationException("Only support new expression");
-
-        _includedProperties = newExpression.Arguments
-            .Select(x => x as MemberExpression)
-            .Select(x => x!.Member.Name).ToList();
-
-        _model = model;
-    }
-
     public TModel? Model => _model;
 
     public List<string> RemovedProperties => _removedProperties;
+
+    public List<string> IncludedProperties => _includedProperties;
 
     private string _jsonString = string.Empty;
 
@@ -101,5 +79,4 @@ public class JsonType<TModel> where TModel : new()
 
         return _jsonString;
     }
-
 }
