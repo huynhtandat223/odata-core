@@ -6,24 +6,12 @@ public class PrimaryTypeGenerator : IObjectGenerator
 {
     private static Faker _faker = new Faker();
 
-    [Obsolete("This is a temporary solution to generate guids as strings")]
-    private static readonly string[] _guidProps = new[]
-    {
-        "subscriptionid",
-        "clientid",
-        "tenantid",
-        "id"
-    };
-
     private static Dictionary<Func<GeneratorMetadata, bool>, Func<object>> _commonCases
         = new Dictionary<Func<GeneratorMetadata, bool>, Func<object>>()
         {
             { m => m.PropertyInfo is not null
                 && m.PropertyInfo.Name.ToLower().Contains("email")
                 && m.PropertyInfo.PropertyType == typeof(string), () => _faker.Internet.Email() },
-            { m => m.PropertyInfo is not null && m.PropertyInfo.PropertyType == typeof(string)
-                && _guidProps.Contains(m.PropertyInfo.Name.ToLower().Trim())
-                , () => DataGenerator.NewGuidString() }
         };
 
     private static Dictionary<Type, Func<object>> _primaryTypeGenerators = new Dictionary<Type, Func<object>>()

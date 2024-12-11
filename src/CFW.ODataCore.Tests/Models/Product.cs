@@ -12,5 +12,5 @@ public class Product : IEntity<Guid>, IODataViewModel<Guid>
 
     public string? Description { get; set; }
 
-    public Category Category { get; set; } = default!;
+    public Category? Category { get; set; } = default!;
 }

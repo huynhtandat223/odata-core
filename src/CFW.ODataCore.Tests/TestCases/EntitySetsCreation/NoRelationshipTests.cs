@@ -5,16 +5,15 @@ using CFW.ODataCore.Tests.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace CFW.ODataCore.Tests.TestCases.EntitySetsCreation;
 
-public class NoNavigationTests : IClassFixture<WebApplicationFactory<Program>>
+public class NoRelationshipTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public NoNavigationTests(WebApplicationFactory<Program> factory)
+    public NoRelationshipTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+        : base(testOutputHelper, factory)
     {
-        _factory = factory;
     }
 
     public static IEnumerable<object?[]> Data =>
@@ -25,7 +24,6 @@ public class NoNavigationTests : IClassFixture<WebApplicationFactory<Program>>
                 new object?[] { typeof(Customer), 0 }, //Auto generated key
                 new object?[] { typeof(Voucher), Guid.NewGuid().ToString() }, //Manual key
             };
-
 
     [Theory]
     [MemberData(nameof(Data))]

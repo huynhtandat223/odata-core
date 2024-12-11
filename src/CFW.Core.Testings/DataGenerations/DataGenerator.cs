@@ -10,13 +10,12 @@ public class DataGenerator
     public static T Create<T>()
         => (T)Create(typeof(T))!;
 
-    public static object Create(Type generatingType)
+    public static object Create(Type generatingType, GeneratorMetadata? generatorMetadata = null)
     {
         var dataGenerator = new DataGenerator();
-        var result = dataGenerator.Generate(new GeneratorMetadata
-        {
-            GeneratingType = generatingType,
-        })!;
+        var metadata = generatorMetadata ?? new GeneratorMetadata();
+        metadata.GeneratingType = generatingType;
+        var result = dataGenerator.Generate(metadata)!;
         return result;
     }
 
@@ -60,6 +59,12 @@ public class DataGenerator
         var properties = processingType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanWrite && p.CanRead && !p.PropertyType.IsCommonGenericCollectionType())
             .ToList();
+
+        if (generatorMetadata.ExcludeProperties.Any())
+        {
+            properties = properties.Where(p => !generatorMetadata.ExcludeProperties.Contains(p.Name)).ToList();
+        }
+
         if (properties.Count == 0)
         {
             return instance!;
@@ -95,14 +100,14 @@ public class DataGenerator
         return result.ToList();
     }
 
-    public static IList CreateList(Type type, int count = 1)
+    public static IList CreateList(Type type, int count = 1, GeneratorMetadata? metadata = null)
     {
         var listType = typeof(List<>).MakeGenericType(type);
         var resultList = (IList)Activator.CreateInstance(listType)!;
 
         for (int i = 0; i < count; i++)
         {
-            var instance = Create(type);
+            var instance = Create(type, metadata);
             resultList.Add(instance);
         }
 

@@ -72,6 +72,9 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , CancellationToken cancellationToken)
     {
         var entity = await handler.Get(key, options, cancellationToken);
+        if (entity == null)
+            return NotFound();
+
         return Ok(entity);
     }
 
