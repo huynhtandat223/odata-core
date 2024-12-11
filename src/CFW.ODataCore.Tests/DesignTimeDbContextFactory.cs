@@ -1,5 +1,4 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 

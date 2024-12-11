@@ -24,21 +24,37 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
     {
-        var dbEntity = _db.Add(model);
-
-        var navigations = dbEntity.Navigations.OfType<Microsoft.EntityFrameworkCore.ChangeTracking.ReferenceEntry>().ToList();
-        foreach (var navigation in navigations)
+        _db.ChangeTracker.TrackGraph(model, async rootEntity =>
         {
-            var existingNavigation = await navigation.TargetEntry!.GetDatabaseValuesAsync(cancellationToken);
-            if (existingNavigation is not null)
-                navigation.TargetEntry.State = EntityState.Modified;
-            else
-                navigation.TargetEntry.State = EntityState.Added;
-        }
+            rootEntity.Entry.State = EntityState.Added;
+
+            var navigations = rootEntity.Entry.Navigations
+                .OfType<Microsoft.EntityFrameworkCore.ChangeTracking.ReferenceEntry>()
+                .ToList();
+
+            foreach (var navigation in navigations)
+            {
+                var targetEntity = navigation.TargetEntry;
+                if (targetEntity is null)
+                    throw new NotImplementedException();
+
+                var keyProperty = targetEntity.Metadata.FindPrimaryKey()?.Properties.SingleOrDefault();
+                if (keyProperty is null)
+                    throw new InvalidOperationException("Primary key not found.");
+
+                var keyValue = targetEntity.Property(keyProperty.Name).CurrentValue!;
+                var defaultKey = Activator.CreateInstance(keyProperty.ClrType);
+
+                if (keyValue.ToString()!.Equals(defaultKey))
+                    navigation.TargetEntry!.State = EntityState.Added;
+                else
+                    navigation.TargetEntry!.State = EntityState.Detached;
+            }
+        });
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return dbEntity.Entity;
+        return model;
     }
 
     public Task<IQueryable> Query(ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken)
