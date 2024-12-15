@@ -1,5 +1,4 @@
-﻿using CFW.Core.Utils;
-using Microsoft.AspNetCore.OData;
+﻿using Microsoft.AspNetCore.OData;
 using System.Collections.ObjectModel;
 using System.Reflection;
 
@@ -8,10 +7,7 @@ namespace CFW.ODataCore.Core;
 public class ODataContainerCollection
 {
 
-    private static ThreadLocal<ODataContainerCollection> instance
-        = new ThreadLocal<ODataContainerCollection>(() => new ODataContainerCollection());
-
-    public static ODataContainerCollection Instance => instance.Value!;
+    public static ODataContainerCollection Instance => new ODataContainerCollection();
 
     private List<ODataMetadataContainer> _containers = new();
 

@@ -1,5 +1,6 @@
 ﻿using CFW.ODataCore.Core;
 using CFW.ODataCore.Core.Templates;
+using CFW.ODataCore.Extensions;
 using CFW.ODataCore.Handlers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;

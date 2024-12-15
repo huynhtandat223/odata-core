@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace CFW.Core.Results;
+﻿namespace CFW.Core.Results;
 
 public class Result
 {
@@ -9,13 +7,6 @@ public class Result
     public string? Message { get; set; }
 
     public Exception? Exception { get; set; }
-
-    public ActionResult ToActionResult()
-    {
-        return IsSuccess
-            ? new OkResult()
-            : new BadRequestObjectResult(Message);
-    }
 }
 
 public class Result<T> : Result
