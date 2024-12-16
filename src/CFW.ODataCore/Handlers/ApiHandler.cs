@@ -5,14 +5,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Handlers;
 
+public interface IQueryHandler<TODataViewModel, TKey>
+{
+    Task<IQueryable> Query(ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken);
+}
+
 public class ApiHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>
 {
     private readonly AppDbContext _db;
+    private readonly IServiceProvider _serviceProvider;
 
-    public ApiHandler(AppDbContext db)
+    public ApiHandler(AppDbContext db, IServiceProvider serviceProvider)
     {
         _db = db;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
@@ -36,6 +43,10 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public Task<IQueryable> Query(ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken)
     {
+        var queryHandler = _serviceProvider.GetService<IQueryHandler<TODataViewModel, TKey>>();
+        if (queryHandler is not null)
+            return queryHandler.Query(options, cancellationToken);
+
         var query = _db.Set<TODataViewModel>();
         var appliedQuery = options.ApplyTo(query);
 

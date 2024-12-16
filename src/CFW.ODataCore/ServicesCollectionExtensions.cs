@@ -54,6 +54,16 @@ public static class ServicesCollectionExtensions
 
         services.AddScoped(typeof(ApiHandler<,>));
 
+        var queryType = typeof(IQueryHandler<,>);
+        var queryTypes = assemblies.SelectMany(x => x.GetTypes())
+            .Where(x => x.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == queryType))
+            .ToList();
+        foreach (var qType in queryTypes)
+        {
+            var intefaceType = qType.GetInterfaces().First(i => i.IsGenericType && i.GetGenericTypeDefinition() == queryType);
+            services.AddScoped(intefaceType, qType);
+        }
+
         return ODataContainerCollection.Instance.Build(services);
     }
 

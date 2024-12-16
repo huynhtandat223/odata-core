@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CFW.Core.Testings\CFW.Core.Testings.csproj" />
     <ProjectReference Include="..\CFW.Core\CFW.Core.csproj" />
+    <ProjectReference Include="..\CFW.Identity\CFW.Identity.csproj" />
     <ProjectReference Include="..\CFW.ODataCore\CFW.ODataCore.csproj" />
   </ItemGroup>
 

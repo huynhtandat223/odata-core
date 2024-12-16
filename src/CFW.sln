@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.ODataCore.Tests", "CFW.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.Core.Testings", "CFW.Core.Testings\CFW.Core.Testings.csproj", "{AB5A7077-2D16-45FD-B0F7-6239C7379248}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.Identity", "CFW.Identity\CFW.Identity.csproj", "{EFF1A5FB-FAE4-4586-A1D9-48AD833BD4F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{AB5A7077-2D16-45FD-B0F7-6239C7379248}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB5A7077-2D16-45FD-B0F7-6239C7379248}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB5A7077-2D16-45FD-B0F7-6239C7379248}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFF1A5FB-FAE4-4586-A1D9-48AD833BD4F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFF1A5FB-FAE4-4586-A1D9-48AD833BD4F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFF1A5FB-FAE4-4586-A1D9-48AD833BD4F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFF1A5FB-FAE4-4586-A1D9-48AD833BD4F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

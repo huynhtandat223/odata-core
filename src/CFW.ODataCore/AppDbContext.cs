@@ -6,7 +6,7 @@ public class AppDbContext : DbContext
 {
     private readonly IEnumerable<Type> _entityTypes = [];
 
-    public AppDbContext(DbContextOptions options, List<Type> entityTypes) : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options, List<Type> entityTypes) : base(options)
     {
         _entityTypes = entityTypes;
     }
