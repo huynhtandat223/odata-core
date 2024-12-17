@@ -6,14 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.Services.AddDbContext<AppDbContext>(options =>
-//{
-//    options.ConfigureWarnings(warnings =>
-//        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-//});
-
 builder.Services.AddDbContext<AppDbContext>(
            options => options.UseInMemoryDatabase("AppDbContext"));
 

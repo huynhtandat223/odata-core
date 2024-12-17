@@ -6,8 +6,10 @@ namespace CFW.ODataCore.Core;
 
 public class ODataContainerCollection
 {
+    static ThreadLocal<ODataContainerCollection> _instance
+        = new ThreadLocal<ODataContainerCollection>(() => new ODataContainerCollection());
 
-    public static ODataContainerCollection Instance => new ODataContainerCollection();
+    public static ODataContainerCollection Instance => _instance.Value!;
 
     private List<ODataMetadataContainer> _containers = new();
 

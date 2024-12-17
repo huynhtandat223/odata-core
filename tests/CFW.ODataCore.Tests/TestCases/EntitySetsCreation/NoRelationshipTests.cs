@@ -1,8 +1,4 @@
-﻿using CFW.Core.Testings.DataGenerations;
-using CFW.Core.Utils;
-using CFW.ODataCore.Core;
-using CFW.ODataCore.Tests.Models;
-using FluentAssertions;
+﻿using CFW.ODataCore.Tests.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 using Xunit.Abstractions;

@@ -1,5 +1,4 @@
-﻿using CFW.ODataCore.Core;
-using FluentAssertions.Equivalency;
+﻿using FluentAssertions.Equivalency;
 using System.Reflection;
 using System.Text;
 

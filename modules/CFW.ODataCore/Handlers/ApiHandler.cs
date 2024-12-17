@@ -24,7 +24,7 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
     {
-        _db.ChangeTracker.TrackGraph(model, async rootEntity =>
+        _db.ChangeTracker.TrackGraph(model, rootEntity =>
         {
             rootEntity.Entry.State = EntityState.Added;
 
@@ -92,9 +92,14 @@ public class ApiHandler<TODataViewModel, TKey>
         return entity;
     }
 
-    public async Task Delete(TKey key, CancellationToken cancellationToken)
+    public async Task<Result> Delete(TKey key, CancellationToken cancellationToken)
     {
-        await _db.Set<TODataViewModel>().Where(x => x.Id!.Equals(key))
+        var affect = await _db.Set<TODataViewModel>().Where(x => x.Id!.Equals(key))
             .ExecuteDeleteAsync(cancellationToken);
+
+        if (affect == 0)
+            return this.Failed("Can't delete entity.");
+
+        return this.Ok();
     }
 }

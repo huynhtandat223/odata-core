@@ -1,5 +1,4 @@
-﻿using CFW.ODataCore.Core;
-using CFW.ODataCore.Tests.Models;
+﻿using CFW.ODataCore.Tests.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 using Xunit.Abstractions;

@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CFW.Core\CFW.Core.csproj" />
+    <ProjectReference Include="..\..\modules\CFW.Core\CFW.Core.csproj" />
   </ItemGroup>
 
 </Project>
