@@ -1,8 +1,9 @@
-﻿using FluentAssertions.Equivalency;
+﻿using CFW.ODataCore.Testings;
+using FluentAssertions.Equivalency;
 using System.Reflection;
 using System.Text;
 
-namespace CFW.ODataCore.Tests;
+namespace CFW.ODataCore.Testings;
 
 public static class TestUtils
 {

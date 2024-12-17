@@ -1,9 +1,10 @@
-﻿using CFW.ODataCore.Tests.Models;
+﻿using CFW.ODataCore.Testings;
+using CFW.ODataCore.Testings.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Tests.TestCases.EntitySetsPatch;
+namespace CFW.ODataCore.Testings.TestCases.EntitySetsPatch;
 
 public class NoRelationshipPatchTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
 {

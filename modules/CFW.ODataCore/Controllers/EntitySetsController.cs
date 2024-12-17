@@ -63,6 +63,11 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , [FromServices] ApiHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var query = await handler.Query(options, cancellationToken);
         return Ok(query);
     }
@@ -72,6 +77,11 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , [FromServices] ApiHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var entity = await handler.Get(key, options, cancellationToken);
         if (entity == null)
             return NotFound();
@@ -97,6 +107,11 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , [FromServices] ApiHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var updatedModel = await handler.Patch(key, delta, cancellationToken);
         return Updated(updatedModel);
     }
@@ -105,6 +120,11 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         , [FromServices] ApiHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var result = await handler.Delete(key, cancellationToken);
         return result.ToActionResult();
     }

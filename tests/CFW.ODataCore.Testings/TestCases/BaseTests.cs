@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Tests.TestCases;
+namespace CFW.ODataCore.Testings.TestCases;
 
 public abstract class BaseTests
 {

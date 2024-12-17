@@ -1,11 +1,10 @@
-﻿using CFW.Core.Utils;
-using CFW.ODataCore.Tests.Models;
+﻿using CFW.ODataCore.Testings.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Tests.TestCases.EntitySetsDelete;
+namespace CFW.ODataCore.Testings.TestCases.EntitySetsDelete;
 
 public class NoRelationshipDeleteTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
 {

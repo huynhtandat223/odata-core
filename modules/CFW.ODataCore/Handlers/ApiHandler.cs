@@ -24,8 +24,11 @@ public class ApiHandler<TODataViewModel, TKey>
 
     public async Task<TODataViewModel> Create(TODataViewModel model, CancellationToken cancellationToken)
     {
-        _db.ChangeTracker.TrackGraph(model, rootEntity =>
+        _db.ChangeTracker.TrackGraph(model, async rootEntity =>
         {
+            if (rootEntity.Entry.Entity != model)
+                return;
+
             rootEntity.Entry.State = EntityState.Added;
 
             var navigations = rootEntity.Entry.Navigations
@@ -45,10 +48,57 @@ public class ApiHandler<TODataViewModel, TKey>
                 var keyValue = targetEntity.Property(keyProperty.Name).CurrentValue!;
                 var defaultKey = Activator.CreateInstance(keyProperty.ClrType);
 
-                if (keyValue.ToString()!.Equals(defaultKey))
+                // If the key is default, then the entity is new.
+                if (keyValue.ToString()!.Equals(defaultKey?.ToString()))
                     navigation.TargetEntry!.State = EntityState.Added;
+
+                // If the key is not default, then check db
                 else
-                    navigation.TargetEntry!.State = EntityState.Detached;
+                {
+                    var dbEntity = await _db.FindAsync(targetEntity.Metadata.ClrType, keyValues: [keyValue], cancellationToken);
+                    if (dbEntity is null)
+                        navigation.TargetEntry!.State = EntityState.Added;
+                    else
+                        navigation.TargetEntry!.State = EntityState.Unchanged;
+                }
+
+            }
+
+            var collections = rootEntity.Entry.Collections
+                .OfType<Microsoft.EntityFrameworkCore.ChangeTracking.CollectionEntry>()
+                .ToList();
+
+            foreach (var collection in collections)
+            {
+                var targetEntities = collection.CurrentValue;
+                if (targetEntities is null)
+                    throw new NotImplementedException();
+
+                foreach (var targetEntity in targetEntities)
+                {
+                    var entry = _db.Entry(targetEntity);
+                    var keyProperty = entry.Metadata.FindPrimaryKey()?.Properties.SingleOrDefault();
+                    if (keyProperty is null)
+                        throw new InvalidOperationException("Primary key not found.");
+
+                    var keyValue = entry.Property(keyProperty.Name).CurrentValue!;
+
+                    var defaultKey = Activator.CreateInstance(keyProperty.ClrType);
+
+                    // If the key is default, then the entity is new.
+                    if (keyValue.ToString()!.Equals(defaultKey?.ToString()))
+                        entry.State = EntityState.Added;
+
+                    // If the key is not default, then check db
+                    else
+                    {
+                        var dbEntity = await _db.FindAsync(entry.Metadata.ClrType, keyValues: [keyValue], cancellationToken);
+                        if (dbEntity is null)
+                            entry.State = EntityState.Added;
+                        else
+                            entry.State = EntityState.Unchanged;
+                    }
+                }
             }
         });
 

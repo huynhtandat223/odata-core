@@ -1,13 +1,9 @@
-﻿using CFW.Core.Testings.DataGenerations;
-using CFW.Core.Utils;
-using CFW.ODataCore.Core;
-using CFW.ODataCore.Tests.Models;
-using FluentAssertions;
+﻿using CFW.ODataCore.Testings.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Tests.TestCases.EntitySetsCreation;
+namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 
 public class OneManyRelationshipTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
 {

@@ -1,7 +1,6 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.Core;
 
-namespace CFW.ODataCore.Tests.Models;
+namespace CFW.ODataCore.Testings.Models;
 
 [ODataRouting("customers")]
 public class Customer : IEntity<int>, IODataViewModel<int>

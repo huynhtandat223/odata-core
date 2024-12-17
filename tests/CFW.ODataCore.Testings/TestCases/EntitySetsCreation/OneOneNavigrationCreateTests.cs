@@ -1,14 +1,9 @@
-﻿using CFW.Core.Testings.DataGenerations;
-using CFW.Core.Utils;
-using CFW.ODataCore.Core;
-using CFW.ODataCore.Tests.Models;
-using FluentAssertions;
+﻿using CFW.ODataCore.Testings.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Tests.TestCases.EntitySetsCreation;
+namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 
 public class OneOneNavigrationCreateTests
     : BaseTests, IClassFixture<WebApplicationFactory<Program>>
@@ -61,7 +56,7 @@ public class OneOneNavigrationCreateTests
 
     [Theory]
     [InlineData(typeof(Product), nameof(Product.Category))]
-    public async Task Create_MainEntityContainsNewComplexPropertyThatHasPrimaryKey_Should_InsertFailed(Type resourceType
+    public async Task Create_MainEntityContainsNewComplexPropertyThatHasPrimaryKey_Should_InsertSuccess(Type resourceType
         , string complexPropName)
     {
         // Arrange
@@ -74,15 +69,22 @@ public class OneOneNavigrationCreateTests
         var navigationProp = expectedEntity.GetPropertyValue(complexPropName);
 
         var resp = await client.PostAsJsonAsync(baseUrl, expectedEntity);
-        resp.IsSuccessStatusCode.Should().BeFalse();
+        resp.IsSuccessStatusCode.Should().BeTrue();
 
-        // Assert no complex property inserted
-        var idPropValue = navigationProp!.GetPropertyValue(idProp);
+        var actual = await resp.Content.ReadFromJsonAsync(resourceType);
+
+        // Assert
+        var dbEntity = await client.GetFromJsonAsync($"{baseUrl}/{actual!.GetPropertyValue(idProp)}?$expand={complexPropName}", resourceType);
+        expectedEntity.Should().BeEquivalentTo(dbEntity, o => o.Excluding(x => x.Name == idProp));
+
+        //compare complex property
+        var childProp = dbEntity!.GetPropertyValue(complexPropName);
+        childProp.Should().NotBeNull();
+        var idPropValue = childProp!.GetPropertyValue(idProp);
         var navigationPropType = navigationProp!.GetType();
         var complexPropUrl = navigationPropType.GetBaseUrl();
-        var childPropResp = await client.GetAsync($"{complexPropUrl}/{idPropValue}");
-        childPropResp.IsSuccessStatusCode.Should().BeFalse();
-        childPropResp.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
+        childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
 
     [Theory]

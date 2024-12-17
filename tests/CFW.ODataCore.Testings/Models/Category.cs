@@ -1,7 +1,6 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.Core;
 
-namespace CFW.ODataCore.Tests.Models;
+namespace CFW.ODataCore.Testings.Models;
 
 [ODataRouting("categories")]
 public class Category : IEntity<Guid>, IODataViewModel<Guid>
