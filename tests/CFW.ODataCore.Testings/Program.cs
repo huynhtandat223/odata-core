@@ -1,6 +1,5 @@
 using CFW.Identity;
 using CFW.ODataCore;
-using CFW.ODataCore.Handlers.Endpoints.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +12,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(
            options => options.UseSqlite("Data Source=appidentitycontext.db"));
 
 builder.Services
-    .AddGenericODataEndpoints([typeof(Program).Assembly, typeof(EndpointViewModel).Assembly]);
+    .AddGenericODataEndpoints();
 
 builder.Services.AddCFWIdentity<ApplicationDbContext, IdentityUser, IdentityRole, string>();
 

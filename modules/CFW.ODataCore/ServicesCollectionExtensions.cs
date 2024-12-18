@@ -7,9 +7,11 @@ namespace CFW.ODataCore;
 public static class ServicesCollectionExtensions
 {
     public static IServiceCollection AddGenericODataEndpoints(this IServiceCollection services
-        , Assembly[] assemblies
+        , Assembly[]? assemblies = null
         , string defaultRoutePrefix = "odata-api")
     {
+        assemblies ??= [Assembly.GetEntryAssembly()!];
+
         var odataRoutings = assemblies.SelectMany(x => x.GetTypes())
                 .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
                 .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
