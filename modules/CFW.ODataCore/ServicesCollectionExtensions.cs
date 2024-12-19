@@ -11,80 +11,36 @@ public static class ServicesCollectionExtensions
         , string defaultRoutePrefix = "odata-api")
     {
         var includedAssemblies = assemblies?.ToList();
-
         if (includedAssemblies is null)
         {
-            includedAssemblies = new List<Assembly>();
             var callingAssembly = Assembly.GetCallingAssembly();
-            var entryAssembly = Assembly.GetEntryAssembly();
-            var executingAssembly = Assembly.GetExecutingAssembly();
-            var scaningAsms = new List<Assembly> { callingAssembly, executingAssembly };
+            var rootNameSpace = callingAssembly.FullName?.Split('.')[0];
+            rootNameSpace = $"{rootNameSpace}.";
 
-            if (entryAssembly is not null)
-            {
-                scaningAsms.Add(entryAssembly);
-            }
-
-            foreach (var asm in scaningAsms)
-            {
-                var rootNameSpace = asm.FullName?.Split('.')[0];
-
-                if (rootNameSpace is null)
-                    continue;
-
-                rootNameSpace = $"{rootNameSpace}.";
-
-                var refAsms = asm.GetReferencedAssemblies()
-                    .Where(x => x.FullName.StartsWith(rootNameSpace))
-                    .Select(Assembly.Load)
-                    .ToList() ?? new List<Assembly>();
-
-                refAsms.Add(asm);
-                includedAssemblies = includedAssemblies.Concat(refAsms).ToList();
-            }
+            includedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(x => x.FullName?.StartsWith(rootNameSpace) == true)
+                .ToList();
         }
 
         var odataRoutings = includedAssemblies
             .Distinct()
             .SelectMany(x => x.GetTypes())
             .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
-            .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
+            .Select(x => new
+            {
+                ODataType = x, //can be ViewModel or Handler
+                x.GetCustomAttribute<ODataRoutingAttribute>()!.RouteRefix,
+            })
             .ToList();
 
-        if (odataRoutings.Any(x => x.RoutingInfo.Name.IsNullOrWhiteSpace()))
-        {
-            var invalidTypes = odataRoutings
-                .Where(x => x.RoutingInfo.Name.IsNullOrWhiteSpace())
-                .Select(x => new { x.ViewModelType.Name })
-                .ToArray();
-            var names = string.Join(separator: ',', values: invalidTypes.Select(x => x.Name));
-
-            throw new InvalidOperationException($"Invalid routing name for {names}");
-        }
-
-        var containerGroups = odataRoutings.GroupBy(x => x.RoutingInfo.RouteRefix ?? defaultRoutePrefix);
+        var containerGroups = odataRoutings.GroupBy(x => x.RouteRefix ?? defaultRoutePrefix);
         foreach (var containerGroup in containerGroups)
         {
             var routePrefix = containerGroup.Key;
             var container = ODataContainerCollection.Instance.AddOrGetContainer(routePrefix!);
 
-            foreach (var routing in containerGroup)
-            {
-                var viewModelType = routing.ViewModelType;
-                var odataInterface = viewModelType.GetInterfaces()
-                    .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
-                if (odataInterface is null)
-                {
-                    throw new InvalidOperationException("ViewModel must implement IODataViewModel<T>");
-                }
-
-                routing.RoutingInfo.EntityType = viewModelType;
-                routing.RoutingInfo.KeyType = routing.ViewModelType.GetInterfaces()
-                    .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>))
-                    .Select(x => x.GetGenericArguments().First())
-                    .First();
-                container.AddEntitySet(routing.RoutingInfo);
-            }
+            var odataTypes = containerGroup.Select(x => x.ODataType).ToList();
+            container.AddEntitySets(odataTypes);
         }
 
         services.AddScoped(typeof(ApiHandler<,>));

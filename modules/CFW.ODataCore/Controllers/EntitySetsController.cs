@@ -4,6 +4,7 @@ using CFW.ODataCore.Extensions;
 using CFW.ODataCore.Handlers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Query;
@@ -32,25 +33,51 @@ public class EntitySetsConvention : Attribute, IControllerModelConvention
         var routePrefix = metadataEntity.Container.RoutePrefix;
         var edmModel = metadataEntity.Container.EdmModel;
 
+
         //QUERY
         var queryAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Query));
         queryAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withoutKeyTemplate);
+        AddAuthorizationInfo(queryAction, metadataEntity);
+
 
         //GET
         var getAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Get));
         getAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withKeyTemplate);
+        AddAuthorizationInfo(getAction, metadataEntity);
+
 
         //POST (create)
         var postAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Post));
         postAction.AddSelector(HttpMethod.Post.Method, routePrefix, edmModel, withoutKeyTemplate);
+        AddAuthorizationInfo(postAction, metadataEntity);
+
 
         //DELETE
         var deleteAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Delete));
         deleteAction.AddSelector(HttpMethod.Delete.Method, routePrefix, edmModel, withKeyTemplate);
+        AddAuthorizationInfo(deleteAction, metadataEntity);
+
 
         //PATCH
         var patchAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Patch));
         patchAction.AddSelector(HttpMethod.Patch.Method, routePrefix, edmModel, withKeyTemplate);
+        AddAuthorizationInfo(patchAction, metadataEntity);
+
+    }
+
+    private void AddAuthorizationInfo(ActionModel actionModel, ODataMetadataEntity metadataEntity)
+    {
+        if (metadataEntity.AllowAnonymousAttribute is not null)
+        {
+            var allowAnonymousFilter = new AllowAnonymousFilter();
+            actionModel.Filters.Add(allowAnonymousFilter);
+        }
+
+        if (metadataEntity.AuthorizeAttribute is not null)
+        {
+            var authorizeFilter = new AuthorizeFilter([metadataEntity.AuthorizeAttribute]);
+            actionModel.Filters.Add(authorizeFilter);
+        }
     }
 }
 

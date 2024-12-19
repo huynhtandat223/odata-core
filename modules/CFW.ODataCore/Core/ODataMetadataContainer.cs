@@ -1,4 +1,5 @@
 ﻿using CFW.ODataCore.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
@@ -10,7 +11,9 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 {
     private readonly ODataConventionModelBuilder _modelBuilder;
 
-    public readonly List<ODataMetadataEntity> _entityMetadataList = new List<ODataMetadataEntity>();
+    private readonly List<ODataMetadataEntity> _entityMetadataList = new List<ODataMetadataEntity>();
+
+    public IReadOnlyCollection<ODataMetadataEntity> EntityMetadataList => _entityMetadataList.AsReadOnly();
 
     public string RoutePrefix { get; }
 
@@ -22,29 +25,46 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         RoutePrefix = routePrefix;
     }
 
-
-    public ODataMetadataContainer AddEntitySet(ODataRoutingAttribute routingAttribute)
+    internal void AddEntitySets(List<Type> odataTypes)
     {
-        var entityType = routingAttribute.EntityType;
-        var keyType = routingAttribute.KeyType;
-
-        if (entityType is null || keyType is null)
-            throw new InvalidOperationException("EntityType and KeyType must be set");
-
-        var entityTypeConfig = _modelBuilder.AddEntityType(entityType);
-        var entitySet = _modelBuilder.AddEntitySet(routingAttribute.Name, entityTypeConfig);
-
-        var controlerType = typeof(EntitySetsController<,>).MakeGenericType([entityType, keyType]).GetTypeInfo();
-
-        _entityMetadataList.Add(new ODataMetadataEntity
+        foreach (var odataType in odataTypes)
         {
-            EntityType = entityType,
-            Name = routingAttribute.Name,
-            Container = this,
-            ControllerType = controlerType
-        });
+            var interfaces = odataType.GetInterfaces();
+            if (interfaces.Length == 0)
+                throw new InvalidOperationException("Not found any interface");
 
-        return this;
+            var routingAttribute = odataType.GetCustomAttribute<ODataRoutingAttribute>()!;
+            var authorizeInfo = odataType.GetCustomAttribute<AuthorizeAttribute>();
+            var anonymousInfo = odataType.GetCustomAttribute<AllowAnonymousAttribute>();
+
+            var odataViewModelType = interfaces
+                .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
+            Type? entityType = null;
+            Type? keyType = null;
+
+            if (odataViewModelType is not null)
+            {
+                entityType = odataType;
+                keyType = odataViewModelType.GetGenericArguments().Single();
+            }
+
+            if (entityType is null || keyType is null)
+                throw new InvalidOperationException("EntityType and KeyType must be set");
+
+            var controlerType = typeof(EntitySetsController<,>).MakeGenericType([entityType, keyType]).GetTypeInfo();
+
+            _modelBuilder.AddEntitySet(routingAttribute.Name, _modelBuilder.AddEntityType(entityType));
+
+            _entityMetadataList.Add(new ODataMetadataEntity
+            {
+                EntityType = entityType,
+                Name = routingAttribute.Name,
+                Container = this,
+                ControllerType = controlerType,
+                AuthorizeAttribute = authorizeInfo,
+                AllowAnonymousAttribute = anonymousInfo
+            });
+        }
     }
 
     private IEdmModel? _edmModel;

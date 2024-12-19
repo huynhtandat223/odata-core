@@ -9,6 +9,7 @@ public static class SeedData
         using var scope = serviceProvider.CreateScope();
         var services = scope.ServiceProvider;
         var context = services.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated();
         if (!context.Users.Any())
         {
             var userManager = services.GetRequiredService<UserManager<IdentityUser>>();

@@ -10,15 +10,11 @@ public class ODataRoutingAttribute : Attribute
 
     public string? RouteRefix { get; set; }
 
-    public ODataRoutingAttribute(Type entityType, Type keyType, string name)
-    {
-        EntityType = entityType;
-        KeyType = keyType;
-        Name = name;
-    }
-
     public ODataRoutingAttribute(string name)
     {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name must be set", nameof(name));
+
         Name = name;
     }
 }

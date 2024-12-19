@@ -5,7 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Handlers;
 
-public interface IQueryHandler<TODataViewModel, TKey>
+public interface IODataHandler
+{
+}
+
+public interface IQueryHandler<TODataViewModel, TKey> : IODataHandler
 {
     Task<IQueryable> Query(ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken);
 }

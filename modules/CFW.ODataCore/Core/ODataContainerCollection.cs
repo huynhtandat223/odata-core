@@ -53,7 +53,7 @@ public class ODataContainerCollection
         var dbEntities = new List<Type>();
         foreach (var container in _containers)
         {
-            foreach (var entity in container._entityMetadataList)
+            foreach (var entity in container.EntityMetadataList)
             {
                 dbEntities.Add(entity.EntityType);
             }
@@ -66,7 +66,7 @@ public class ODataContainerCollection
     {
         foreach (var container in _containers)
         {
-            var metadataEntity = container._entityMetadataList.FirstOrDefault(x => x.ControllerType == controllerType);
+            var metadataEntity = container.EntityMetadataList.FirstOrDefault(x => x.ControllerType == controllerType);
             if (metadataEntity != null)
                 return metadataEntity;
         }

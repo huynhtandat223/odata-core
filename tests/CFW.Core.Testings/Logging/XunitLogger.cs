@@ -57,11 +57,6 @@ public sealed class XunitLogger : ILogger
         //if (logLevel == LogLevel.Debug || logLevel == LogLevel.Trace || logLevel == LogLevel.Information)
         //    return;
 
-        if (state.GetType().FullName!.Equals("Microsoft.AspNetCore.Hosting.HostingRequestFinishedLog"))
-        {
-            return;
-        }
-
         var sb = new StringBuilder();
 
         sb.Append($"[{_service}] ");
