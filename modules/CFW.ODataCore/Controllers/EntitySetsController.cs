@@ -35,33 +35,45 @@ public class EntitySetsConvention : Attribute, IControllerModelConvention
 
 
         //QUERY
-        var queryAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Query));
-        queryAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withoutKeyTemplate);
-        AddAuthorizationInfo(queryAction, metadataEntity);
-
+        if (metadataEntity.AllowMethods.Contains(AllowMethod.Query))
+        {
+            var queryAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Query));
+            queryAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withoutKeyTemplate);
+            AddAuthorizationInfo(queryAction, metadataEntity);
+        }
 
         //GET
-        var getAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Get));
-        getAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withKeyTemplate);
-        AddAuthorizationInfo(getAction, metadataEntity);
+        if (metadataEntity.AllowMethods.Contains(AllowMethod.GetByKey))
+        {
+            var getAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Get));
+            getAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, withKeyTemplate);
+            AddAuthorizationInfo(getAction, metadataEntity);
+        }
 
 
         //POST (create)
-        var postAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Post));
-        postAction.AddSelector(HttpMethod.Post.Method, routePrefix, edmModel, withoutKeyTemplate);
-        AddAuthorizationInfo(postAction, metadataEntity);
-
+        if (metadataEntity.AllowMethods.Contains(AllowMethod.PostCreate))
+        {
+            var postAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Post));
+            postAction.AddSelector(HttpMethod.Post.Method, routePrefix, edmModel, withoutKeyTemplate);
+            AddAuthorizationInfo(postAction, metadataEntity);
+        }
 
         //DELETE
-        var deleteAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Delete));
-        deleteAction.AddSelector(HttpMethod.Delete.Method, routePrefix, edmModel, withKeyTemplate);
-        AddAuthorizationInfo(deleteAction, metadataEntity);
-
+        if (metadataEntity.AllowMethods.Contains(AllowMethod.Delete))
+        {
+            var deleteAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Delete));
+            deleteAction.AddSelector(HttpMethod.Delete.Method, routePrefix, edmModel, withKeyTemplate);
+            AddAuthorizationInfo(deleteAction, metadataEntity);
+        }
 
         //PATCH
-        var patchAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Patch));
-        patchAction.AddSelector(HttpMethod.Patch.Method, routePrefix, edmModel, withKeyTemplate);
-        AddAuthorizationInfo(patchAction, metadataEntity);
+        if (metadataEntity.AllowMethods.Contains(AllowMethod.PatchUpdate))
+        {
+            var patchAction = controller.Actions.Single(a => a.ActionName == nameof(EntitySetsController<RefODataViewModel, int>.Patch));
+            patchAction.AddSelector(HttpMethod.Patch.Method, routePrefix, edmModel, withKeyTemplate);
+            AddAuthorizationInfo(patchAction, metadataEntity);
+        }
 
     }
 

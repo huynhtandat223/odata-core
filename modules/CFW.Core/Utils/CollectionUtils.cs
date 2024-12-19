@@ -39,4 +39,12 @@ public static class CollectionUtils
 
         return result;
     }
+
+    public static T Random<T>(this IEnumerable<T> source)
+    {
+        var list = new List<T>(source);
+        var random = new Random();
+        var index = random.Next(list.Count);
+        return list[index];
+    }
 }

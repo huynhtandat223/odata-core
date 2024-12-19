@@ -32,6 +32,15 @@ public static class ObjectUtils
         return result!;
     }
 
+    public static object JsonConvert(this string source, Type targetType)
+    {
+        if (string.IsNullOrEmpty(source))
+            return default!;
+
+        var result = JsonSerializer.Deserialize(source, targetType, _serializerOptions);
+        return result!;
+    }
+
     public static string ToJsonString(this object source)
     {
         return JsonSerializer.Serialize(source);

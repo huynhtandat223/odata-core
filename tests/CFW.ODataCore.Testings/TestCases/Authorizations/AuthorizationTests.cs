@@ -1,10 +1,7 @@
-﻿using CFW.ODataCore.Testings.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
+﻿using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 using System.Net;
-using Xunit;
-using Xunit.Abstractions;
 
-namespace CFW.ODataCore.Testings.TestCases;
+namespace CFW.ODataCore.Testings.TestCases.Authorizations;
 
 public class AuthorizationTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
 {

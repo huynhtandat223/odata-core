@@ -1,7 +1,7 @@
 ﻿using CFW.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
 [ODataRouting("authorize-categories")]
 [Authorize]

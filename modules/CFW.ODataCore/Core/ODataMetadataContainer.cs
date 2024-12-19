@@ -62,7 +62,8 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
                 Container = this,
                 ControllerType = controlerType,
                 AuthorizeAttribute = authorizeInfo,
-                AllowAnonymousAttribute = anonymousInfo
+                AllowAnonymousAttribute = anonymousInfo,
+                AllowMethods = routingAttribute.AllowMethods ?? Enum.GetValues<AllowMethod>()
             });
         }
     }

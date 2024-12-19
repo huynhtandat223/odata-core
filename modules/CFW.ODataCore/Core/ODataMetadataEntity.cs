@@ -16,4 +16,6 @@ public class ODataMetadataEntity
     public AuthorizeAttribute? AuthorizeAttribute { get; set; }
 
     public AllowAnonymousAttribute? AllowAnonymousAttribute { get; set; }
+
+    public AllowMethod[] AllowMethods { get; set; } = Array.Empty<AllowMethod>();
 }

@@ -84,8 +84,6 @@ public static class ServiceCollectionExtensions
         //    return Results.Ok(role);
         //});
 
-        SeedData.Initialize(app.Services);
-
         return app;
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace CFW.ODataCore.Core;
 
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public class ODataRoutingAttribute : Attribute
 {
     public Type? EntityType { get; set; }
@@ -10,6 +11,8 @@ public class ODataRoutingAttribute : Attribute
 
     public string? RouteRefix { get; set; }
 
+    public AllowMethod[]? AllowMethods { get; set; }
+
     public ODataRoutingAttribute(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -17,4 +20,13 @@ public class ODataRoutingAttribute : Attribute
 
         Name = name;
     }
+}
+
+public enum AllowMethod
+{
+    Query = 1,
+    GetByKey,
+    PostCreate,
+    PatchUpdate,
+    Delete,
 }
