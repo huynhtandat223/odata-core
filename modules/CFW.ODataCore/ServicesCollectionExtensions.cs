@@ -10,12 +10,46 @@ public static class ServicesCollectionExtensions
         , Assembly[]? assemblies = null
         , string defaultRoutePrefix = "odata-api")
     {
-        assemblies ??= [Assembly.GetEntryAssembly()!];
+        var includedAssemblies = assemblies?.ToList();
 
-        var odataRoutings = assemblies.SelectMany(x => x.GetTypes())
-                .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
-                .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
-                .ToList();
+        if (includedAssemblies is null)
+        {
+            includedAssemblies = new List<Assembly>();
+            var callingAssembly = Assembly.GetCallingAssembly();
+            var entryAssembly = Assembly.GetEntryAssembly();
+            var executingAssembly = Assembly.GetExecutingAssembly();
+            var scaningAsms = new List<Assembly> { callingAssembly, executingAssembly };
+
+            if (entryAssembly is not null)
+            {
+                scaningAsms.Add(entryAssembly);
+            }
+
+            foreach (var asm in scaningAsms)
+            {
+                var rootNameSpace = asm.FullName?.Split('.')[0];
+
+                if (rootNameSpace is null)
+                    continue;
+
+                rootNameSpace = $"{rootNameSpace}.";
+
+                var refAsms = asm.GetReferencedAssemblies()
+                    .Where(x => x.FullName.StartsWith(rootNameSpace))
+                    .Select(Assembly.Load)
+                    .ToList() ?? new List<Assembly>();
+
+                refAsms.Add(asm);
+                includedAssemblies = includedAssemblies.Concat(refAsms).ToList();
+            }
+        }
+
+        var odataRoutings = includedAssemblies
+            .Distinct()
+            .SelectMany(x => x.GetTypes())
+            .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
+            .Select(x => new { ViewModelType = x, RoutingInfo = x.GetCustomAttribute<ODataRoutingAttribute>()! })
+            .ToList();
 
         if (odataRoutings.Any(x => x.RoutingInfo.Name.IsNullOrWhiteSpace()))
         {
@@ -56,7 +90,7 @@ public static class ServicesCollectionExtensions
         services.AddScoped(typeof(ApiHandler<,>));
 
         var queryType = typeof(IQueryHandler<,>);
-        var queryTypes = assemblies.SelectMany(x => x.GetTypes())
+        var queryTypes = includedAssemblies.SelectMany(x => x.GetTypes())
             .Where(x => x.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == queryType))
             .ToList();
         foreach (var qType in queryTypes)
