@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
@@ -18,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\CFW.Core\CFW.Core.csproj" />
-    <ProjectReference Include="..\..\modules\CFW.Identity\CFW.Identity.csproj" />
     <ProjectReference Include="..\..\modules\CFW.ODataCore\CFW.ODataCore.csproj" />
     <ProjectReference Include="..\CFW.Core.Testings\CFW.Core.Testings.csproj" />
   </ItemGroup>

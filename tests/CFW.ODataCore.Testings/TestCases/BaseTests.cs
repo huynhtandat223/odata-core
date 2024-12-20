@@ -1,6 +1,5 @@
 ﻿using CFW.Core.Testings.Logging;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit.Abstractions;
+using Microsoft.AspNetCore.Identity;
 
 namespace CFW.ODataCore.Testings.TestCases;
 
@@ -22,5 +21,14 @@ public abstract class BaseTests
                         => new XunitLoggerProvider(_testOutputHelper, "Testing"));
                 });
         });
+    }
+
+    protected async Task SeedUser(string userName, string password)
+    {
+        var userManager = _factory.Services.GetRequiredService<UserManager<IdentityUser>>();
+        var user = new IdentityUser { UserName = "admin" };
+        var result = await userManager.CreateAsync(user, password);
+        if (!result.Succeeded)
+            throw new InvalidOperationException("Test data invalid. User creation failed.");
     }
 }

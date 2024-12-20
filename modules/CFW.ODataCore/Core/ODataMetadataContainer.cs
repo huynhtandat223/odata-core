@@ -1,5 +1,4 @@
 ﻿using CFW.ODataCore.Controllers;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
@@ -33,9 +32,8 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
             if (interfaces.Length == 0)
                 throw new InvalidOperationException("Not found any interface");
 
-            var routingAttribute = odataType.GetCustomAttribute<ODataRoutingAttribute>()!;
-            var authorizeInfo = odataType.GetCustomAttribute<AuthorizeAttribute>();
-            var anonymousInfo = odataType.GetCustomAttribute<AllowAnonymousAttribute>();
+            var attributes = odataType.GetCustomAttributes().ToArray();
+            var routingAttribute = attributes.OfType<ODataRoutingAttribute>().Single();
 
             var odataViewModelType = interfaces
                 .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
@@ -61,9 +59,7 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
                 Name = routingAttribute.Name,
                 Container = this,
                 ControllerType = controlerType,
-                AuthorizeAttribute = authorizeInfo,
-                AllowAnonymousAttribute = anonymousInfo,
-                AllowMethods = routingAttribute.AllowMethods ?? Enum.GetValues<AllowMethod>()
+                SetupAttributes = attributes,
             });
         }
     }

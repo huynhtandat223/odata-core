@@ -11,7 +11,7 @@ public class ODataRoutingAttribute : Attribute
 
     public string? RouteRefix { get; set; }
 
-    public AllowMethod[]? AllowMethods { get; set; }
+    public ODataMethod[]? AllowMethods { get; set; }
 
     public ODataRoutingAttribute(string name)
     {
@@ -22,7 +22,7 @@ public class ODataRoutingAttribute : Attribute
     }
 }
 
-public enum AllowMethod
+public enum ODataMethod
 {
     Query = 1,
     GetByKey,

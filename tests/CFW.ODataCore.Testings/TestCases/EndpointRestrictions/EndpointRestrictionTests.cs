@@ -43,7 +43,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
 
         foreach (var method in methodsArray)
         {
-            if (method == AllowMethod.Query)
+            if (method == ODataMethod.Query)
             {
                 // Act
                 var queryResponseMessage = await client.GetAsync(baseUrl);
@@ -58,7 +58,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 value!.Cast<object>().Count().Should().Be(data.Count);
             }
 
-            if (method == AllowMethod.GetByKey)
+            if (method == ODataMethod.GetByKey)
             {
                 var expectedEntity = data.Cast<object>().Random();
                 var keyValue = expectedEntity.GetPropertyValue(keyProp);
@@ -72,7 +72,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 actualEntity.Should().BeEquivalentTo(expectedEntity);
             }
 
-            if (method == AllowMethod.PostCreate)
+            if (method == ODataMethod.PostCreate)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
 
@@ -85,7 +85,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 data = data.Cast<object>().Append(newEntity).ToList();
             }
 
-            if (method == AllowMethod.PatchUpdate)
+            if (method == ODataMethod.PatchUpdate)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -101,7 +101,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
 
             }
 
-            if (method == AllowMethod.Delete)
+            if (method == ODataMethod.Delete)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -130,7 +130,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
             throw new Exception("Test data invalid. Methods are allowed for this endpoint.");
         }
 
-        var notAllowedMethods = Enum.GetValues<AllowMethod>().Except(methodsArray).ToArray();
+        var notAllowedMethods = Enum.GetValues<ODataMethod>().Except(methodsArray).ToArray();
         if (notAllowedMethods.Length == 0)
         {
             throw new Exception("Test data invalid. No methods are not allowed for this endpoint.");
@@ -146,7 +146,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
         var client = _factory.CreateClient();
         foreach (var method in notAllowedMethods)
         {
-            if (method == AllowMethod.Query)
+            if (method == ODataMethod.Query)
             {
                 // Act
                 var queryResponseMessage = await client.GetAsync(baseUrl);
@@ -155,7 +155,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 queryResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == AllowMethod.GetByKey)
+            if (method == ODataMethod.GetByKey)
             {
                 var getByKeyResponseMessage = await client.GetAsync($"{baseUrl}/{keyValue}");
                 // Assert
@@ -163,7 +163,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 getByKeyResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == AllowMethod.PostCreate)
+            if (method == ODataMethod.PostCreate)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
                 // Act
@@ -173,7 +173,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 postResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == AllowMethod.PatchUpdate)
+            if (method == ODataMethod.PatchUpdate)
             {
                 var updatingEntity = DataGenerator.Create(odataViewModelType)
                     .SetPropertyValue(nameof(IEntity<object>.Id), keyValue);
@@ -184,7 +184,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 patchResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == AllowMethod.Delete)
+            if (method == ODataMethod.Delete)
             {
                 // Act
                 var deleteResponseMessage = await client.DeleteAsync($"{baseUrl}/{keyValue}");

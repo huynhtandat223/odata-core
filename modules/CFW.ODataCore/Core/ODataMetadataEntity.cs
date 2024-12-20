@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace CFW.ODataCore.Core;
 
@@ -13,9 +12,5 @@ public class ODataMetadataEntity
 
     public required Type ViewModelType { get; set; }
 
-    public AuthorizeAttribute? AuthorizeAttribute { get; set; }
-
-    public AllowAnonymousAttribute? AllowAnonymousAttribute { get; set; }
-
-    public AllowMethod[] AllowMethods { get; set; } = Array.Empty<AllowMethod>();
+    public Attribute[] SetupAttributes { get; set; } = Array.Empty<Attribute>();
 }

@@ -30,4 +30,21 @@ public static class TestUtils
         return obj.GetType().GetProperties()
             .ToDictionary(x => x.Name, x => x.GetValue(obj));
     }
+
+    public static async Task<string> LoginAndGetToken(this HttpClient httpClient, string email, string password)
+    {
+        var loginResponse = await httpClient.PostAsJsonAsync("/login", new
+        {
+            Email = email,
+            Password = password
+        });
+        loginResponse.EnsureSuccessStatusCode();
+        var loginResponseContent = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        return loginResponseContent!.AccessToken;
+    }
+
+    public class LoginResponse
+    {
+        public string AccessToken { get; set; } = string.Empty;
+    }
 }
