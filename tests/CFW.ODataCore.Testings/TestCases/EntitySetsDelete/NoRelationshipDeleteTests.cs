@@ -1,8 +1,7 @@
-﻿using CFW.ODataCore.Testings.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
+﻿using CFW.CoreTestings.DataGenerations;
+using CFW.ODataCore.OData;
+using CFW.ODataCore.Testings.Models;
 using System.Net;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsDelete;
 

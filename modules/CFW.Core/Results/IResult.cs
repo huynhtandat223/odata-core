@@ -1,4 +1,6 @@
-﻿namespace CFW.Core.Results;
+﻿using System.Net;
+
+namespace CFW.Core.Results;
 
 public class Result
 {
@@ -8,7 +10,7 @@ public class Result
 
     public Exception? Exception { get; set; }
 
-    public bool? IsCreated { get; set; }
+    public HttpStatusCode HttpStatusCode { get; set; }
 }
 
 public class Result<T> : Result

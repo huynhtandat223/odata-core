@@ -1,4 +1,6 @@
-﻿using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
+﻿using CFW.CoreTestings.DataGenerations;
+using CFW.ODataCore.OData;
+using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 using FluentAssertions.Common;
 using System.Net;
 using System.Reflection;

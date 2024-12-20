@@ -1,7 +1,6 @@
-﻿using CFW.ODataCore.Testings.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit;
-using Xunit.Abstractions;
+﻿using CFW.CoreTestings.DataGenerations;
+using CFW.ODataCore.OData;
+using CFW.ODataCore.Testings.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 

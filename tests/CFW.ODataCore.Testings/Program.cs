@@ -1,5 +1,5 @@
-using CFW.ODataCore;
 using CFW.ODataCore.EFCore;
+using CFW.ODataCore.Extensions;
 using CFW.ODataCore.Testings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -47,24 +47,5 @@ using var scope = app.Services.CreateScope();
 var db = scope.ServiceProvider.GetRequiredService<TestingDbContext>();
 if (!db.Database.CanConnect())
     db.Database.EnsureCreated();
-
-//var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-//var hasUser = userManager.Users.Any();
-
-//if (!hasUser)
-//{
-//    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-//    var user = new IdentityUser { UserName = "admin" };
-//    var result = userManager.CreateAsync(user, "123!@#abcABC").Result;
-//    if (result.Succeeded)
-//    {
-//        var role = new IdentityRole { Name = "Admin" };
-//        var roleResult = roleManager.CreateAsync(role).Result;
-//        if (roleResult.Succeeded)
-//        {
-//            userManager.AddToRoleAsync(user, "Admin").Wait();
-//        }
-//    }
-//}
 
 app.Run();

@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/tests/CFW.ODataCore.Testings/appsettings.Development.json

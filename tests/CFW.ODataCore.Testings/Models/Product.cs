@@ -1,4 +1,5 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.OData;
 
 namespace CFW.ODataCore.Testings.Models;
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OData.Results;
 
 namespace CFW.ODataCore.Extensions;
 
@@ -7,18 +6,15 @@ public static class ResultExtensions
 {
     public static ActionResult ToActionResult(this Result result)
     {
-        return result.IsSuccess
-            ? new OkResult()
-            : new BadRequestObjectResult(result.Message);
+        var statusCodeResult = new StatusCodeResult((int)result.HttpStatusCode);
+        return statusCodeResult;
     }
 
     public static ActionResult ToActionResult<T>(this Result<T> result)
     {
-        if (result.IsCreated == true)
-        {
-            return new CreatedODataResult<T>(result.Data!);
-        }
+        var objectResult = new ObjectResult(result.Data);
+        objectResult.StatusCode = (int)result.HttpStatusCode;
 
-        return ToActionResult(result);
+        return objectResult;
     }
 }

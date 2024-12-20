@@ -1,4 +1,4 @@
-﻿using CFW.Core.Testings.Logging;
+﻿using CFW.CoreTestings.Logging;
 using Microsoft.AspNetCore.Identity;
 
 namespace CFW.ODataCore.Testings.TestCases;
