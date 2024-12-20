@@ -129,7 +129,7 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
     }
 
     public async Task<ActionResult<TODataViewModel>> Post([FromBody] TODataViewModel viewModel
-        , [FromServices] ApiHandler<TODataViewModel, TKey> handler
+        , [FromServices] ICreateHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -138,8 +138,7 @@ public class EntitySetsController<TODataViewModel, TKey> : ODataController
         }
 
         var newViewModel = await handler.Create(viewModel, cancellationToken);
-
-        return Created(newViewModel);
+        return newViewModel.ToActionResult();
     }
 
     public async Task<ActionResult> Patch(TKey key, [FromBody] Delta<TODataViewModel> delta

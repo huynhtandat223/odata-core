@@ -49,16 +49,6 @@ public class ODataContainerCollection
                 pm.ApplicationParts.Add(metadataContainer);
             }
         });
-
-        var dbEntities = new List<Type>();
-        foreach (var container in _containers)
-        {
-            foreach (var entity in container.EntityMetadataList)
-            {
-                dbEntities.Add(entity.EntityType);
-            }
-        }
-        mvcBuilder.Services.AddSingleton(dbEntities);
         return mvcBuilder.Services;
     }
 

@@ -8,11 +8,11 @@ public static class SeedData
     {
         using var scope = serviceProvider.CreateScope();
         var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<ApplicationDbContext>();
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var hasUser = userManager.Users.Any();
 
-        if (!context.Users.Any())
+        if (!hasUser)
         {
-            var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var user = new IdentityUser { UserName = "admin" };
             var result = userManager.CreateAsync(user, "123!@#abcABC").Result;

@@ -1,21 +1,30 @@
 using CFW.Identity;
 using CFW.ODataCore;
+using CFW.ODataCore.EFCore;
+using CFW.ODataCore.Testings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 var builder = WebApplication.CreateBuilder();
 
 var id = Guid.NewGuid().ToString();
-builder.Services.AddDbContext<AppDbContext>(
-           options => options.UseSqlite($@"Data Source=appdbcontext_{id}.db"));
-
-builder.Services.AddDbContext<ApplicationDbContext>(
-           options => options.UseSqlite($@"Data Source=appidentitycontext{id}.db"));
+builder.Services.AddDbContext<TestingDbContext>(
+           options => options
+           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+           .EnableSensitiveDataLogging()
+           .UseSqlite($@"Data Source=appdbcontext_{id}.db"));
 
 builder.Services
-    .AddGenericODataEndpoints();
+    .AddGenericODataEndpoints()
+    .AddAutoPopuplateEntities<TestingDbContext>();
 
-builder.Services.AddCFWIdentity<ApplicationDbContext, IdentityUser, IdentityRole, string>();
+
+builder.Services.AddAuthorization();
+builder.Services.AddIdentityApiEndpoints<IdentityUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<TestingDbContext>();
+
 
 var app = builder.Build();
 
@@ -23,13 +32,8 @@ app.UseGenericODataEndpoints();
 app.UseCFWIdentity<IdentityUser, string>();
 
 using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+var db = scope.ServiceProvider.GetRequiredService<TestingDbContext>();
 if (!db.Database.CanConnect())
     db.Database.EnsureCreated();
-
-using var scope2 = app.Services.CreateScope();
-var db2 = scope2.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-if (!db2.Database.CanConnect())
-    db2.Database.EnsureCreated();
 
 app.Run();

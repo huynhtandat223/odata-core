@@ -39,25 +39,25 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
             var odataViewModelType = interfaces
                 .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
-            Type? entityType = null;
+            Type? viewModelType = null;
             Type? keyType = null;
 
             if (odataViewModelType is not null)
             {
-                entityType = odataType;
+                viewModelType = odataType;
                 keyType = odataViewModelType.GetGenericArguments().Single();
             }
 
-            if (entityType is null || keyType is null)
+            if (viewModelType is null || keyType is null)
                 throw new InvalidOperationException("EntityType and KeyType must be set");
 
-            var controlerType = typeof(EntitySetsController<,>).MakeGenericType([entityType, keyType]).GetTypeInfo();
+            var controlerType = typeof(EntitySetsController<,>).MakeGenericType([viewModelType, keyType]).GetTypeInfo();
 
-            _modelBuilder.AddEntitySet(routingAttribute.Name, _modelBuilder.AddEntityType(entityType));
+            _modelBuilder.AddEntitySet(routingAttribute.Name, _modelBuilder.AddEntityType(viewModelType));
 
             _entityMetadataList.Add(new ODataMetadataEntity
             {
-                EntityType = entityType,
+                ViewModelType = viewModelType,
                 Name = routingAttribute.Name,
                 Container = this,
                 ControllerType = controlerType,

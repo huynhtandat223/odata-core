@@ -30,7 +30,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
         }
 
         var client = _factory.CreateClient();
-        var dbContext = _factory.Services.GetRequiredService<AppDbContext>();
+        var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
 
         var data = DataGenerator.CreateList(odataViewModelType, 5);
         foreach (var item in data)
@@ -136,7 +136,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
             throw new Exception("Test data invalid. No methods are not allowed for this endpoint.");
         }
 
-        var dbContext = _factory.Services.GetRequiredService<AppDbContext>();
+        var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
 
         var data = DataGenerator.Create(odataViewModelType);
         dbContext.Add(data);

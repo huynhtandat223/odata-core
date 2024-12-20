@@ -11,7 +11,7 @@ public class ODataMetadataEntity
 
     public required string Name { get; set; }
 
-    public required Type EntityType { get; set; }
+    public required Type ViewModelType { get; set; }
 
     public AuthorizeAttribute? AuthorizeAttribute { get; set; }
 

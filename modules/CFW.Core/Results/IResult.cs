@@ -7,6 +7,8 @@ public class Result
     public string? Message { get; set; }
 
     public Exception? Exception { get; set; }
+
+    public bool? IsCreated { get; set; }
 }
 
 public class Result<T> : Result

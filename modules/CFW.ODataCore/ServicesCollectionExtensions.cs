@@ -1,11 +1,26 @@
 ﻿using CFW.ODataCore.Core;
+using CFW.ODataCore.EFCore;
 using CFW.ODataCore.Handlers;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
 namespace CFW.ODataCore;
 
 public static class ServicesCollectionExtensions
 {
+    public static IServiceCollection AddAutoPopuplateEntities<TDbContext>(this IServiceCollection services
+        , ServiceLifetime dbServiceLifetime = ServiceLifetime.Scoped)
+        where TDbContext : DbContext
+    {
+        var modelCustomizer = typeof(ODataModelCustomizer<>).MakeGenericType(typeof(TDbContext));
+        //services.AddSingleton(typeof(IModelCustomizer), modelCustomizer);
+
+        var contextProvider = typeof(ContextProvider<>).MakeGenericType(typeof(TDbContext));
+        services.Add(new ServiceDescriptor(typeof(IODataDbContextProvider), contextProvider, dbServiceLifetime));
+
+        return services;
+    }
+
     public static IServiceCollection AddGenericODataEndpoints(this IServiceCollection services
         , Assembly[]? assemblies = null
         , string defaultRoutePrefix = "odata-api")
@@ -44,6 +59,7 @@ public static class ServicesCollectionExtensions
         }
 
         services.AddScoped(typeof(ApiHandler<,>));
+        services.AddScoped(typeof(ICreateHandler<,>), typeof(DefaultCreateHandler<,>));
 
         var queryType = typeof(IQueryHandler<,>);
         var queryTypes = includedAssemblies.SelectMany(x => x.GetTypes())
