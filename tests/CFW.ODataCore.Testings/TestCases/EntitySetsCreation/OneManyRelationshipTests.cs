@@ -4,9 +4,9 @@ using CFW.ODataCore.Testings.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 
-public class OneManyRelationshipTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class OneManyRelationshipTests : BaseTests, IClassFixture<AppFactory>
 {
-    public OneManyRelationshipTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public OneManyRelationshipTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -22,7 +22,7 @@ public class OneManyRelationshipTests : BaseTests, IClassFixture<WebApplicationF
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         // Act
         var childCollection = DataGenerator.CreateList(propType, 3, new GeneratorMetadata

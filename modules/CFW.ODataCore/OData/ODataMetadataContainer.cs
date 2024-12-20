@@ -24,43 +24,54 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         RoutePrefix = routePrefix;
     }
 
-    internal void AddEntitySets(List<Type> odataTypes)
+    public void AddEntitySets(string routePrefix, BaseODataTypeResolver typeResolver)
     {
-        foreach (var odataType in odataTypes)
+        var oDataTypes = typeResolver.GetODataTypes(routePrefix);
+        foreach (var oDataType in oDataTypes)
         {
-            var interfaces = odataType.GetInterfaces();
-            if (interfaces.Length == 0)
-                throw new InvalidOperationException("Not found any interface");
-
-            var attributes = odataType.GetCustomAttributes().ToArray();
-            var routingAttribute = attributes.OfType<ODataRoutingAttribute>().Single();
-
-            var odataViewModelType = interfaces
-                .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
-            Type? viewModelType = null;
-            Type? keyType = null;
-
-            if (odataViewModelType is not null)
-            {
-                viewModelType = odataType;
-                keyType = odataViewModelType.GetGenericArguments().Single();
-            }
-
-            if (viewModelType is null || keyType is null)
-                throw new InvalidOperationException("EntityType and KeyType must be set");
-
+            var viewModelType = oDataType.EntityType;
+            var routingAttribute = oDataType.RoutingAttribute;
+            var keyType = oDataType.KeyType;
             var controlerType = typeof(EntitySetsController<,>).MakeGenericType([viewModelType, keyType]).GetTypeInfo();
 
-            _modelBuilder.AddEntitySet(routingAttribute.Name, _modelBuilder.AddEntityType(viewModelType));
+            var entityType = _modelBuilder.AddEntityType(viewModelType);
+            _modelBuilder.AddEntitySet(routingAttribute.Name, entityType);
 
-            _entityMetadataList.Add(new ODataMetadataEntity
+            var metadataEntity = new ODataMetadataEntity
             {
                 ViewModelType = viewModelType,
                 Name = routingAttribute.Name,
                 Container = this,
                 ControllerType = controlerType,
-                SetupAttributes = attributes,
-            });
+                SetupAttributes = viewModelType.GetCustomAttributes().ToArray(),
+            };
+
+            metadataEntity.BoundActionMetadataList = typeResolver
+                .GetBoundActionMetadataList(viewModelType, keyType, this, routingAttribute.Name)
+                .ToList();
+            foreach (var boundActionMetadata in metadataEntity.BoundActionMetadataList)
+            {
+                var actionName = boundActionMetadata.BoundActionAttribute.Name;
+                var action = _modelBuilder.Action(actionName);
+
+                action.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
+                action.Parameter(boundActionMetadata.RequestType, "body");
+
+                if (boundActionMetadata.ResponseType == typeof(Result))
+                    continue;
+
+                if (boundActionMetadata.ResponseType.IsCommonGenericCollectionType())
+                {
+                    var elementType = boundActionMetadata.ResponseType.GetGenericArguments().Single();
+                    action.ReturnsCollection(elementType);
+                }
+                else
+                {
+                    action.Returns(boundActionMetadata.ResponseType);
+                }
+            }
+
+            _entityMetadataList.Add(metadataEntity);
         }
     }
 
@@ -68,6 +79,9 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
     public IEdmModel Build()
     {
+        if (_edmModel is not null)
+            return _edmModel;
+
         _edmModel = _modelBuilder.GetEdmModel();
         _edmModel.MarkAsImmutable();
         return _edmModel;
@@ -77,5 +91,6 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
 
     // IApplicationPartTypeProvider implementation
-    public IEnumerable<TypeInfo> Types => _entityMetadataList.Select(x => x.ControllerType);
+    public IEnumerable<TypeInfo> Types => _entityMetadataList
+        .SelectMany(x => x.GetAllControllerTypes());
 }

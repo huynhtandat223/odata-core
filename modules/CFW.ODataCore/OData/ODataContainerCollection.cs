@@ -28,9 +28,14 @@ public class ODataContainerCollection
         return container;
     }
 
-    public IServiceCollection Build(IServiceCollection services)
+    public void Clear()
     {
-        var mvcBuilder = services.AddControllers().AddOData(options =>
+        _containers.Clear();
+    }
+
+    public IMvcBuilder Build(IMvcBuilder mvcBuilder)
+    {
+        return mvcBuilder.AddOData(options =>
         {
             options.EnableQueryFeatures();
 
@@ -49,7 +54,6 @@ public class ODataContainerCollection
                 pm.ApplicationParts.Add(metadataContainer);
             }
         });
-        return mvcBuilder.Services;
     }
 
     public ODataMetadataEntity GetMetadataEntity(TypeInfo controllerType)
@@ -61,5 +65,19 @@ public class ODataContainerCollection
                 return metadataEntity;
         }
         throw new InvalidOperationException($"Controller type {controllerType} is not registered.");
+    }
+
+    public ODataBoundActionMetadata GetBoundActionMetadataEntity(TypeInfo boundActionControllerType)
+    {
+        foreach (var container in _containers)
+        {
+            var boundActionMetadata = container.EntityMetadataList
+                .SelectMany(x => x.BoundActionMetadataList)
+                .FirstOrDefault(x => x.BoundActionControllerType == boundActionControllerType);
+
+            if (boundActionMetadata != null)
+                return boundActionMetadata;
+        }
+        throw new InvalidOperationException($"Controller type {boundActionControllerType} is not registered.");
     }
 }

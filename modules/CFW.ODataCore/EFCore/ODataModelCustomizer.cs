@@ -1,5 +1,4 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -11,13 +10,11 @@ public class ODataModelCustomizer<TDbContext> : ModelCustomizer, IModelCustomize
     private readonly Lazy<Type[]> _entityTypes = new(() =>
     {
         var entityInterface = typeof(IEntity<>);
-        var containers = ODataContainerCollection.Instance.MetadataContainers;
-        var entityTypes = containers
-            .SelectMany(x => x.EntityMetadataList)
-            .Where(x => x.ViewModelType.GetInterfaces()
-                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == entityInterface))
-            .Select(y => y.ViewModelType)
+        var entityTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == entityInterface))
             .ToArray();
+
         return entityTypes;
     });
 

@@ -4,9 +4,9 @@ using CFW.ODataCore.Testings.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 
-public class NoRelationshipTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class NoRelationshipTests : BaseTests, IClassFixture<AppFactory>
 {
-    public NoRelationshipTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public NoRelationshipTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -25,7 +25,7 @@ public class NoRelationshipTests : BaseTests, IClassFixture<WebApplicationFactor
     public async Task Create_ShouldSuccess(Type resourceType, object? idValue)
     {
         // Arrange
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
 
@@ -52,7 +52,7 @@ public class NoRelationshipTests : BaseTests, IClassFixture<WebApplicationFactor
     public async Task Create_ResourceWithNoAutoGenerateKey_ShouldError(Type resourceType, object? defaultId)
     {
         // Arrange
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
 

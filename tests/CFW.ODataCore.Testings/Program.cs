@@ -6,18 +6,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-var builder = WebApplication.CreateBuilder();
+var builder = WebApplication.CreateBuilder(args);
+var isTesting = builder.Environment.EnvironmentName == AppFactory.TestingEnvironment;
 
-var id = Guid.NewGuid().ToString();
 builder.Services.AddDbContext<TestingDbContext>(
            options => options
            .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
            .EnableSensitiveDataLogging()
-           .UseSqlite($@"Data Source=appdbcontext_{id}.db"));
+           .UseSqlite($@"Data Source=appdbcontex.db"));
 
-builder.Services
-    .AddGenericODataEndpoints()
-    .AddAutoPopuplateEntities<TestingDbContext>();
+if (!isTesting)
+{
+    builder.Services.AddControllers()
+    .AddGenericODataEndpoints();
+}
+
+builder.Services.AddGenericDbContext<TestingDbContext>();
 
 
 builder.Services.AddAuthorization();

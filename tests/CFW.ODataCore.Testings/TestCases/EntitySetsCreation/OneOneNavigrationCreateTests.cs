@@ -5,9 +5,9 @@ using CFW.ODataCore.Testings.Models;
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;
 
 public class OneOneNavigrationCreateTests
-    : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+    : BaseTests, IClassFixture<AppFactory>
 {
-    public OneOneNavigrationCreateTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public OneOneNavigrationCreateTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -27,7 +27,7 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         // Act
         var expectedEntity = DataGenerator.Create(resourceType);
@@ -48,7 +48,7 @@ public class OneOneNavigrationCreateTests
         childProp.Should().NotBeNull();
         var idPropValue = childProp!.GetPropertyValue(idProp);
         var navigationPropType = navigationProp!.GetType();
-        var complexPropUrl = navigationPropType.GetBaseUrl();
+        var complexPropUrl = navigationPropType.GetDefaultBaseUrl();
         var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
         childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
@@ -61,7 +61,7 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         // Act
         var expectedEntity = DataGenerator.Create(resourceType);
@@ -81,7 +81,7 @@ public class OneOneNavigrationCreateTests
         childProp.Should().NotBeNull();
         var idPropValue = childProp!.GetPropertyValue(idProp);
         var navigationPropType = navigationProp!.GetType();
-        var complexPropUrl = navigationPropType.GetBaseUrl();
+        var complexPropUrl = navigationPropType.GetDefaultBaseUrl();
         var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
         childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
@@ -94,11 +94,11 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         //Create complex property
         var complexPropType = resourceType.GetProperty(complexPropName)!.PropertyType;
-        var complexPropUrl = complexPropType.GetBaseUrl();
+        var complexPropUrl = complexPropType.GetDefaultBaseUrl();
         var complexProp = DataGenerator.Create(complexPropType);
         var dbComplexPropValueResp = await client.PostAsJsonAsync(complexPropUrl, complexProp);
         dbComplexPropValueResp.IsSuccessStatusCode.Should().BeTrue();

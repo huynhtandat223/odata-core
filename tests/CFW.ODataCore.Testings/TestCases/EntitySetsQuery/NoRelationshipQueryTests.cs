@@ -9,9 +9,9 @@ public class ODataQueryResult<T>
     public IEnumerable<T> Value { get; set; } = Array.Empty<T>();
 }
 
-public class NoRelationshipQueryTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class NoRelationshipQueryTests : BaseTests, IClassFixture<AppFactory>
 {
-    public NoRelationshipQueryTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public NoRelationshipQueryTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -22,7 +22,7 @@ public class NoRelationshipQueryTests : BaseTests, IClassFixture<WebApplicationF
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         var entities = DataGenerator.CreateList(resourceType, 10);
         Parallel.For(0, entities.Count, async (i) =>
@@ -49,7 +49,7 @@ public class NoRelationshipQueryTests : BaseTests, IClassFixture<WebApplicationF
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
 
         var entities = DataGenerator.CreateList(resourceType, 11);
         Parallel.For(0, entities.Count, async (i) =>

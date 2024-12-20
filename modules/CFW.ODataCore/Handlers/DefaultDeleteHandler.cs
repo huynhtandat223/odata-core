@@ -1,6 +1,5 @@
 ﻿using CFW.ODataCore.EFCore;
 using CFW.ODataCore.OData;
-using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Handlers;
 
@@ -20,12 +19,14 @@ public class DefaultDeleteHandler<TODataViewModel, TKey> : IDeleteHandler<TOData
     public async Task<Result> Delete(TKey key, CancellationToken cancellationToken)
     {
         var db = _dbContextProvider.GetContext();
-        var affect = await db.Set<TODataViewModel>().Where(x => x.Id!.Equals(key))
-            .ExecuteDeleteAsync(cancellationToken);
+        var entity = await db.FindAsync<TODataViewModel>([key], cancellationToken);
 
-        if (affect == 0)
-            return this.Failed("Can't delete entity.");
+        if (entity is null)
+            return entity.Notfound();
 
-        return this.Success();
+        db.Set<TODataViewModel>().Remove(entity);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return entity.Success();
     }
 }

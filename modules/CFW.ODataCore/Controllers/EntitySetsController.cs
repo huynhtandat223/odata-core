@@ -1,5 +1,5 @@
-﻿using CFW.ODataCore.Controllers.Conventions;
-using CFW.ODataCore.Extensions;
+﻿using CFW.Core.Entities;
+using CFW.ODataCore.Controllers.Conventions;
 using CFW.ODataCore.Handlers;
 using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.Mvc;
@@ -11,71 +11,33 @@ namespace CFW.ODataCore.Controllers;
 
 [EntitySetsConvention]
 public class EntitySetsController<TODataViewModel, TKey> : ODataController
-    where TODataViewModel : class, IODataViewModel<TKey>
+    where TODataViewModel : class, IODataViewModel<TKey>, IEntity<TKey>
 {
     public async Task<ActionResult> Query(ODataQueryOptions<TODataViewModel> options
-        , [FromServices] IQueryHandler<TODataViewModel, TKey> handler
+        , [FromServices] IRequestHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        var result = await handler.Query(options, cancellationToken);
-        return result.ToActionResult();
-    }
+        => await handler.HandleQuery(this, options, cancellationToken);
 
     public async Task<ActionResult<TODataViewModel?>> Get(TKey key,
         ODataQueryOptions<TODataViewModel> options
-        , [FromServices] IGetByKeyHandler<TODataViewModel, TKey> handler
+        , [FromServices] IRequestHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+    => await handler.HandleGet(this, key, options, cancellationToken);
 
-        var result = await handler.Get(key, options, cancellationToken);
-        return result.ToActionResult();
-    }
 
     public async Task<ActionResult<TODataViewModel>> Post([FromBody] TODataViewModel viewModel
-        , [FromServices] ICreateHandler<TODataViewModel, TKey> handler
+        , [FromServices] IRequestHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+    => await handler.HandlePost(this, viewModel, cancellationToken);
 
-        var result = await handler.Create(viewModel, cancellationToken);
-        return result.ToActionResult();
-    }
 
     public async Task<ActionResult> Patch(TKey key, [FromBody] Delta<TODataViewModel> delta
-        , [FromServices] IPatchHandler<TODataViewModel, TKey> handler
+        , [FromServices] IRequestHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        var result = await handler.Patch(key, delta, cancellationToken);
-        return result.ToActionResult();
-    }
+    => await handler.HandlePatch(this, key, delta, cancellationToken);
 
     public async Task<ActionResult> Delete(TKey key
-        , [FromServices] IDeleteHandler<TODataViewModel, TKey> handler
+        , [FromServices] IRequestHandler<TODataViewModel, TKey> handler
         , CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        var result = await handler.Delete(key, cancellationToken);
-        return result.ToActionResult();
-    }
+    => await handler.HandleDelete(this, key, cancellationToken);
 }

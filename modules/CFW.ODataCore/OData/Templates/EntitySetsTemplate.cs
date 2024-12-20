@@ -36,8 +36,13 @@ internal class EntitySetsTemplate : ODataSegmentTemplate
         if (!context.RouteValues.TryGetValue("key", out var key))
             throw new InvalidOperationException("Key not found in route values.");
 
-        var keyName = _entitySetSegment.EntitySet.EntityType.DeclaredKey.Single();
-        var keySegment = new KeySegment(new Dictionary<string, object> { { keyName.Name, key! } }, _entitySetSegment.EntitySet.EntityType
+
+        //NEt 9.0
+        // var keyName = _entitySetSegment.EntitySet.EntityType.DeclaredKey.Single();
+        var entityType = _entitySetSegment.EntitySet.EntityType();
+        var keyName = entityType.DeclaredKey.Single();
+
+        var keySegment = new KeySegment(new Dictionary<string, object> { { keyName.Name, key! } }, entityType
             , _entitySetSegment.EntitySet);
         context.Segments.Add(keySegment);
 

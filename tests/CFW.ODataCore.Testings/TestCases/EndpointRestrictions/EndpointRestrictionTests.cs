@@ -22,7 +22,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     public async Task Request_WithCustomAlowMethods_ShouldSuccess(Type odataViewModelType)
     {
         // Arrange
-        var baseUrl = odataViewModelType.GetBaseUrl();
+        var baseUrl = odataViewModelType.GetDefaultBaseUrl();
         var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
@@ -41,14 +41,15 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
         }
         dbContext.SaveChanges();
         var keyProp = nameof(IEntity<object>.Id);
-
+        var ids = data.Cast<object>().Select(x => x.GetPropertyValue(keyProp)).ToList();
 
         foreach (var method in methodsArray)
         {
             if (method == ODataMethod.Query)
             {
                 // Act
-                var queryResponseMessage = await client.GetAsync(baseUrl);
+                var odataFilterIds = $"$filter=id in ({string.Join(", ", ids.Select(id => $"'{id}'"))})";
+                var queryResponseMessage = await client.GetAsync($"{baseUrl}?{odataFilterIds}");
                 // Assert
                 queryResponseMessage.IsSuccessStatusCode.Should().BeTrue();
 
@@ -123,7 +124,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     [InlineData(typeof(RestrictionPostCreate))]
     public async Task Request_WithoutCustomAlowMethods_ShouldMethodNotAllow(Type odataViewModelType)
     {
-        var baseUrl = odataViewModelType.GetBaseUrl();
+        var baseUrl = odataViewModelType.GetDefaultBaseUrl();
         var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 

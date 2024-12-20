@@ -5,9 +5,9 @@ using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsDelete;
 
-public class NoRelationshipDeleteTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class NoRelationshipDeleteTests : BaseTests, IClassFixture<AppFactory>
 {
-    public NoRelationshipDeleteTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public NoRelationshipDeleteTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -18,7 +18,7 @@ public class NoRelationshipDeleteTests : BaseTests, IClassFixture<WebApplication
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         // Act
         var resp = await client.DeleteAsync($"{baseUrl}/{DataGenerator.NewGuidString()}");
         resp.IsSuccessStatusCode.Should().BeFalse();
@@ -30,7 +30,7 @@ public class NoRelationshipDeleteTests : BaseTests, IClassFixture<WebApplication
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         var expectedEntity = DataGenerator.Create(resourceType);

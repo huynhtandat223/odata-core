@@ -5,9 +5,9 @@ using CFW.ODataCore.Testings.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsPatch;
 
-public class NoRelationshipPatchTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class NoRelationshipPatchTests : BaseTests, IClassFixture<AppFactory>
 {
-    public NoRelationshipPatchTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public NoRelationshipPatchTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -18,7 +18,7 @@ public class NoRelationshipPatchTests : BaseTests, IClassFixture<WebApplicationF
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         // Act
@@ -44,7 +44,7 @@ public class NoRelationshipPatchTests : BaseTests, IClassFixture<WebApplicationF
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         // Act

@@ -1,5 +1,4 @@
-﻿using CFW.ODataCore.Extensions;
-using CFW.ODataCore.OData;
+﻿using CFW.ODataCore.OData;
 using CFW.ODataCore.OData.Templates;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -75,12 +74,12 @@ public class EntitySetsConvention : Attribute, IControllerModelConvention
         , IEnumerable<ODataAllowAnonymousAttribute> anonymousAttributes
         , ODataMethod method)
     {
-        var queryAuthAttr = authorizeAttrs.SingleOrDefault(x => x.ApplyMethods is not null
-                && x.ApplyMethods.Contains(ODataMethod.Query));
+        var authAttr = authorizeAttrs.SingleOrDefault(x => x.ApplyMethods is not null
+                && x.ApplyMethods.Contains(method));
 
-        if (queryAuthAttr is not null)
+        if (authAttr is not null)
         {
-            var authorizeFilter = new AuthorizeFilter([queryAuthAttr]);
+            var authorizeFilter = new AuthorizeFilter([authAttr]);
             actionModel.Filters.Add(authorizeFilter);
             return;
         }

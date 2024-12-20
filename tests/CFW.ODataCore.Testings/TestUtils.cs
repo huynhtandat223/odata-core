@@ -8,11 +8,14 @@ namespace CFW.ODataCore.Testings;
 
 public static class TestUtils
 {
-    public static string GetBaseUrl(this Type resourceType)
+    public static string GetDefaultBaseUrl(this Type resourceType, string? routePrefix = null)
     {
         var odataRouting = resourceType.GetCustomAttribute<ODataRoutingAttribute>();
-        return $"odata-api/{odataRouting!.Name}";
+        return $"{routePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
     }
+
+    public const string AdminRole = "Admin";
+    public const string SupperAdminRole = "SuperAdmin";
 
     public static EquivalencyAssertionOptions<TExpectation> CompareDecimal<TExpectation>(
          EquivalencyAssertionOptions<TExpectation> o)

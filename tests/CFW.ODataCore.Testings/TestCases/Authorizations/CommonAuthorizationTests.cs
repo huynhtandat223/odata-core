@@ -7,9 +7,9 @@ using System.Reflection;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations;
 
-public class AuthorizationTests : BaseTests, IClassFixture<WebApplicationFactory<Program>>
+public class CommonAuthorizationTests : BaseTests, IClassFixture<AppFactory>
 {
-    public AuthorizationTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public CommonAuthorizationTests(ITestOutputHelper testOutputHelper, AppFactory factory)
         : base(testOutputHelper, factory)
     {
     }
@@ -32,7 +32,7 @@ public class AuthorizationTests : BaseTests, IClassFixture<WebApplicationFactory
         }
 
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var data = DataGenerator.Create(resourceType);
         var id = data.GetPropertyValue(nameof(IODataViewModel<object>.Id));
 
@@ -84,14 +84,14 @@ public class AuthorizationTests : BaseTests, IClassFixture<WebApplicationFactory
             throw new InvalidOperationException("Test data invalid.Only default authorize attribute is allowed.");
         }
 
-        var userName = "admin";
-        var password = "123!@#abcABC";
+        var userName = Guid.NewGuid().ToString();
+        var password = DefaultPassword;
         await SeedUser(userName, password);
 
         var client = _factory.CreateClient();
         var token = await client.LoginAndGetToken(userName, password);
 
-        var baseUrl = resourceType.GetBaseUrl();
+        var baseUrl = resourceType.GetDefaultBaseUrl();
         var defaultModel = DataGenerator.Create(resourceType);
         var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
         dbContext.Add(defaultModel);
@@ -121,6 +121,6 @@ public class AuthorizationTests : BaseTests, IClassFixture<WebApplicationFactory
 
         responseMessage = await client.DeleteAsync($"{baseUrl}/{id}");
         responseMessage.IsSuccessStatusCode.Should().BeTrue();
-
     }
+
 }

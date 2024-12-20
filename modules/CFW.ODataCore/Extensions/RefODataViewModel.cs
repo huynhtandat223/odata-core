@@ -1,8 +1,12 @@
-﻿using CFW.ODataCore.OData;
+﻿using CFW.Core.Entities;
+using CFW.ODataCore.OData;
 
 namespace CFW.ODataCore.Extensions;
 
-public class RefODataViewModel : IODataViewModel<int>
+/// <summary>
+/// Use for nameof operator, not for actual use
+/// </summary>
+public class RefODataViewModel : IODataViewModel<int>, IEntity<int>
 {
     public int Id { get; set; }
 }

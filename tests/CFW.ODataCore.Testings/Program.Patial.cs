@@ -1,3 +1,5 @@
 ﻿namespace CFW.ODataCore.Testings;
 
-public partial class Program { }
+public partial class Program
+{
+}
