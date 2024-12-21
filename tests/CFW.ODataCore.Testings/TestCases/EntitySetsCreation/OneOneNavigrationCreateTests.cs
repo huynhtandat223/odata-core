@@ -27,7 +27,7 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         // Act
         var expectedEntity = DataGenerator.Create(resourceType);
@@ -48,7 +48,7 @@ public class OneOneNavigrationCreateTests
         childProp.Should().NotBeNull();
         var idPropValue = childProp!.GetPropertyValue(idProp);
         var navigationPropType = navigationProp!.GetType();
-        var complexPropUrl = navigationPropType.GetDefaultBaseUrl();
+        var complexPropUrl = navigationPropType.GetBaseUrl();
         var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
         childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
@@ -61,7 +61,7 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         // Act
         var expectedEntity = DataGenerator.Create(resourceType);
@@ -81,7 +81,7 @@ public class OneOneNavigrationCreateTests
         childProp.Should().NotBeNull();
         var idPropValue = childProp!.GetPropertyValue(idProp);
         var navigationPropType = navigationProp!.GetType();
-        var complexPropUrl = navigationPropType.GetDefaultBaseUrl();
+        var complexPropUrl = navigationPropType.GetBaseUrl();
         var childPropEntity = await client.GetFromJsonAsync($"{complexPropUrl}/{idPropValue}", navigationPropType);
         childPropEntity.Should().BeEquivalentTo(navigationProp, o => o.Excluding(x => x.Name == idProp));
     }
@@ -94,11 +94,11 @@ public class OneOneNavigrationCreateTests
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         //Create complex property
         var complexPropType = resourceType.GetProperty(complexPropName)!.PropertyType;
-        var complexPropUrl = complexPropType.GetDefaultBaseUrl();
+        var complexPropUrl = complexPropType.GetBaseUrl();
         var complexProp = DataGenerator.Create(complexPropType);
         var dbComplexPropValueResp = await client.PostAsJsonAsync(complexPropUrl, complexProp);
         dbComplexPropValueResp.IsSuccessStatusCode.Should().BeTrue();

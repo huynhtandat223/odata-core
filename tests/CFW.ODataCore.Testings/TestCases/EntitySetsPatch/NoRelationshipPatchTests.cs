@@ -18,7 +18,7 @@ public class NoRelationshipPatchTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         // Act
@@ -44,7 +44,7 @@ public class NoRelationshipPatchTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         // Act

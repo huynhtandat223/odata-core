@@ -22,7 +22,7 @@ public class NoRelationshipQueryTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         var entities = DataGenerator.CreateList(resourceType, 10);
         Parallel.For(0, entities.Count, async (i) =>
@@ -49,7 +49,7 @@ public class NoRelationshipQueryTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         var entities = DataGenerator.CreateList(resourceType, 11);
         Parallel.For(0, entities.Count, async (i) =>

@@ -1,4 +1,5 @@
-﻿using CFW.ODataCore.OData;
+﻿using CFW.ODataCore.Features.BoundActions;
+using CFW.ODataCore.OData;
 using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
 using System.Reflection;
@@ -8,10 +9,23 @@ namespace CFW.ODataCore.Testings;
 
 public static class TestUtils
 {
-    public static string GetDefaultBaseUrl(this Type resourceType, string? routePrefix = null)
+    public static string GetBaseUrl(this Type resourceType, string? routePrefix = null)
     {
         var odataRouting = resourceType.GetCustomAttribute<ODataRoutingAttribute>();
         return $"{routePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
+    }
+
+    public static string GetNonKeyActionUrl(this Type resourceType, Type handlerType, string? routePrefix = null)
+    {
+        var actionName = handlerType.GetCustomAttribute<BoundActionAttribute>()!.Name;
+        return $"{GetBaseUrl(resourceType, routePrefix)}/{actionName}";
+    }
+
+    public static IEnumerable<string> GetKeyedActionUrl(this Type resourceType, Type handlerType, object keyValue, string? routePrefix = null)
+    {
+        var actionName = handlerType.GetCustomAttribute<BoundActionAttribute>()!.Name;
+        yield return $"{GetBaseUrl(resourceType, routePrefix)}/{keyValue}/{actionName}";
+        yield return $"{GetBaseUrl(resourceType, routePrefix)}({keyValue})/{actionName}";
     }
 
     public const string AdminRole = "Admin";

@@ -25,7 +25,7 @@ public class NoRelationshipTests : BaseTests, IClassFixture<AppFactory>
     public async Task Create_ShouldSuccess(Type resourceType, object? idValue)
     {
         // Arrange
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
 
@@ -52,7 +52,7 @@ public class NoRelationshipTests : BaseTests, IClassFixture<AppFactory>
     public async Task Create_ResourceWithNoAutoGenerateKey_ShouldError(Type resourceType, object? defaultId)
     {
         // Arrange
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
 

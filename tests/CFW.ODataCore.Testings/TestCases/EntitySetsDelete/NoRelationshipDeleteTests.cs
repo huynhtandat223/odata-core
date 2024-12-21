@@ -18,7 +18,7 @@ public class NoRelationshipDeleteTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         // Act
         var resp = await client.DeleteAsync($"{baseUrl}/{DataGenerator.NewGuidString()}");
         resp.IsSuccessStatusCode.Should().BeFalse();
@@ -30,7 +30,7 @@ public class NoRelationshipDeleteTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var idProp = nameof(IODataViewModel<object>.Id);
 
         var expectedEntity = DataGenerator.Create(resourceType);

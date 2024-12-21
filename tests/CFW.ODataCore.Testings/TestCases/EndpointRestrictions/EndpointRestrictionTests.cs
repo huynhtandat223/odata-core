@@ -22,7 +22,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     public async Task Request_WithCustomAlowMethods_ShouldSuccess(Type odataViewModelType)
     {
         // Arrange
-        var baseUrl = odataViewModelType.GetDefaultBaseUrl();
+        var baseUrl = odataViewModelType.GetBaseUrl();
         var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
@@ -124,7 +124,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     [InlineData(typeof(RestrictionPostCreate))]
     public async Task Request_WithoutCustomAlowMethods_ShouldMethodNotAllow(Type odataViewModelType)
     {
-        var baseUrl = odataViewModelType.GetDefaultBaseUrl();
+        var baseUrl = odataViewModelType.GetBaseUrl();
         var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 

@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Text;
 using Xunit.Abstractions;
 
 namespace CFW.CoreTestings.Logging;
+
+[DebuggerStepThrough]
 public sealed class XunitLogger : ILogger
 {
     private const string ScopeDelimiter = "=> ";

@@ -22,7 +22,7 @@ public class OneManyRelationshipTests : BaseTests, IClassFixture<AppFactory>
         // Arrange
         var client = _factory.CreateClient();
         var idProp = nameof(IODataViewModel<object>.Id);
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
 
         // Act
         var childCollection = DataGenerator.CreateList(propType, 3, new GeneratorMetadata

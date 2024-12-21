@@ -60,7 +60,7 @@ public class MultiAuthorizationTests : BaseTests, IClassFixture<NonInitAppFactor
         var superAdminClient = _factory.CreateClient();
         superAdminClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {superAdminToken}");
 
-        var baseUrl = multiAuthorizationType.GetDefaultBaseUrl(testApi);
+        var baseUrl = multiAuthorizationType.GetBaseUrl(testApi);
         var defaultModel = DataGenerator.Create(multiAuthorizationType);
         var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
         dbContext.Add(defaultModel);

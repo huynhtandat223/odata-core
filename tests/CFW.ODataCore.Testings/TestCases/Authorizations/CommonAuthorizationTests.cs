@@ -32,7 +32,7 @@ public class CommonAuthorizationTests : BaseTests, IClassFixture<AppFactory>
         }
 
         var client = _factory.CreateClient();
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var data = DataGenerator.Create(resourceType);
         var id = data.GetPropertyValue(nameof(IODataViewModel<object>.Id));
 
@@ -91,7 +91,7 @@ public class CommonAuthorizationTests : BaseTests, IClassFixture<AppFactory>
         var client = _factory.CreateClient();
         var token = await client.LoginAndGetToken(userName, password);
 
-        var baseUrl = resourceType.GetDefaultBaseUrl();
+        var baseUrl = resourceType.GetBaseUrl();
         var defaultModel = DataGenerator.Create(resourceType);
         var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
         dbContext.Add(defaultModel);

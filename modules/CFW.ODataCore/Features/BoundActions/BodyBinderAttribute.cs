@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
+using System.Reflection;
 using System.Text.Json;
 
 namespace CFW.ODataCore.Features.BoundActions;
@@ -21,9 +22,7 @@ public class BodyBinder : IModelBinder
         if (bindingContext == null)
             throw new ArgumentNullException(nameof(bindingContext));
 
-        var modelType = bindingContext.ModelType;
         var request = bindingContext.HttpContext.Request;
-        var jsonOption = bindingContext.HttpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>();
 
         if (!request.Body.CanRead)
         {
@@ -39,42 +38,55 @@ public class BodyBinder : IModelBinder
             var root = document.RootElement;
 
             var jsonObject = root.EnumerateObject();
-            var count = jsonObject.Count();
-            if (count == 1)
+            var isBodyWrapper = jsonObject.Count() == 1
+                && jsonObject.Any(x => x.Name.Equals("body", StringComparison.CurrentCultureIgnoreCase));
+            if (isBodyWrapper)
             {
                 var rootProperty = jsonObject.First();
-                var propName = rootProperty.Name;
-
-                if (propName.Equals("body", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    var bodyProperty = JsonSerializer.Deserialize(rootProperty.Value, modelType, jsonOption.Value.JsonSerializerOptions);
-                    if (bodyProperty is null)
-                    {
-                        bindingContext.Result = ModelBindingResult.Failed();
-                        bindingContext.ModelState.AddModelError(bindingContext.ModelName, "Invalid body");
-                        return;
-                    }
-
-                    bindingContext.Result = ModelBindingResult.Success(bodyProperty);
-                    return;
-                }
-            }
-
-            var result = JsonSerializer.Deserialize(root, modelType, jsonOption.Value.JsonSerializerOptions);
-            if (result is null)
-            {
-                bindingContext.Result = ModelBindingResult.Failed();
-                bindingContext.ModelState.AddModelError(bindingContext.ModelName, "Invalid body");
-
+                BindJsonElement(bindingContext, rootProperty.Value);
                 return;
             }
 
-            bindingContext.Result = ModelBindingResult.Success(result);
+            BindJsonElement(bindingContext, root);
+            return;
         }
         catch (Exception ex)
         {
             bindingContext.ModelState.AddModelError(bindingContext.ModelName, ex.Message);
             bindingContext.Result = ModelBindingResult.Failed();
         }
+    }
+
+    private void BindJsonElement(ModelBindingContext bindingContext, JsonElement jsonElment)
+    {
+        var modelType = bindingContext.ModelType;
+        var jsonOption = bindingContext.HttpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>();
+
+        var result = JsonSerializer.Deserialize(jsonElment, modelType, jsonOption.Value.JsonSerializerOptions);
+        if (result is null)
+        {
+            bindingContext.Result = ModelBindingResult.Failed();
+            bindingContext.ModelState.AddModelError(bindingContext.ModelName, "Invalid body");
+            return;
+        }
+
+        var routeData = bindingContext.HttpContext.Request.RouteValues;
+        var routeBoundProperties = modelType.GetProperties()
+            .Where(property => property.GetCustomAttribute<FromRouteAttribute>() is not null);
+
+        foreach (var routeBoundProperty in routeBoundProperties)
+        {
+            var routeAttribute = routeBoundProperty.GetCustomAttribute<FromRouteAttribute>();
+            var routeKey = routeAttribute?.Name ?? routeBoundProperty.Name;
+
+            if (routeData.TryGetValue(routeKey, out var routeValue))
+            {
+                var convertedRouteValue = Convert.ChangeType(routeValue, routeBoundProperty.PropertyType);
+                routeBoundProperty.SetValue(result, convertedRouteValue);
+            }
+        }
+
+        bindingContext.Result = ModelBindingResult.Success(result);
+        return;
     }
 }

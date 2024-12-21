@@ -1,10 +1,12 @@
 ﻿using CFW.ODataCore.OData;
 using CFW.ODataCore.OData.Templates;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
+using System.Reflection;
 
 namespace CFW.ODataCore.Features.BoundActions;
 
@@ -28,8 +30,10 @@ public class BoundActionsConvention : Attribute, IControllerModelConvention
             .Single(x => x.Name == boundActionName);
 
         var requestType = boundActionMetadata.RequestType;
-        var odataViewModelType = typeof(IODataViewModel<>).MakeGenericType(boundActionMetadata.KeyType);
-        var hasKey = requestType.GetInterfaces().Contains(odataViewModelType);
+        var keyType = boundActionMetadata.KeyType;
+
+        var hasKey = requestType.GetProperties()
+            .Any(p => p.GetCustomAttribute<FromRouteAttribute>() is not null && p.PropertyType == keyType);
 
         var ignoreKeyTemplates = !hasKey;
         var template = new ODataPathTemplate(new BoundActionsTemplate(entitySet, ignoreKeyTemplates, edmAction));
