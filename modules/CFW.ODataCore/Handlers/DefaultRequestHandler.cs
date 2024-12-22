@@ -1,5 +1,4 @@
-﻿using CFW.Core.Entities;
-using CFW.ODataCore.Controllers;
+﻿using CFW.ODataCore.Controllers;
 using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
@@ -8,7 +7,7 @@ using Microsoft.AspNetCore.OData.Query;
 namespace CFW.ODataCore.Handlers;
 
 public interface IRequestHandler<TODataViewModel, TKey>
-   where TODataViewModel : class, IODataViewModel<TKey>, IEntity<TKey>
+   where TODataViewModel : class, IODataViewModel<TKey>
 {
     Task<ActionResult> HandleQuery(EntitySetsController<TODataViewModel, TKey> controller, ODataQueryOptions<TODataViewModel> options
         , CancellationToken cancellationToken);
@@ -28,7 +27,7 @@ public interface IRequestHandler<TODataViewModel, TKey>
 }
 
 public class DefaultRequestHandler<TODataViewModel, TKey> : IRequestHandler<TODataViewModel, TKey>
-    where TODataViewModel : class, IODataViewModel<TKey>, IEntity<TKey>
+    where TODataViewModel : class, IODataViewModel<TKey>
 {
     public async Task<ActionResult> HandleDelete(EntitySetsController<TODataViewModel, TKey> controller, TKey key, CancellationToken cancellationToken)
     {

@@ -13,7 +13,9 @@ public class ODataMetadataEntity
 
     public required Type ViewModelType { get; set; }
 
-    public Attribute[] SetupAttributes { get; set; } = Array.Empty<Attribute>();
+    public required IEnumerable<Attribute> SetupAttributes { get; set; } = Array.Empty<Attribute>();
+
+    public required ODataRoutingAttribute DataRoutingAttribute { get; set; }
 
     public List<ODataBoundActionMetadata> BoundActionMetadataList { get; set; } = new List<ODataBoundActionMetadata>();
 

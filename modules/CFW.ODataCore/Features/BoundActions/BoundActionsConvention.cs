@@ -12,12 +12,19 @@ namespace CFW.ODataCore.Features.BoundActions;
 
 public class BoundActionsConvention : Attribute, IControllerModelConvention
 {
+    private List<ODataBoundActionMetadata> _boundActionMetadata;
+
+    public BoundActionsConvention(List<ODataBoundActionMetadata> boundActionMetadata)
+    {
+        _boundActionMetadata = boundActionMetadata;
+    }
+
     public void Apply(ControllerModel controller)
     {
-        if (!controller.ControllerType.IsGenericType || controller.ControllerType.GetGenericTypeDefinition() != typeof(BoundActionsController<,,,>))
-            throw new InvalidOperationException("Controller must be a BoundActionsController<TViewModel, Key, Request, Response>.");
+        var boundActionMetadata = _boundActionMetadata.FirstOrDefault(x => x.BoundActionControllerType == controller.ControllerType);
+        if (boundActionMetadata is null)
+            return;
 
-        var boundActionMetadata = ODataContainerCollection.Instance.GetBoundActionMetadataEntity(controller.ControllerType);
         var entitySet = boundActionMetadata.Container.EdmModel.EntityContainer.FindEntitySet(boundActionMetadata.BoundCollectionName);
         var entityFullName = entitySet.EntityType().FullName();
         var routePrefix = boundActionMetadata.Container.RoutePrefix;

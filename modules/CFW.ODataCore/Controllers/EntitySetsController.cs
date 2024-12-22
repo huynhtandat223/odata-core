@@ -1,6 +1,4 @@
-﻿using CFW.Core.Entities;
-using CFW.ODataCore.Controllers.Conventions;
-using CFW.ODataCore.Handlers;
+﻿using CFW.ODataCore.Handlers;
 using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
@@ -9,9 +7,8 @@ using Microsoft.AspNetCore.OData.Routing.Controllers;
 
 namespace CFW.ODataCore.Controllers;
 
-[EntitySetsConvention]
 public class EntitySetsController<TODataViewModel, TKey> : ODataController
-    where TODataViewModel : class, IODataViewModel<TKey>, IEntity<TKey>
+    where TODataViewModel : class, IODataViewModel<TKey>
 {
     public async Task<ActionResult> Query(ODataQueryOptions<TODataViewModel> options
         , [FromServices] IRequestHandler<TODataViewModel, TKey> handler

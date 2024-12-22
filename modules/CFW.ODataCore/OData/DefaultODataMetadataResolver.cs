@@ -1,68 +1,18 @@
-﻿using CFW.ODataCore.Features.BoundActions;
-using CFW.ODataCore.OData;
-using System.Collections.Immutable;
+﻿using CFW.ODataCore.Controllers;
+using CFW.ODataCore.Features.BoundActions;
 using System.Reflection;
 
-namespace CFW.ODataCore;
+namespace CFW.ODataCore.OData;
 
-[Obsolete("Use ODataMetadataEntity instead")]
-public record ODataType
-{
-    public required string RoutePrefix { get; set; }
-
-    public required Type EntityType { get; set; }
-
-    public required ODataRoutingAttribute RoutingAttribute { get; set; }
-
-    public Type[] Interfaces => EntityType.GetInterfaces();
-
-    public Type KeyType => Interfaces.Single(x => x.IsGenericType
-        && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>)).GetGenericArguments().Single();
-
-
-}
-
-public abstract class BaseODataTypeResolver
+public abstract class BaseODataMetadataResolver
 {
     protected abstract IEnumerable<Type> CachedType { get; }
 
-    private IEnumerable<ODataType>? _odataTypes;
     private readonly string _defaultPrefix;
 
-    public BaseODataTypeResolver(string defaultPrefix)
+    public BaseODataMetadataResolver(string defaultPrefix)
     {
         _defaultPrefix = defaultPrefix;
-    }
-
-    private IEnumerable<ODataType> GetTypes()
-    {
-        if (_odataTypes is null)
-        {
-            _odataTypes = CachedType
-            .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
-            .Select(x => new ODataType
-            {
-                RoutePrefix = x.GetCustomAttribute<ODataRoutingAttribute>()!.RouteRefix ?? _defaultPrefix,
-                EntityType = x,
-                RoutingAttribute = x.GetCustomAttribute<ODataRoutingAttribute>()!
-            }).ToImmutableArray();
-        }
-        return _odataTypes;
-    }
-
-    public IEnumerable<string> GetRoutePrefixes()
-    {
-        return GetTypes()
-        .Select(x => x.RoutePrefix)
-        .Distinct();
-    }
-
-    public ODataType[] GetODataTypes(string routePrefix)
-    {
-        return GetTypes()
-        .Where(x => x.RoutePrefix == routePrefix)
-        .Distinct()
-        .ToArray();
     }
 
     internal IEnumerable<ODataBoundActionMetadata> GetBoundActionMetadataList(Type viewModelType, Type keyType
@@ -126,9 +76,49 @@ public abstract class BaseODataTypeResolver
             }
         }
     }
+
+    private ODataMetadataEntity CreateMetadataEntity(Type viewModelType, ODataRoutingAttribute routingAttribute
+        , ODataMetadataContainer container)
+    {
+        var odataViewModelInterface = viewModelType.GetInterfaces()
+            .Single(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
+        var keyType = odataViewModelInterface.GetGenericArguments().Single();
+
+        return new ODataMetadataEntity
+        {
+            DataRoutingAttribute = routingAttribute,
+            Container = container,
+            ViewModelType = viewModelType,
+            ControllerType = typeof(EntitySetsController<,>).MakeGenericType(viewModelType, keyType).GetTypeInfo(),
+            Name = routingAttribute.Name,
+            BoundActionMetadataList = GetBoundActionMetadataList(viewModelType, keyType, container, routingAttribute.Name).ToList(),
+            SetupAttributes = viewModelType.GetCustomAttributes(),
+        };
+    }
+
+    public IEnumerable<ODataMetadataContainer> CreateContainers()
+    {
+        var routePrefixes = CachedType
+            .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
+            .Select(x => new { ViewModelType = x, RoutingAttribute = x.GetCustomAttribute<ODataRoutingAttribute>()! })
+            .GroupBy(x => x.RoutingAttribute!.RouteRefix ?? _defaultPrefix);
+
+        foreach (var group in routePrefixes)
+        {
+            var routePrefix = group.Key;
+            var container = new ODataMetadataContainer(routePrefix);
+
+            var oDataTypes = group
+                .Select(x => CreateMetadataEntity(x.ViewModelType, x.RoutingAttribute, container));
+
+            container.AddEntitySets(routePrefix, this, oDataTypes);
+            container.Build();
+            yield return container;
+        }
+    }
 }
 
-public class ODataTypeResolver : BaseODataTypeResolver
+public class DefaultODataMetadataResolver : BaseODataMetadataResolver
 {
     private static readonly List<Type> _cachedType = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
@@ -137,7 +127,7 @@ public class ODataTypeResolver : BaseODataTypeResolver
             || x.GetCustomAttribute<BoundActionAttribute>() is not null)
         .ToList();
 
-    public ODataTypeResolver(string defaultPrefix) : base(defaultPrefix)
+    public DefaultODataMetadataResolver(string defaultPrefix) : base(defaultPrefix)
     {
     }
 

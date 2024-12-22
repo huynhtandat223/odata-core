@@ -9,14 +9,20 @@ namespace CFW.ODataCore.Controllers.Conventions;
 
 public class EntitySetsConvention : Attribute, IControllerModelConvention
 {
+    private ODataMetadataContainer _container;
+
+    public EntitySetsConvention(ODataMetadataContainer container)
+    {
+        _container = container;
+    }
+
     public void Apply(ControllerModel controller)
     {
-        if (!controller.ControllerType.IsGenericType || controller.ControllerType.GetGenericTypeDefinition() != typeof(EntitySetsController<,>))
-            throw new InvalidOperationException("Controller must be a GenericController<TViewModel>.");
+        var metadataEntity = _container.EntityMetadataList.FirstOrDefault(x => x.ControllerType == controller.ControllerType);
+        if (metadataEntity is null)
+            return;
 
-        var metadataEntity = ODataContainerCollection.Instance.GetMetadataEntity(controller.ControllerType);
         var entitySet = metadataEntity.Container.EdmModel.EntityContainer.FindEntitySet(metadataEntity.Name);
-
         var withoutKeyTemplate = new ODataPathTemplate(new EntitySetsTemplate(entitySet, ignoreKeyTemplates: true));
         var withKeyTemplate = new ODataPathTemplate(new EntitySetsTemplate(entitySet, ignoreKeyTemplates: false));
         var routePrefix = metadataEntity.Container.RoutePrefix;

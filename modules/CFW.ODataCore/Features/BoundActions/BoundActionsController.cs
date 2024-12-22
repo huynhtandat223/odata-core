@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.OData.Routing.Controllers;
 
 namespace CFW.ODataCore.Features.BoundActions;
 
-[BoundActionsConvention]
 public class BoundActionsController<TODataViewModel, TKey, TRequest, TResponse> : ODataController
     where TODataViewModel : class, IODataViewModel<TKey>
 {

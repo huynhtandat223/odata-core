@@ -13,7 +13,7 @@ builder.Services.AddDbContext<TestingDbContext>(
            options => options
            .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
            .EnableSensitiveDataLogging()
-           .UseSqlite($@"Data Source=appdbcontex.db"));
+           .UseSqlite($@"Data Source=appdbcontext.db"));
 
 if (!isTesting)
 {

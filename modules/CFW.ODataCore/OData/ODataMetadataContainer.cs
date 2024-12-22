@@ -1,5 +1,4 @@
-﻿using CFW.ODataCore.Controllers;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
+﻿using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
@@ -24,31 +23,13 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         RoutePrefix = routePrefix;
     }
 
-    public void AddEntitySets(string routePrefix, BaseODataTypeResolver typeResolver)
+    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver, IEnumerable<ODataMetadataEntity> oDataTypes)
     {
-        var oDataTypes = typeResolver.GetODataTypes(routePrefix);
-        foreach (var oDataType in oDataTypes)
+        foreach (var metadataEntity in oDataTypes)
         {
-            var viewModelType = oDataType.EntityType;
-            var routingAttribute = oDataType.RoutingAttribute;
-            var keyType = oDataType.KeyType;
-            var controlerType = typeof(EntitySetsController<,>).MakeGenericType([viewModelType, keyType]).GetTypeInfo();
+            var entityType = _modelBuilder.AddEntityType(metadataEntity.ViewModelType);
+            _modelBuilder.AddEntitySet(metadataEntity.Name, entityType);
 
-            var entityType = _modelBuilder.AddEntityType(viewModelType);
-            _modelBuilder.AddEntitySet(routingAttribute.Name, entityType);
-
-            var metadataEntity = new ODataMetadataEntity
-            {
-                ViewModelType = viewModelType,
-                Name = routingAttribute.Name,
-                Container = this,
-                ControllerType = controlerType,
-                SetupAttributes = viewModelType.GetCustomAttributes().ToArray(),
-            };
-
-            metadataEntity.BoundActionMetadataList = typeResolver
-                .GetBoundActionMetadataList(viewModelType, keyType, this, routingAttribute.Name)
-                .ToList();
             foreach (var boundActionMetadata in metadataEntity.BoundActionMetadataList)
             {
                 var actionName = boundActionMetadata.BoundActionAttribute.Name;
