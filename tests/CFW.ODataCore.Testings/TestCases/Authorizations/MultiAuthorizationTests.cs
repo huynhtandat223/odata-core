@@ -1,6 +1,5 @@
 ﻿using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
-using CFW.ODataCore.OData;
 using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;

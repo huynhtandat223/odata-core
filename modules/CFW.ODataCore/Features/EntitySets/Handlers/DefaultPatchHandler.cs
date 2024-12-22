@@ -1,8 +1,7 @@
 ﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.OData.Deltas;
 
-namespace CFW.ODataCore.Handlers;
+namespace CFW.ODataCore.Features.EntitySets.Handlers;
 
 public interface IPatchHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>

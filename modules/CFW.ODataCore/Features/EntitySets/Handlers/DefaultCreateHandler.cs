@@ -1,9 +1,8 @@
 ﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace CFW.ODataCore.Handlers;
+namespace CFW.ODataCore.Features.EntitySets.Handlers;
 
 public interface ICreateHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Text.Json;
 
-namespace CFW.ODataCore.Features.BoundActions;
+namespace CFW.ODataCore.Features.Shared;
 
 
 [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
@@ -62,7 +62,7 @@ public class BodyBinder : IModelBinder
         var modelType = bindingContext.ModelType;
         var jsonOption = bindingContext.HttpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>();
 
-        var result = JsonSerializer.Deserialize(jsonElment, modelType, jsonOption.Value.JsonSerializerOptions);
+        var result = jsonElment.Deserialize(modelType, jsonOption.Value.JsonSerializerOptions);
         if (result is null)
         {
             bindingContext.Result = ModelBindingResult.Failed();

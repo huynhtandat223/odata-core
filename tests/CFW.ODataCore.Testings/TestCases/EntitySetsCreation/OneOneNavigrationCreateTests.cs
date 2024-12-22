@@ -1,5 +1,4 @@
 ﻿using CFW.CoreTestings.DataGenerations;
-using CFW.ODataCore.OData;
 using CFW.ODataCore.Testings.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntitySetsCreation;

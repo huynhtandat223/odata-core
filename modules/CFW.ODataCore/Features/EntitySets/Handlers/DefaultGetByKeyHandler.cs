@@ -1,10 +1,9 @@
 ﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
-namespace CFW.ODataCore.Handlers;
+namespace CFW.ODataCore.Features.EntitySets.Handlers;
 
 public interface IGetByKeyHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>

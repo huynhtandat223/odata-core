@@ -1,11 +1,10 @@
-﻿using CFW.ODataCore.OData;
-using CFW.ODataCore.OData.Templates;
+﻿using CFW.ODataCore.Features.Shared;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Routing.Template;
 
-namespace CFW.ODataCore.Controllers.Conventions;
+namespace CFW.ODataCore.Features.EntitySets;
 
 public class EntitySetsConvention : Attribute, IControllerModelConvention
 {

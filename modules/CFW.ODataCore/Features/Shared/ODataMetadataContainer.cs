@@ -3,7 +3,7 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
 
-namespace CFW.ODataCore.OData;
+namespace CFW.ODataCore.Features.Shared;
 
 public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvider
 {
@@ -55,6 +55,7 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
             _entityMetadataList.Add(metadataEntity);
         }
     }
+
 
     private IEdmModel? _edmModel;
 

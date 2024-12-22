@@ -1,11 +1,10 @@
-﻿using CFW.ODataCore.Handlers;
-using CFW.ODataCore.OData;
+﻿using CFW.ODataCore.Features.EntitySets.Handlers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 
-namespace CFW.ODataCore.Controllers;
+namespace CFW.ODataCore.Features.EntitySets;
 
 public class EntitySetsController<TODataViewModel, TKey> : ODataController
     where TODataViewModel : class, IODataViewModel<TKey>

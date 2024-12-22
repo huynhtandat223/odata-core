@@ -1,5 +1,5 @@
 ﻿
-using CFW.ODataCore.OData;
+using CFW.ODataCore.Features.Shared;
 
 namespace CFW.ODataCore.Testings;
 

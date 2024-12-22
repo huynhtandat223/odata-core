@@ -1,9 +1,8 @@
 ﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.OData;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 
-namespace CFW.ODataCore.Handlers;
+namespace CFW.ODataCore.Features.EntitySets.Handlers;
 
 public interface IQueryHandler<TODataViewModel, TKey>
 {

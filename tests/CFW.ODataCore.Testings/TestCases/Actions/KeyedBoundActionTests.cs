@@ -3,7 +3,7 @@ using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
 using CFW.ODataCore.Features.BoundActions;
-using CFW.ODataCore.OData;
+using CFW.ODataCore.Features.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;

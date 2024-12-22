@@ -1,7 +1,7 @@
 ﻿using CFW.ODataCore.Features.BoundActions;
 using System.Reflection;
 
-namespace CFW.ODataCore.OData;
+namespace CFW.ODataCore.Features.Shared;
 
 public class ODataMetadataEntity
 {

@@ -1,8 +1,8 @@
-﻿using CFW.ODataCore.Controllers;
-using CFW.ODataCore.Features.BoundActions;
+﻿using CFW.ODataCore.Features.BoundActions;
+using CFW.ODataCore.Features.EntitySets;
 using System.Reflection;
 
-namespace CFW.ODataCore.OData;
+namespace CFW.ODataCore.Features.Shared;
 
 public abstract class BaseODataMetadataResolver
 {

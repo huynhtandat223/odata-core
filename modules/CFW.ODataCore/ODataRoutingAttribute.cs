@@ -1,12 +1,8 @@
-﻿namespace CFW.ODataCore.OData;
+﻿namespace CFW.ODataCore;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public class ODataRoutingAttribute : Attribute
 {
-    public Type? EntityType { get; set; }
-
-    public Type? KeyType { get; set; }
-
     public string Name { get; set; }
 
     public string? RouteRefix { get; set; }

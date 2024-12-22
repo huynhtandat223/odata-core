@@ -1,7 +1,6 @@
 ﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.OData;
 
-namespace CFW.ODataCore.Handlers;
+namespace CFW.ODataCore.Features.EntitySets.Handlers;
 
 public interface IDeleteHandler<TODataViewModel, TKey>
 {

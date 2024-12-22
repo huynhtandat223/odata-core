@@ -1,4 +1,4 @@
-﻿namespace CFW.ODataCore.OData;
+﻿namespace CFW.ODataCore;
 
 public interface IODataViewModel<TKey>
 {

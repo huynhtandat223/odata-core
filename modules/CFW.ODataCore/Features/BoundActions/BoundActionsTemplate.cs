@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 
-namespace CFW.ODataCore.OData.Templates;
+namespace CFW.ODataCore.Features.BoundActions;
 
 internal class BoundActionsTemplate : ODataSegmentTemplate
 {

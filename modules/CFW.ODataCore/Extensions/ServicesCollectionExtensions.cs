@@ -1,8 +1,8 @@
-﻿using CFW.ODataCore.Controllers.Conventions;
-using CFW.ODataCore.EFCore;
+﻿using CFW.ODataCore.EFCore;
 using CFW.ODataCore.Features.BoundActions;
-using CFW.ODataCore.Handlers;
-using CFW.ODataCore.OData;
+using CFW.ODataCore.Features.EntitySets;
+using CFW.ODataCore.Features.EntitySets.Handlers;
+using CFW.ODataCore.Features.Shared;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 
