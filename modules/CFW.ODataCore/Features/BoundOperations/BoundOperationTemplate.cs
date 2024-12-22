@@ -3,31 +3,31 @@ using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 
-namespace CFW.ODataCore.Features.BoundActions;
+namespace CFW.ODataCore.Features.BoundOperations;
 
-internal class BoundActionsTemplate : ODataSegmentTemplate
+internal class BoundOperationTemplate : ODataSegmentTemplate
 {
     private readonly EntitySetSegment _entitySetSegment;
     private readonly bool _ignoreKeyTemplates;
-    private readonly IEdmAction _edmAction;
+    private readonly IEdmOperation _operation;
 
-    public BoundActionsTemplate(IEdmEntitySet edmEntitySet
+    public BoundOperationTemplate(IEdmEntitySet edmEntitySet
         , bool ignoreKeyTemplates
-        , IEdmAction edmAction)
+        , IEdmOperation operation)
     {
         _entitySetSegment = new EntitySetSegment(edmEntitySet);
         _ignoreKeyTemplates = ignoreKeyTemplates;
-        _edmAction = edmAction;
+        _operation = operation;
     }
 
     public override IEnumerable<string> GetTemplates(ODataRouteOptions options)
     {
         if (_ignoreKeyTemplates)
-            yield return $"/{_entitySetSegment.EntitySet.Name}/{_edmAction.Name}";
+            yield return $"/{_entitySetSegment.EntitySet.Name}/{_operation.Name}";
         else
         {
-            yield return $"/{_entitySetSegment.EntitySet.Name}/{{key}}/{_edmAction.Name}";
-            yield return $"/{_entitySetSegment.EntitySet.Name}({{key}})/{_edmAction.Name}";
+            yield return $"/{_entitySetSegment.EntitySet.Name}/{{key}}/{_operation.Name}";
+            yield return $"/{_entitySetSegment.EntitySet.Name}({{key}})/{_operation.Name}";
         }
     }
 
@@ -45,7 +45,7 @@ internal class BoundActionsTemplate : ODataSegmentTemplate
             context.Segments.Add(keySegment);
         }
 
-        context.Segments.Add(new OperationSegment(_edmAction, null));
+        context.Segments.Add(new OperationSegment(_operation, null));
         return true;
     }
 }

@@ -28,59 +28,64 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         RoutePrefix = routePrefix;
     }
 
-    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver, IEnumerable<ODataMetadataEntity> oDataTypes)
+    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver, IEnumerable<ODataMetadataEntity> metadataEntities)
     {
-        foreach (var metadataEntity in oDataTypes)
+        foreach (var metadataEntity in metadataEntities)
         {
             var entityType = _modelBuilder.AddEntityType(metadataEntity.ViewModelType);
             _modelBuilder.AddEntitySet(metadataEntity.Name, entityType);
 
-            foreach (var boundActionMetadata in metadataEntity.BoundActionMetadataList)
+            foreach (var boundOperationMetadata in metadataEntity.BoundOperationMetadataList)
             {
-                var actionName = boundActionMetadata.BoundActionAttribute.Name;
-                var action = _modelBuilder.Action(actionName);
-
-                action.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
-                action.Parameter(boundActionMetadata.RequestType, "body");
-
-                if (boundActionMetadata.ResponseType == typeof(Result))
-                    continue;
-
-                if (boundActionMetadata.ResponseType.IsCommonGenericCollectionType())
-                {
-                    var elementType = boundActionMetadata.ResponseType.GetGenericArguments().Single();
-                    action.ReturnsCollection(elementType);
-                }
-                else
-                {
-                    action.Returns(boundActionMetadata.ResponseType);
-                }
+                AddOperation(entityType, boundOperationMetadata);
             }
-
-            foreach (var operationMetadata in metadataEntity.BoundFunctionMetadataList)
-            {
-                var operationName = operationMetadata.BoundActionAttribute.Name;
-                var operation = _modelBuilder.Function(operationName);
-
-                operation.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
-                operation.Parameter(operationMetadata.RequestType, "body");
-
-                if (operationMetadata.ResponseType == typeof(Result))
-                    throw new InvalidOperationException("Functions can't use Result type");
-
-                if (operationMetadata.ResponseType.IsCommonGenericCollectionType())
-                {
-                    var elementType = operationMetadata.ResponseType.GetGenericArguments().Single();
-                    operation.ReturnsCollection(elementType);
-                }
-                else
-                {
-                    operation.Returns(operationMetadata.ResponseType);
-                }
-            }
-
-
             _entityMetadataList.Add(metadataEntity);
+        }
+    }
+
+    private void AddOperation(EntityTypeConfiguration entityType, ODataBoundOperationMetadata boundOperationMetadata)
+    {
+        var operationName = boundOperationMetadata.BoundOprationAttribute.Name;
+
+        if (boundOperationMetadata.OperationType == OperationType.Action)
+        {
+            var operation = _modelBuilder.Action(operationName);
+
+            operation.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
+            operation.Parameter(boundOperationMetadata.RequestType, "body");
+
+            if (boundOperationMetadata.ResponseType == typeof(Result))
+                return;
+
+            if (boundOperationMetadata.ResponseType.IsCommonGenericCollectionType())
+            {
+                var elementType = boundOperationMetadata.ResponseType.GetGenericArguments().Single();
+                operation.ReturnsCollection(elementType);
+            }
+            else
+            {
+                operation.Returns(boundOperationMetadata.ResponseType);
+            }
+        }
+        else
+        {
+            var operation = _modelBuilder.Function(operationName);
+
+            operation.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
+            operation.Parameter(boundOperationMetadata.RequestType, "body");
+
+            if (boundOperationMetadata.ResponseType == typeof(Result))
+                throw new InvalidOperationException("Functions can't use Result type");
+
+            if (boundOperationMetadata.ResponseType.IsCommonGenericCollectionType())
+            {
+                var elementType = boundOperationMetadata.ResponseType.GetGenericArguments().Single();
+                operation.ReturnsCollection(elementType);
+            }
+            else
+            {
+                operation.Returns(boundOperationMetadata.ResponseType);
+            }
         }
     }
 

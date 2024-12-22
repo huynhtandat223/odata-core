@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace CFW.ODataCore.EFCore;
+namespace CFW.ODataCore.Features.EFCore;
 
 public class ODataModelCustomizer<TDbContext> : ModelCustomizer, IModelCustomizer
     where TDbContext : DbContext
@@ -28,9 +28,7 @@ public class ODataModelCustomizer<TDbContext> : ModelCustomizer, IModelCustomize
         base.Customize(modelBuilder, context);
 
         if (context is not TDbContext)
-        {
             return;
-        }
 
         foreach (var entityType in _entityTypes.Value)
         {

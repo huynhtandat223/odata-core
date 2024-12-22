@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace CFW.ODataCore.EFCore;
+namespace CFW.ODataCore.Features.EFCore;
 
 public interface IODataDbContextProvider
 {

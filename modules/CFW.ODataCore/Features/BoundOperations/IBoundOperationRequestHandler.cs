@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 
-namespace CFW.ODataCore.Features.BoundActions;
+namespace CFW.ODataCore.Features.BoundOperations;
 
 public interface IBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse>
     where TODataViewModel : class, IODataViewModel<TKey>

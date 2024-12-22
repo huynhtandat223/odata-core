@@ -1,6 +1,6 @@
-﻿using CFW.ODataCore.EFCore;
-using CFW.ODataCore.Features.BoundActions;
+﻿using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.Core;
+using CFW.ODataCore.Features.EFCore;
 using CFW.ODataCore.Features.EntitySets;
 using CFW.ODataCore.Features.EntitySets.Handlers;
 using CFW.ODataCore.Features.Shared;
@@ -36,7 +36,6 @@ public static class ServicesCollectionExtensions
         services.AddScoped(typeof(IDeleteHandler<,>), typeof(DefaultDeleteHandler<,>));
         services.AddScoped(typeof(IPatchHandler<,>), typeof(DefaultPatchHandler<,>));
 
-        services.AddScoped(typeof(IBoundActionRequestHandler<,,,>), typeof(DefaultBoundActionRequestHandler<,,,>));
         services.AddScoped(typeof(IBoundOperationRequestHandler<,,,>), typeof(DefaultBoundOperationRequestHandler<,,,>));
 
         services.AddScoped(typeof(IUnboundActionRequestHandler<,>), typeof(DefaultActionRequestHandler<,>));
@@ -44,10 +43,10 @@ public static class ServicesCollectionExtensions
 
         foreach (var container in containers)
         {
-            var boundActionMetadata = container.EntityMetadataList
-                .SelectMany(x => x.BoundActionMetadataList)
+            var boundOperationMetadata = container.EntityMetadataList
+                .SelectMany(x => x.BoundOperationMetadataList)
                 .ToList();
-            foreach (var metadata in boundActionMetadata)
+            foreach (var metadata in boundOperationMetadata)
             {
                 var serviceType = metadata.ResponseType == typeof(Result)
                     ? typeof(IODataActionHandler<>).MakeGenericType(metadata.RequestType)
@@ -55,16 +54,6 @@ public static class ServicesCollectionExtensions
 
                 services.AddScoped(serviceType, metadata.HandlerType);
             }
-
-            foreach (var metadata in container.EntityMetadataList
-                .SelectMany(x => x.BoundFunctionMetadataList))
-            {
-                var serviceType = metadata.ResponseType == typeof(Result)
-                    ? typeof(IODataActionHandler<>).MakeGenericType(metadata.RequestType)
-                    : typeof(IODataActionHandler<,>).MakeGenericType(metadata.RequestType, metadata.ResponseType);
-                services.AddScoped(serviceType, metadata.HandlerType);
-            }
-
 
             foreach (var metadata in container.UnBoundActions)
             {
@@ -100,17 +89,10 @@ public static class ServicesCollectionExtensions
             {
                 options.Conventions.Add(new EntitySetsConvention(container));
 
-                var boundActionMetadata = container.EntityMetadataList
-                    .SelectMany(x => x.BoundActionMetadataList)
-                    .ToList();
-
-                if (boundActionMetadata.Any())
-                    options.Conventions.Add(new BoundActionsConvention(boundActionMetadata));
-
-                var hasBoundFunctions = container.EntityMetadataList
-                    .SelectMany(x => x.BoundFunctionMetadataList)
+                var hasBoundOperations = container.EntityMetadataList
+                    .SelectMany(x => x.BoundOperationMetadataList)
                     .Any();
-                if (hasBoundFunctions)
+                if (hasBoundOperations)
                     options.Conventions.Add(new BoundOperationsConvention(container));
 
                 if (container.UnBoundActions.Any())

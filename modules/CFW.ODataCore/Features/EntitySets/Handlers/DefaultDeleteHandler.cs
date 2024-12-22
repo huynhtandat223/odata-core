@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.EFCore;
+﻿using CFW.ODataCore.Features.EFCore;
 
 namespace CFW.ODataCore.Features.EntitySets.Handlers;
 

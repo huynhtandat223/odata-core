@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.BoundActions;
+namespace CFW.ODataCore.Features.BoundOperations;
 
 public class BoundOperationsConvention : IControllerModelConvention
 {
@@ -22,22 +22,20 @@ public class BoundOperationsConvention : IControllerModelConvention
     public void Apply(ControllerModel controller)
     {
         var metadata = _container.EntityMetadataList
-            .SelectMany(x => x.BoundFunctionMetadataList)
+            .SelectMany(x => x.BoundOperationMetadataList)
             .FirstOrDefault(x => x.ControllerType == controller.ControllerType);
 
         if (metadata is null)
-        {
             return;
-        }
 
         var entitySet = metadata.Container.EdmModel.EntityContainer.FindEntitySet(metadata.BoundCollectionName);
         var entityFullName = entitySet.EntityType().FullName();
         var routePrefix = metadata.Container.RoutePrefix;
         var edmModel = metadata.Container.EdmModel;
-        var boundActionName = metadata.BoundActionAttribute.Name;
+        var boundActionName = metadata.BoundOprationAttribute.Name;
 
         var edmOpr = edmModel.SchemaElements
-            .OfType<IEdmFunction>()
+            .OfType<IEdmOperation>()
             .Where(x => x.IsBound && x.Parameters.First().Type.FullName() == entityFullName)
             .Single(x => x.Name == boundActionName);
 
@@ -50,10 +48,14 @@ public class BoundOperationsConvention : IControllerModelConvention
         var ignoreKeyTemplates = !hasKey;
         var template = new ODataPathTemplate(new BoundOperationTemplate(entitySet, ignoreKeyTemplates, edmOpr));
 
-        var controlerAction = controller.Actions
-                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.Execute));
+        var controllerActionMethod = metadata.OperationType == OperationType.Action
+            ? controller.Actions
+                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteAction))
+            : controller.Actions
+                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteFunction));
 
-        controlerAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, template);
+        var httpMethod = metadata.OperationType == OperationType.Action ? HttpMethod.Post.Method : HttpMethod.Get.Method;
+        controllerActionMethod.AddSelector(httpMethod, routePrefix, edmModel, template);
 
         var authAttr = metadata.SetupAttributes.OfType<ODataAuthorizeAttribute>().SingleOrDefault();
         var anonymousAttr = metadata.SetupAttributes.OfType<ODataAllowAnonymousAttribute>().SingleOrDefault();
@@ -61,14 +63,14 @@ public class BoundOperationsConvention : IControllerModelConvention
         if (authAttr is not null)
         {
             var authorizeFilter = new AuthorizeFilter([authAttr]);
-            controlerAction.Filters.Add(authorizeFilter);
+            controllerActionMethod.Filters.Add(authorizeFilter);
             return;
         }
 
         if (anonymousAttr is not null)
         {
             var allowAnonymousFilter = new AllowAnonymousFilter();
-            controlerAction.Filters.Add(allowAnonymousFilter);
+            controllerActionMethod.Filters.Add(allowAnonymousFilter);
             return;
         }
     }

@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.Features.BoundActions;
+﻿using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.UnBoundActions;
 using CFW.ODataCore.Features.UnboundFunctions;
 using CFW.ODataCore.Testings;

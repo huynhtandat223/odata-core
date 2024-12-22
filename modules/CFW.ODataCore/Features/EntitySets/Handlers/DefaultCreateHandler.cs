@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.EFCore;
+﻿using CFW.ODataCore.Features.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 

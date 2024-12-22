@@ -1,5 +1,5 @@
-using CFW.ODataCore.EFCore;
 using CFW.ODataCore.Extensions;
+using CFW.ODataCore.Features.EFCore;
 using CFW.ODataCore.Testings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

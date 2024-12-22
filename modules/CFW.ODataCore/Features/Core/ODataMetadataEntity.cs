@@ -17,21 +17,14 @@ public class ODataMetadataEntity
 
     public required ODataEntitySetAttribute DataRoutingAttribute { get; set; }
 
-    public List<ODataBoundActionMetadata> BoundActionMetadataList { get; set; } = new List<ODataBoundActionMetadata>();
-
-    public List<ODataBoundActionMetadata> BoundFunctionMetadataList { get; set; } = new List<ODataBoundActionMetadata>();
+    public IEnumerable<ODataBoundOperationMetadata> BoundOperationMetadataList { get; set; } = new List<ODataBoundOperationMetadata>();
 
     public IEnumerable<TypeInfo> GetAllControllerTypes()
     {
         yield return ControllerType;
-        foreach (var boundActionMetadata in BoundActionMetadataList)
+        foreach (var operationMetadata in BoundOperationMetadataList)
         {
-            yield return boundActionMetadata.ControllerType;
-        }
-
-        foreach (var boundFunctionMetadata in BoundFunctionMetadataList)
-        {
-            yield return boundFunctionMetadata.ControllerType;
+            yield return operationMetadata.ControllerType;
         }
     }
 }
