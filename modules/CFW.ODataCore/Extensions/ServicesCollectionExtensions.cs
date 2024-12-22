@@ -5,6 +5,7 @@ using CFW.ODataCore.Features.EntitySets;
 using CFW.ODataCore.Features.EntitySets.Handlers;
 using CFW.ODataCore.Features.Shared;
 using CFW.ODataCore.Features.UnBoundActions;
+using CFW.ODataCore.Features.UnboundFunctions;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,7 +37,10 @@ public static class ServicesCollectionExtensions
         services.AddScoped(typeof(IPatchHandler<,>), typeof(DefaultPatchHandler<,>));
 
         services.AddScoped(typeof(IBoundActionRequestHandler<,,,>), typeof(DefaultBoundActionRequestHandler<,,,>));
+
+
         services.AddScoped(typeof(IUnboundActionRequestHandler<,>), typeof(DefaultActionRequestHandler<,>));
+        services.AddScoped(typeof(IUnboundFunctionRequestHandler<,>), typeof(DefaultActionRequestHandler<,>));
 
         foreach (var container in containers)
         {
@@ -53,6 +57,15 @@ public static class ServicesCollectionExtensions
             }
 
             foreach (var metadata in container.UnBoundActions)
+            {
+                var serviceType = metadata.ResponseType == typeof(Result)
+                    ? typeof(IODataActionHandler<>).MakeGenericType(metadata.RequestType)
+                    : typeof(IODataActionHandler<,>).MakeGenericType(metadata.RequestType, metadata.ResponseType);
+
+                services.AddScoped(serviceType, metadata.HandlerType);
+            }
+
+            foreach (var metadata in container.UnboundFunctions)
             {
                 var serviceType = metadata.ResponseType == typeof(Result)
                     ? typeof(IODataActionHandler<>).MakeGenericType(metadata.RequestType)
@@ -86,6 +99,9 @@ public static class ServicesCollectionExtensions
 
                 if (container.UnBoundActions.Any())
                     options.Conventions.Add(new UnBoundActionsConvention(container));
+
+                if (container.UnboundFunctions.Any())
+                    options.Conventions.Add(new UnboundFunctionsConvention(container));
             }
         });
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.ApplicationParts;
+﻿using CFW.ODataCore.Features.UnboundFunctions;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
@@ -12,6 +13,8 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
     private readonly List<ODataMetadataEntity> _entityMetadataList = new List<ODataMetadataEntity>();
 
     public List<UnboundActionMetadata> UnBoundActions { get; private set; } = new List<UnboundActionMetadata>();
+
+    public List<UnboundFunctionMetadata> UnboundFunctions { get; private set; } = new List<UnboundFunctionMetadata>();
 
     public IReadOnlyCollection<ODataMetadataEntity> EntityMetadataList => _entityMetadataList.AsReadOnly();
 
@@ -65,7 +68,7 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
         foreach (var unBoundActionMetadata in unboudActionMetadataList)
         {
-            var action = _modelBuilder.Action(unBoundActionMetadata.UnboundActionAttribute.Name);
+            var action = _modelBuilder.Action(unBoundActionMetadata.Attribute.Name);
             action.Parameter(unBoundActionMetadata.RequestType, "body");
 
             if (unBoundActionMetadata.ResponseType == typeof(Result))
@@ -82,6 +85,34 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
             }
         }
         UnBoundActions = unboudActionMetadataList.ToList();
+    }
+
+    public class Templte
+    {
+        public int Test { get; set; }
+    }
+
+    internal void AddUnboundFunctions(List<UnboundFunctionMetadata> metadataList)
+    {
+        if (!metadataList.Any())
+            return;
+
+        foreach (var metadata in metadataList)
+        {
+            var function = _modelBuilder.Function(metadata.RoutingAttribute.Name);
+            function.Parameter(metadata.RequestType, "body");
+
+            if (metadata.ResponseType.IsCommonGenericCollectionType())
+            {
+                var elementType = metadata.ResponseType.GetGenericArguments().Single();
+                function.ReturnsCollection(elementType);
+            }
+            else
+            {
+                function.Returns(metadata.ResponseType);
+            }
+        }
+        UnboundFunctions = metadataList.ToList();
     }
 
     private IEdmModel? _edmModel;
@@ -112,6 +143,11 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         foreach (var unboundAction in UnBoundActions)
         {
             yield return unboundAction.ControllerType;
+        }
+
+        foreach (var unboundFunction in UnboundFunctions)
+        {
+            yield return unboundFunction.ControllerType;
         }
     }
 }

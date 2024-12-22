@@ -1,6 +1,4 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.Attributes;
-using CFW.ODataCore.Features.EntitySets;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 

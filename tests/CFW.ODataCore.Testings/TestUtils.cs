@@ -1,9 +1,11 @@
 ﻿using CFW.ODataCore.Features.BoundActions;
 using CFW.ODataCore.Features.UnBoundActions;
+using CFW.ODataCore.Features.UnboundFunctions;
 using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
 using System.Reflection;
 using System.Text;
+using System.Web;
 
 namespace CFW.ODataCore.Testings;
 
@@ -35,6 +37,30 @@ public static class TestUtils
         }
 
         return $"{routePrefix ?? unboundActionAttribute.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{unboundActionAttribute.Name}";
+    }
+
+    public static string GetUnboundFunctionUrl(this Type handlerType, object requestParams, string? routePrefix = null)
+    {
+        var attribute = handlerType.GetCustomAttribute<UnboundFunctionAttribute>();
+        if (attribute == null)
+        {
+            throw new InvalidOperationException($"The handler type {handlerType.Name} does not have UnboundFunctionAttribute");
+        }
+
+        if (requestParams == null) throw new ArgumentNullException(nameof(requestParams));
+
+        var properties = requestParams.GetType()
+                            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                            .Where(p => p.GetValue(requestParams) != null);
+
+        var queryString = string.Join("&", properties.Select(property =>
+        {
+            var name = HttpUtility.UrlEncode(property.Name);
+            var value = HttpUtility.UrlEncode(property.GetValue(requestParams)?.ToString());
+            return $"{name}={value}";
+        }));
+
+        return $"{routePrefix ?? attribute.RoutePrefix ?? Constants.DefaultODataRoutePrefix}/{attribute.Name}?{queryString}";
     }
 
     public static IEnumerable<string> GetKeyedActionUrl(this Type resourceType, Type handlerType, object keyValue, string? routePrefix = null)

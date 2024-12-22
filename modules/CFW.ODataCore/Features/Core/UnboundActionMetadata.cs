@@ -11,10 +11,9 @@ public class UnboundActionMetadata
 
     public required Type HandlerType { get; set; }
 
-    public required UnboundActionAttribute UnboundActionAttribute { get; set; }
+    public required UnboundActionAttribute Attribute { get; set; }
 
     public required IEnumerable<Attribute> SetupAttributes { get; set; }
 
     public required TypeInfo ControllerType { get; set; }
 }
-

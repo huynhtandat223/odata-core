@@ -5,23 +5,23 @@ using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.Features.UnBoundActions;
 
-public class UnboundActionsTemplate : ODataSegmentTemplate
+public class UnboundOperationTemplate : ODataSegmentTemplate
 {
-    private readonly IEdmAction _action;
+    private readonly IEdmOperation _opration;
 
-    public UnboundActionsTemplate(IEdmAction action)
+    public UnboundOperationTemplate(IEdmOperation opration)
     {
-        _action = action;
+        _opration = opration;
     }
 
     public override IEnumerable<string> GetTemplates(ODataRouteOptions options)
     {
-        yield return $"/{_action.Name}";
+        yield return $"/{_opration.Name}";
     }
 
     public override bool TryTranslate(ODataTemplateTranslateContext context)
     {
-        context.Segments.Add(new OperationSegment(_action, null));
+        context.Segments.Add(new OperationSegment(_opration, null));
         return true;
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CFW.ODataCore.Features.UnboundFunctions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 
 namespace CFW.ODataCore.Features.Shared;
@@ -9,7 +10,8 @@ public interface IUnboundActionRequestHandler<TRequest, TResponse>
         , TRequest request, CancellationToken cancellationToken);
 }
 
-public class DefaultActionRequestHandler<TRequest, TResponse> : IUnboundActionRequestHandler<TRequest, TResponse>
+public class DefaultActionRequestHandler<TRequest, TResponse>
+    : IUnboundActionRequestHandler<TRequest, TResponse>, IUnboundFunctionRequestHandler<TRequest, TResponse>
 {
     public async Task<ActionResult> Handle(ODataController controller
         , TRequest request, CancellationToken cancellationToken)

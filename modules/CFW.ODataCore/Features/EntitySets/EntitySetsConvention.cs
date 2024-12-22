@@ -1,5 +1,5 @@
-﻿using CFW.ODataCore.Attributes;
-using CFW.ODataCore.Features.Core;
+﻿using CFW.ODataCore.Features.Core;
+using CFW.ODataCore.Features.Shared;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Extensions;
