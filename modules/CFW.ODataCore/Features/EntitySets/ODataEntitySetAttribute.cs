@@ -1,7 +1,7 @@
-﻿namespace CFW.ODataCore;
+﻿namespace CFW.ODataCore.Features.EntitySets;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-public class ODataRoutingAttribute : Attribute
+public class ODataEntitySetAttribute : Attribute
 {
     public string Name { get; set; }
 
@@ -9,7 +9,7 @@ public class ODataRoutingAttribute : Attribute
 
     public ODataMethod[]? AllowMethods { get; set; }
 
-    public ODataRoutingAttribute(string name)
+    public ODataEntitySetAttribute(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name must be set", nameof(name));

@@ -1,4 +1,5 @@
-﻿using CFW.ODataCore.Features.Shared;
+﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.Features.Core;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Extensions;
@@ -26,7 +27,7 @@ public class EntitySetsConvention : Attribute, IControllerModelConvention
         var withKeyTemplate = new ODataPathTemplate(new EntitySetsTemplate(entitySet, ignoreKeyTemplates: false));
         var routePrefix = metadataEntity.Container.RoutePrefix;
         var edmModel = metadataEntity.Container.EdmModel;
-        var routingAttribute = metadataEntity.SetupAttributes.OfType<ODataRoutingAttribute>().Single();
+        var routingAttribute = metadataEntity.SetupAttributes.OfType<ODataEntitySetAttribute>().Single();
         var allowMethods = routingAttribute.AllowMethods ?? Enum.GetValues<ODataMethod>();
         var authorizeAttrs = metadataEntity.SetupAttributes.OfType<ODataAuthorizeAttribute>();
         var anonymousAttrs = metadataEntity.SetupAttributes.OfType<ODataAllowAnonymousAttribute>();

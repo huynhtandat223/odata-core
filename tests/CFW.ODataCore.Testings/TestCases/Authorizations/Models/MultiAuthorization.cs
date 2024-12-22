@@ -1,8 +1,10 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Attributes;
+using CFW.ODataCore.Features.EntitySets;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
-[ODataRouting("multi-authorizations")]
+[ODataEntitySet("multi-authorizations")]
 [ODataAuthorize(ApplyMethods = [ODataMethod.Query])]
 [ODataAuthorize(ApplyMethods = [ODataMethod.GetByKey], Roles = TestUtils.AdminRole)]
 [ODataAuthorize(ApplyMethods = [ODataMethod.PostCreate], Roles = $"{TestUtils.AdminRole},{TestUtils.SupperAdminRole}")]

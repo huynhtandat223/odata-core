@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
-[ODataRouting("authorize-categories")]
+[ODataEntitySet("authorize-categories")]
 [ODataAuthorize]
 public class AuthorizeCategory : IODataViewModel<Guid>, IEntity<Guid>
 {

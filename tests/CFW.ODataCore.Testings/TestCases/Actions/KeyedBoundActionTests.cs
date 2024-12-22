@@ -10,40 +10,43 @@ using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.Actions;
 
-[ODataRouting(nameof(KeyedBoundActionViewModel))]
-public class KeyedBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
-{
-    public Guid Id { get; set; }
-}
-
-public class KeyedActionRequest
-{
-    [FromRoute]
-    public Guid Id { set; get; }
-
-    public Guid ActionId { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-}
-
-[BoundAction<KeyedBoundActionViewModel, Guid>(nameof(KeyedActionHandler))]
-public class KeyedActionHandler : IODataActionHandler<KeyedActionRequest>
-{
-    private readonly List<object> _requests;
-    public KeyedActionHandler(List<object> requests)
-    {
-        _requests = requests;
-    }
-
-    public async Task<Result> Execute(KeyedActionRequest request, CancellationToken cancellationToken)
-    {
-        _requests.Add(request);
-        return await Task.FromResult(this.Success());
-    }
-}
-
 public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
+
+    [ODataEntitySet(nameof(KeyedBoundActionViewModel))]
+    public class KeyedBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class KeyedActionRequest
+    {
+        [FromRoute]
+        public Guid Id { set; get; }
+
+        public Guid ActionId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    [BoundAction<KeyedBoundActionViewModel, Guid>(nameof(KeyedActionHandler))]
+    public class KeyedActionHandler : IODataActionHandler<KeyedActionRequest>
+    {
+        private readonly List<object> _requests;
+        public KeyedActionHandler(List<object> requests)
+        {
+            _requests = requests;
+        }
+
+        public async Task<Result> Execute(KeyedActionRequest request, CancellationToken cancellationToken)
+        {
+            _requests.Add(request);
+            return await Task.FromResult(this.Success());
+        }
+    }
+
+
+
     private readonly List<object> _requests = new List<object>();
     public KeyedBoundActionTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory) : base(testOutputHelper, factory)
     {

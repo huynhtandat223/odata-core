@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[ODataRouting("customers")]
+[ODataEntitySet("customers")]
 public class Customer : IEntity<int>, IODataViewModel<int>
 {
     public int Id { get; set; }
@@ -12,7 +12,7 @@ public class Customer : IEntity<int>, IODataViewModel<int>
     public string? Address { get; set; }
 }
 
-[ODataRouting("vouchers")]
+[ODataEntitySet("vouchers")]
 public class Voucher : IEntity<string>, IODataViewModel<string>
 {
     public string Id { get; set; } = string.Empty;

@@ -1,5 +1,6 @@
 ﻿using CFW.Core.Entities;
 using CFW.CoreTestings.DataGenerations;
+using CFW.ODataCore.Features.EntitySets;
 using CFW.ODataCore.Testings.TestCases.EndpointRestrictions.Models;
 using CFW.ODataCore.Testings.TestCases.EntitySetsQuery;
 using System.Collections;
@@ -22,7 +23,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var baseUrl = odataViewModelType.GetBaseUrl();
-        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
+        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataEntitySetAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
         if (methodsArray!.Length == 0)
@@ -124,7 +125,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     public async Task Request_WithoutCustomAlowMethods_ShouldMethodNotAllow(Type odataViewModelType)
     {
         var baseUrl = odataViewModelType.GetBaseUrl();
-        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataRoutingAttribute>();
+        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataEntitySetAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
         if (methodsArray!.Length == 0)

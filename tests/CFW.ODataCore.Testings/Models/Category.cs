@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[ODataRouting("categories")]
+[ODataEntitySet("categories")]
 public class Category : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }
@@ -28,7 +28,7 @@ public class Category : IEntity<Guid>, IODataViewModel<Guid>
     public DateTime? DeletedAt { get; set; }
 }
 
-[ODataRouting("orders")]
+[ODataEntitySet("orders")]
 public class Order : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

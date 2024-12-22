@@ -9,38 +9,39 @@ using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.Actions;
 
-[ODataRouting(nameof(NonKeyBoundActionViewModel))]
-public class NonKeyBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
-{
-    public Guid Id { get; set; }
-}
-
-public class NonKeyActionRequest
-{
-    public Guid ActionId { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-}
-
-[BoundAction<NonKeyBoundActionViewModel, Guid>(nameof(NonKeyActionHandler))]
-public class NonKeyActionHandler : IODataActionHandler<NonKeyActionRequest>
-{
-    private readonly List<object> _requests;
-
-    public NonKeyActionHandler(List<object> requests)
-    {
-        _requests = requests;
-    }
-
-    public async Task<Result> Execute(NonKeyActionRequest request, CancellationToken cancellationToken)
-    {
-        _requests.Add(request);
-        return await Task.FromResult(this.Success());
-    }
-}
-
 public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
+    [ODataEntitySet(nameof(NonKeyBoundActionViewModel))]
+    public class NonKeyBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class NonKeyActionRequest
+    {
+        public Guid ActionId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    [BoundAction<NonKeyBoundActionViewModel, Guid>(nameof(NonKeyActionHandler))]
+    public class NonKeyActionHandler : IODataActionHandler<NonKeyActionRequest>
+    {
+        private readonly List<object> _requests;
+
+        public NonKeyActionHandler(List<object> requests)
+        {
+            _requests = requests;
+        }
+
+        public async Task<Result> Execute(NonKeyActionRequest request, CancellationToken cancellationToken)
+        {
+            _requests.Add(request);
+            return await Task.FromResult(this.Success());
+        }
+    }
+
+
     private readonly List<object> _requests = new List<object>();
 
     public NonKeyBoundActionTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory) : base(testOutputHelper, factory)

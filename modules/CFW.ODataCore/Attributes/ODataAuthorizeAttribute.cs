@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using CFW.ODataCore.Features.EntitySets;
+using Microsoft.AspNetCore.Authorization;
 
-namespace CFW.ODataCore;
+namespace CFW.ODataCore.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class ODataAuthorizeAttribute : AuthorizeAttribute

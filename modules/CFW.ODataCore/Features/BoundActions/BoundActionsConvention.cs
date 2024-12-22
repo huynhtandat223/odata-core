@@ -1,4 +1,5 @@
-﻿using CFW.ODataCore.Features.Shared;
+﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.Features.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -9,7 +10,7 @@ using System.Reflection;
 
 namespace CFW.ODataCore.Features.BoundActions;
 
-public class BoundActionsConvention : Attribute, IControllerModelConvention
+public class BoundActionsConvention : IControllerModelConvention
 {
     private List<ODataBoundActionMetadata> _boundActionMetadata;
 
@@ -32,7 +33,7 @@ public class BoundActionsConvention : Attribute, IControllerModelConvention
 
         var edmAction = edmModel.SchemaElements
             .OfType<IEdmAction>()
-            .Where(x => x.Parameters.First().Type.FullName() == entityFullName)
+            .Where(x => x.IsBound && x.Parameters.First().Type.FullName() == entityFullName)
             .Single(x => x.Name == boundActionName);
 
         var requestType = boundActionMetadata.RequestType;

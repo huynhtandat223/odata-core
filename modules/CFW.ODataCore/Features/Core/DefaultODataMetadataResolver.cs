@@ -1,8 +1,10 @@
 ﻿using CFW.ODataCore.Features.BoundActions;
 using CFW.ODataCore.Features.EntitySets;
+using CFW.ODataCore.Features.Shared;
+using CFW.ODataCore.Features.UnBoundActions;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Shared;
+namespace CFW.ODataCore.Features.Core;
 
 public abstract class BaseODataMetadataResolver
 {
@@ -77,7 +79,7 @@ public abstract class BaseODataMetadataResolver
         }
     }
 
-    private ODataMetadataEntity CreateMetadataEntity(Type viewModelType, ODataRoutingAttribute routingAttribute
+    private ODataMetadataEntity CreateMetadataEntity(Type viewModelType, ODataEntitySetAttribute routingAttribute
         , ODataMetadataContainer container)
     {
         var odataViewModelInterface = viewModelType.GetInterfaces()
@@ -96,11 +98,45 @@ public abstract class BaseODataMetadataResolver
         };
     }
 
+    private UnboundActionMetadata CreateUnboundActionMetadata(Type handlerType, UnboundActionAttribute unboundActionAttribute)
+    {
+        var actionHandlerInterface = handlerType
+            .GetInterfaces()
+            .SingleOrDefault(x => x.IsGenericType
+                && x.GetGenericTypeDefinition() == typeof(IODataActionHandler<>));
+
+        if (actionHandlerInterface is null)
+        {
+            actionHandlerInterface = handlerType
+                .GetInterfaces()
+                .SingleOrDefault(x => x.IsGenericType
+                    && x.GetGenericTypeDefinition() == typeof(IODataActionHandler<,>));
+        }
+
+        if (actionHandlerInterface is null)
+            throw new InvalidOperationException($"Handler type {handlerType} does not implement IODataActionHandler<> or IODataActionHandler<,>");
+
+        var args = actionHandlerInterface.GetGenericArguments();
+        var requestType = args[0];
+        var responseType = args.Count() == 1 ? typeof(Result) : args[1];
+
+        return new UnboundActionMetadata
+        {
+            HandlerType = handlerType,
+            RequestType = requestType,
+            ResponseType = responseType,
+            UnboundActionAttribute = unboundActionAttribute,
+            SetupAttributes = handlerType.GetCustomAttributes(),
+            ControllerType = typeof(UnboundActionsController<,>).MakeGenericType(requestType, responseType).GetTypeInfo(),
+        };
+    }
+
     public IEnumerable<ODataMetadataContainer> CreateContainers()
     {
+        var containers = new List<ODataMetadataContainer>();
         var routePrefixes = CachedType
-            .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null)
-            .Select(x => new { ViewModelType = x, RoutingAttribute = x.GetCustomAttribute<ODataRoutingAttribute>()! })
+            .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null)
+            .Select(x => new { ViewModelType = x, RoutingAttribute = x.GetCustomAttribute<ODataEntitySetAttribute>()! })
             .GroupBy(x => x.RoutingAttribute!.RouteRefix ?? _defaultPrefix);
 
         foreach (var group in routePrefixes)
@@ -112,9 +148,36 @@ public abstract class BaseODataMetadataResolver
                 .Select(x => CreateMetadataEntity(x.ViewModelType, x.RoutingAttribute, container));
 
             container.AddEntitySets(routePrefix, this, oDataTypes);
-            container.Build();
-            yield return container;
+            containers.Add(container);
         }
+
+        var unboudActionMetadataGroup = CachedType
+            .Where(x => x.GetCustomAttribute<UnboundActionAttribute>() is not null)
+            .Select(x => new
+            {
+                HandlerType = x,
+                UnboundActionAttribute = x.GetCustomAttribute<UnboundActionAttribute>()!,
+            })
+            .GroupBy(x => x.UnboundActionAttribute!.RouteRefix ?? _defaultPrefix);
+        foreach (var group in unboudActionMetadataGroup)
+        {
+            var routePrefix = group.Key;
+            var container = containers.FirstOrDefault(x => x.RoutePrefix == routePrefix);
+            if (container is null)
+            {
+                container = new ODataMetadataContainer(routePrefix);
+                containers.Add(container);
+            }
+
+            var unboundActionMetadataList = group
+                    .Select(x => CreateUnboundActionMetadata(x.HandlerType, x.UnboundActionAttribute))
+            .ToList();
+
+            container.AddUnboundActions(unboundActionMetadataList);
+        }
+
+        containers.ForEach(x => x.Build());
+        return containers;
     }
 }
 
@@ -123,8 +186,9 @@ public class DefaultODataMetadataResolver : BaseODataMetadataResolver
     private static readonly List<Type> _cachedType = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
         .SelectMany(a => a.GetTypes())
-        .Where(x => x.GetCustomAttribute<ODataRoutingAttribute>() is not null
-            || x.GetCustomAttribute<BoundActionAttribute>() is not null)
+        .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null
+            || x.GetCustomAttribute<BoundActionAttribute>() is not null
+            || x.GetCustomAttribute<UnboundActionAttribute>() is not null)
         .ToList();
 
     public DefaultODataMetadataResolver(string defaultPrefix) : base(defaultPrefix)

@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[ODataRouting("products")]
+[ODataEntitySet("products")]
 public class Product : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

@@ -1,4 +1,5 @@
 ﻿using CFW.ODataCore.Features.BoundActions;
+using CFW.ODataCore.Features.UnBoundActions;
 using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
 using System.Reflection;
@@ -10,14 +11,30 @@ public static class TestUtils
 {
     public static string GetBaseUrl(this Type resourceType, string? routePrefix = null)
     {
-        var odataRouting = resourceType.GetCustomAttribute<ODataRoutingAttribute>();
-        return $"{routePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
+        var odataRouting = resourceType.GetCustomAttribute<ODataEntitySetAttribute>();
+        if (odataRouting == null)
+        {
+            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have ODataEntitySetAttribute");
+        }
+
+        return $"{routePrefix ?? odataRouting.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
     }
 
     public static string GetNonKeyActionUrl(this Type resourceType, Type handlerType, string? routePrefix = null)
     {
         var actionName = handlerType.GetCustomAttribute<BoundActionAttribute>()!.Name;
         return $"{GetBaseUrl(resourceType, routePrefix)}/{actionName}";
+    }
+
+    public static string GetUnboundActionUrl(this Type handlerType, string? routePrefix = null)
+    {
+        var unboundActionAttribute = handlerType.GetCustomAttribute<UnboundActionAttribute>();
+        if (unboundActionAttribute == null)
+        {
+            throw new InvalidOperationException($"The handler type {handlerType.Name} does not have UnboundActionAttribute");
+        }
+
+        return $"{routePrefix ?? unboundActionAttribute.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{unboundActionAttribute.Name}";
     }
 
     public static IEnumerable<string> GetKeyedActionUrl(this Type resourceType, Type handlerType, object keyValue, string? routePrefix = null)

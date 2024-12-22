@@ -3,13 +3,15 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Shared;
+namespace CFW.ODataCore.Features.Core;
 
 public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvider
 {
     private readonly ODataConventionModelBuilder _modelBuilder;
 
     private readonly List<ODataMetadataEntity> _entityMetadataList = new List<ODataMetadataEntity>();
+
+    public List<UnboundActionMetadata> UnBoundActions { get; private set; } = new List<UnboundActionMetadata>();
 
     public IReadOnlyCollection<ODataMetadataEntity> EntityMetadataList => _entityMetadataList.AsReadOnly();
 
@@ -56,6 +58,31 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         }
     }
 
+    internal void AddUnboundActions(List<UnboundActionMetadata> unboudActionMetadataList)
+    {
+        if (!unboudActionMetadataList.Any())
+            return;
+
+        foreach (var unBoundActionMetadata in unboudActionMetadataList)
+        {
+            var action = _modelBuilder.Action(unBoundActionMetadata.UnboundActionAttribute.Name);
+            action.Parameter(unBoundActionMetadata.RequestType, "body");
+
+            if (unBoundActionMetadata.ResponseType == typeof(Result))
+                continue;
+
+            if (unBoundActionMetadata.ResponseType.IsCommonGenericCollectionType())
+            {
+                var elementType = unBoundActionMetadata.ResponseType.GetGenericArguments().Single();
+                action.ReturnsCollection(elementType);
+            }
+            else
+            {
+                action.Returns(unBoundActionMetadata.ResponseType);
+            }
+        }
+        UnBoundActions = unboudActionMetadataList.ToList();
+    }
 
     private IEdmModel? _edmModel;
 
@@ -73,6 +100,18 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
 
     // IApplicationPartTypeProvider implementation
-    public IEnumerable<TypeInfo> Types => _entityMetadataList
-        .SelectMany(x => x.GetAllControllerTypes());
+    public IEnumerable<TypeInfo> Types => GetAllController();
+
+    private IEnumerable<TypeInfo> GetAllController()
+    {
+        foreach (var controllerType in _entityMetadataList.SelectMany(x => x.GetAllControllerTypes()))
+        {
+            yield return controllerType;
+        }
+
+        foreach (var unboundAction in UnBoundActions)
+        {
+            yield return unboundAction.ControllerType;
+        }
+    }
 }
