@@ -21,7 +21,7 @@ public class BoundActionsConvention : IControllerModelConvention
 
     public void Apply(ControllerModel controller)
     {
-        var boundActionMetadata = _boundActionMetadata.FirstOrDefault(x => x.BoundActionControllerType == controller.ControllerType);
+        var boundActionMetadata = _boundActionMetadata.FirstOrDefault(x => x.ControllerType == controller.ControllerType);
         if (boundActionMetadata is null)
             return;
 

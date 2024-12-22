@@ -3,13 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CFW.ODataCore.Features.Shared;
 
-public interface IBoundActionRequestHandler<TODataViewModel, TKey, TRequest, TResponse>
-    where TODataViewModel : class, IODataViewModel<TKey>
-{
-    Task<ActionResult> Handle(BoundActionsController<TODataViewModel, TKey, TRequest, TResponse> controller
-        , TRequest request, CancellationToken cancellationToken);
-}
-
+[Obsolete("Merge all actions and functions")]
 public class DefaultBoundActionRequestHandler<TViewModel, TKey, TRequest, TResponse>
     : DefaultActionRequestHandler<TRequest, TResponse>, IBoundActionRequestHandler<TViewModel, TKey, TRequest, TResponse>
     where TViewModel : class, IODataViewModel<TKey>

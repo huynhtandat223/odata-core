@@ -18,6 +18,7 @@ public abstract class BaseODataMetadataResolver
         _defaultPrefix = defaultPrefix;
     }
 
+    [Obsolete]
     internal IEnumerable<ODataBoundActionMetadata> GetBoundActionMetadataList(Type viewModelType, Type keyType
         , ODataMetadataContainer container
         , string boundCollectionName)
@@ -50,8 +51,8 @@ public abstract class BaseODataMetadataResolver
                     RequestType = requestType,
                     ResponseType = responseType,
                     HandlerType = actionHandlerType,
-                    BoundActionAttribute = actionHandlerType.GetCustomAttribute<BoundActionAttribute>()!,
-                    BoundActionControllerType = typeof(BoundActionsController<,,,>).MakeGenericType(
+                    BoundActionAttribute = actionHandlerType.GetCustomAttribute<BoundOperationAttribute>()!,
+                    ControllerType = typeof(BoundActionsController<,,,>).MakeGenericType(
                         viewModelType, keyType, requestType, responseType).GetTypeInfo(),
                 };
             }
@@ -72,11 +73,72 @@ public abstract class BaseODataMetadataResolver
                     RequestType = requestType,
                     ResponseType = responseType,
                     HandlerType = actionHandlerType,
-                    BoundActionAttribute = actionHandlerType.GetCustomAttribute<BoundActionAttribute>()!,
-                    BoundActionControllerType = typeof(BoundActionsController<,,,>).MakeGenericType(
+                    BoundActionAttribute = actionHandlerType.GetCustomAttribute<BoundOperationAttribute>()!,
+                    ControllerType = typeof(BoundActionsController<,,,>).MakeGenericType(
                         viewModelType, keyType, requestType, responseType).GetTypeInfo(),
                 };
             }
+        }
+    }
+
+    internal IEnumerable<ODataBoundActionMetadata> GetBoundOperationMetadataList(Type viewModelType, Type keyType
+        , ODataMetadataContainer container
+        , string boundCollectionName)
+    {
+        var boundRoutingAttrType = typeof(BoundFunctionAttribute<,>).MakeGenericType(viewModelType, keyType);
+        var withResponseOprHandler = typeof(IODataActionHandler<,>);
+
+        var handlerTypes = CachedType
+            .Where(x => x.GetCustomAttribute(boundRoutingAttrType) is not null)
+            .ToArray();
+
+        foreach (var handlerType in handlerTypes)
+        {
+            var interfaces = handlerType.GetInterfaces();
+            var actionWithResponseHandlerInterface = interfaces
+                .SingleOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == withResponseOprHandler);
+
+            if (actionWithResponseHandlerInterface is not null)
+            {
+                var requestType = actionWithResponseHandlerInterface.GetGenericArguments().First();
+                var responseType = actionWithResponseHandlerInterface.GetGenericArguments().Last();
+
+                yield return new ODataBoundActionMetadata
+                {
+                    KeyType = keyType,
+                    SetupAttributes = handlerType.GetCustomAttributes().ToArray(),
+                    BoundCollectionName = boundCollectionName,
+                    Container = container,
+                    RequestType = requestType,
+                    ResponseType = responseType,
+                    HandlerType = handlerType,
+                    BoundActionAttribute = handlerType.GetCustomAttribute<BoundOperationAttribute>()!,
+                    ControllerType = typeof(BoundOperationsController<,,,>).MakeGenericType(
+                        viewModelType, keyType, requestType, responseType).GetTypeInfo(),
+                };
+            }
+
+            //var actionHandlerInterface = interfaces
+            //    .SingleOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == actionHandlerInterfaceType);
+            //if (actionHandlerInterface is not null)
+            //{
+            //    var requestType = actionHandlerInterface.GetGenericArguments().Single();
+            //    var responseType = typeof(Result);
+
+            //    yield return new ODataBoundActionMetadata
+            //    {
+            //        KeyType = keyType,
+            //        SetupAttributes = actionHandlerType.GetCustomAttributes().ToArray(),
+            //        BoundCollectionName = boundCollectionName,
+            //        Container = container,
+            //        RequestType = requestType,
+            //        ResponseType = responseType,
+            //        HandlerType = actionHandlerType,
+            //        BoundActionAttribute = actionHandlerType.GetCustomAttribute<BoundActionAttribute>()!,
+            //        ControllerType = typeof(BoundActionsController<,,,>).MakeGenericType(
+            //            viewModelType, keyType, requestType, responseType).GetTypeInfo(),
+            //    };
+            //}
         }
     }
 
@@ -95,6 +157,7 @@ public abstract class BaseODataMetadataResolver
             ControllerType = typeof(EntitySetsController<,>).MakeGenericType(viewModelType, keyType).GetTypeInfo(),
             Name = routingAttribute.Name,
             BoundActionMetadataList = GetBoundActionMetadataList(viewModelType, keyType, container, routingAttribute.Name).ToList(),
+            BoundFunctionMetadataList = GetBoundOperationMetadataList(viewModelType, keyType, container, routingAttribute.Name).ToList(),
             SetupAttributes = viewModelType.GetCustomAttributes(),
         };
     }
@@ -237,7 +300,7 @@ public class DefaultODataMetadataResolver : BaseODataMetadataResolver
         .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
         .SelectMany(a => a.GetTypes())
         .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null
-            || x.GetCustomAttribute<BoundActionAttribute>() is not null
+            || x.GetCustomAttribute<BoundOperationAttribute>() is not null
             || x.GetCustomAttribute<UnboundActionAttribute>() is not null
             || x.GetCustomAttribute<UnboundFunctionAttribute>() is not null)
         .ToList();

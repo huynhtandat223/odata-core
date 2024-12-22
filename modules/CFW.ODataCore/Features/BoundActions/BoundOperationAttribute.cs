@@ -1,7 +1,7 @@
 ﻿namespace CFW.ODataCore.Features.BoundActions;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class BoundActionAttribute : Attribute
+public class BoundOperationAttribute : Attribute
 {
     public Type ViewModelType { get; set; } = default!;
 
@@ -10,7 +10,7 @@ public class BoundActionAttribute : Attribute
     public string Name { get; set; } = default!;
 }
 
-public class BoundActionAttribute<TODataViewModel, TKey> : BoundActionAttribute
+public class BoundActionAttribute<TODataViewModel, TKey> : BoundOperationAttribute
 {
     public BoundActionAttribute(string name)
     {

@@ -19,12 +19,19 @@ public class ODataMetadataEntity
 
     public List<ODataBoundActionMetadata> BoundActionMetadataList { get; set; } = new List<ODataBoundActionMetadata>();
 
+    public List<ODataBoundActionMetadata> BoundFunctionMetadataList { get; set; } = new List<ODataBoundActionMetadata>();
+
     public IEnumerable<TypeInfo> GetAllControllerTypes()
     {
         yield return ControllerType;
         foreach (var boundActionMetadata in BoundActionMetadataList)
         {
-            yield return boundActionMetadata.BoundActionControllerType;
+            yield return boundActionMetadata.ControllerType;
+        }
+
+        foreach (var boundFunctionMetadata in BoundFunctionMetadataList)
+        {
+            yield return boundFunctionMetadata.ControllerType;
         }
     }
 }

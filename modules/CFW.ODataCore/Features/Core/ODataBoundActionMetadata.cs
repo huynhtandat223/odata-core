@@ -11,9 +11,9 @@ public class ODataBoundActionMetadata
 
     public required Type HandlerType { get; set; }
 
-    public required BoundActionAttribute BoundActionAttribute { get; set; }
+    public required BoundOperationAttribute BoundActionAttribute { get; set; }
 
-    public required TypeInfo BoundActionControllerType { get; set; }
+    public required TypeInfo ControllerType { get; set; }
 
     public required ODataMetadataContainer Container { get; set; }
 

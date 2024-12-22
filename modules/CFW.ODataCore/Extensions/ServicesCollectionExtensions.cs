@@ -37,7 +37,7 @@ public static class ServicesCollectionExtensions
         services.AddScoped(typeof(IPatchHandler<,>), typeof(DefaultPatchHandler<,>));
 
         services.AddScoped(typeof(IBoundActionRequestHandler<,,,>), typeof(DefaultBoundActionRequestHandler<,,,>));
-
+        services.AddScoped(typeof(IBoundOperationRequestHandler<,,,>), typeof(DefaultBoundOperationRequestHandler<,,,>));
 
         services.AddScoped(typeof(IUnboundActionRequestHandler<,>), typeof(DefaultActionRequestHandler<,>));
         services.AddScoped(typeof(IUnboundFunctionRequestHandler<,>), typeof(DefaultActionRequestHandler<,>));
@@ -55,6 +55,16 @@ public static class ServicesCollectionExtensions
 
                 services.AddScoped(serviceType, metadata.HandlerType);
             }
+
+            foreach (var metadata in container.EntityMetadataList
+                .SelectMany(x => x.BoundFunctionMetadataList))
+            {
+                var serviceType = metadata.ResponseType == typeof(Result)
+                    ? typeof(IODataActionHandler<>).MakeGenericType(metadata.RequestType)
+                    : typeof(IODataActionHandler<,>).MakeGenericType(metadata.RequestType, metadata.ResponseType);
+                services.AddScoped(serviceType, metadata.HandlerType);
+            }
+
 
             foreach (var metadata in container.UnBoundActions)
             {
@@ -96,6 +106,12 @@ public static class ServicesCollectionExtensions
 
                 if (boundActionMetadata.Any())
                     options.Conventions.Add(new BoundActionsConvention(boundActionMetadata));
+
+                var hasBoundFunctions = container.EntityMetadataList
+                    .SelectMany(x => x.BoundFunctionMetadataList)
+                    .Any();
+                if (hasBoundFunctions)
+                    options.Conventions.Add(new BoundOperationsConvention(container));
 
                 if (container.UnBoundActions.Any())
                     options.Conventions.Add(new UnBoundActionsConvention(container));

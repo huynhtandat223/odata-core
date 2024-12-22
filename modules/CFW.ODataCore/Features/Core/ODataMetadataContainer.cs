@@ -57,6 +57,29 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
                 }
             }
 
+            foreach (var operationMetadata in metadataEntity.BoundFunctionMetadataList)
+            {
+                var operationName = operationMetadata.BoundActionAttribute.Name;
+                var operation = _modelBuilder.Function(operationName);
+
+                operation.SetBindingParameter(BindingParameterConfiguration.DefaultBindingParameterName, entityType);
+                operation.Parameter(operationMetadata.RequestType, "body");
+
+                if (operationMetadata.ResponseType == typeof(Result))
+                    throw new InvalidOperationException("Functions can't use Result type");
+
+                if (operationMetadata.ResponseType.IsCommonGenericCollectionType())
+                {
+                    var elementType = operationMetadata.ResponseType.GetGenericArguments().Single();
+                    operation.ReturnsCollection(elementType);
+                }
+                else
+                {
+                    operation.Returns(operationMetadata.ResponseType);
+                }
+            }
+
+
             _entityMetadataList.Add(metadataEntity);
         }
     }
@@ -85,11 +108,6 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
             }
         }
         UnBoundActions = unboudActionMetadataList.ToList();
-    }
-
-    public class Templte
-    {
-        public int Test { get; set; }
     }
 
     internal void AddUnboundFunctions(List<UnboundFunctionMetadata> metadataList)
