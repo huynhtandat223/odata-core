@@ -1,11 +1,10 @@
 ﻿using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.EntitySets;
 using CFW.ODataCore.Features.Shared;
-using CFW.ODataCore.Features.UnBoundActions;
-using CFW.ODataCore.Features.UnboundFunctions;
+using CFW.ODataCore.Features.UnBoundOperations;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Core;
+namespace CFW.ODataCore.Core.MetadataResolvers;
 
 public abstract class BaseODataMetadataResolver
 {
@@ -23,8 +22,8 @@ public abstract class BaseODataMetadataResolver
         , string boundCollectionName)
     {
         var boundOperationAttr = typeof(BoundOperationAttribute);
-        var withResponseHandlerInterfaceType = typeof(IODataActionHandler<,>);
-        var nonResponseInterfaceType = typeof(IODataActionHandler<>);
+        var withResponseHandlerInterfaceType = typeof(IODataOperationHandler<,>);
+        var nonResponseInterfaceType = typeof(IODataOperationHandler<>);
 
         var handlerTypeInfos = CachedType
             .Where(x => x.GetCustomAttribute(boundOperationAttr) is not null)
@@ -115,61 +114,37 @@ public abstract class BaseODataMetadataResolver
         };
     }
 
-    private UnboundActionMetadata CreateUnboundActionMetadata(Type handlerType, UnboundActionAttribute unboundActionAttribute)
+    private UnboundOperationMetadata CreateUnboundOperationMetadata(Type handlerType
+        , UnboundOperationAttribute unboundOperationAttribute)
     {
-        var actionHandlerInterface = handlerType
+        var handlerInterface = handlerType
             .GetInterfaces()
             .SingleOrDefault(x => x.IsGenericType
-                && x.GetGenericTypeDefinition() == typeof(IODataActionHandler<>));
+                && x.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>));
 
-        if (actionHandlerInterface is null)
+        if (handlerInterface is null)
         {
-            actionHandlerInterface = handlerType
+            handlerInterface = handlerType
                 .GetInterfaces()
                 .SingleOrDefault(x => x.IsGenericType
-                    && x.GetGenericTypeDefinition() == typeof(IODataActionHandler<,>));
+                    && x.GetGenericTypeDefinition() == typeof(IODataOperationHandler<,>));
         }
 
-        if (actionHandlerInterface is null)
+        if (handlerInterface is null)
             throw new InvalidOperationException($"Handler type {handlerType} does not implement IODataActionHandler<> or IODataActionHandler<,>");
 
-        var args = actionHandlerInterface.GetGenericArguments();
+        var args = handlerInterface.GetGenericArguments();
         var requestType = args[0];
         var responseType = args.Count() == 1 ? typeof(Result) : args[1];
 
-        return new UnboundActionMetadata
+        return new UnboundOperationMetadata
         {
             HandlerType = handlerType,
             RequestType = requestType,
             ResponseType = responseType,
-            Attribute = unboundActionAttribute,
+            Attribute = unboundOperationAttribute,
             SetupAttributes = handlerType.GetCustomAttributes(),
-            ControllerType = typeof(UnboundActionsController<,>).MakeGenericType(requestType, responseType).GetTypeInfo(),
-        };
-    }
-
-    private UnboundFunctionMetadata CreateUnboundFunctionMetadata(Type handlerType, UnboundFunctionAttribute attribute)
-    {
-        var actionHandlerInterface = handlerType
-                .GetInterfaces()
-                .SingleOrDefault(x => x.IsGenericType
-                    && x.GetGenericTypeDefinition() == typeof(IODataActionHandler<,>));
-
-        if (actionHandlerInterface is null)
-            throw new InvalidOperationException($"Handler type {handlerType} does not implement IODataActionHandler<,>");
-
-        var args = actionHandlerInterface.GetGenericArguments();
-        var requestType = args[0];
-        var responseType = args[1];
-
-        return new UnboundFunctionMetadata
-        {
-            HandlerType = handlerType,
-            RequestType = requestType,
-            ResponseType = responseType,
-            RoutingAttribute = attribute,
-            SetupAttributes = handlerType.GetCustomAttributes(),
-            ControllerType = typeof(UnboundFunctionsController<,>).MakeGenericType(requestType, responseType).GetTypeInfo(),
+            ControllerType = typeof(UnboundOperationsController<,>).MakeGenericType(requestType, responseType).GetTypeInfo(),
         };
     }
 
@@ -193,15 +168,15 @@ public abstract class BaseODataMetadataResolver
             containers.Add(container);
         }
 
-        var unboudActionMetadataGroup = CachedType
-            .Where(x => x.GetCustomAttribute<UnboundActionAttribute>() is not null)
+        var unboudOperationMetadataGroup = CachedType
+            .Where(x => x.GetCustomAttribute<UnboundOperationAttribute>() is not null)
             .Select(x => new
             {
                 HandlerType = x,
-                UnboundActionAttribute = x.GetCustomAttribute<UnboundActionAttribute>()!,
+                Attribute = x.GetCustomAttribute<UnboundOperationAttribute>()!,
             })
-            .GroupBy(x => x.UnboundActionAttribute!.RouteRefix ?? _defaultPrefix);
-        foreach (var group in unboudActionMetadataGroup)
+            .GroupBy(x => x.Attribute!.RoutePrefix ?? _defaultPrefix);
+        foreach (var group in unboudOperationMetadataGroup)
         {
             var routePrefix = group.Key;
             var container = containers.FirstOrDefault(x => x.RoutePrefix == routePrefix);
@@ -211,35 +186,11 @@ public abstract class BaseODataMetadataResolver
                 containers.Add(container);
             }
 
-            var unboundActionMetadataList = group
-                .Select(x => CreateUnboundActionMetadata(x.HandlerType, x.UnboundActionAttribute))
+            var unboundOperationMetadataList = group
+                .Select(x => CreateUnboundOperationMetadata(x.HandlerType, x.Attribute))
                 .ToList();
 
-            container.AddUnboundActions(unboundActionMetadataList);
-        }
-
-        var unboundFunctionMetadataGroup = CachedType
-            .Where(x => x.GetCustomAttribute<UnboundFunctionAttribute>() is not null)
-            .Select(x => new
-            {
-                HandlerType = x,
-                UnboundFunctionAttribute = x.GetCustomAttribute<UnboundFunctionAttribute>()!,
-            })
-            .GroupBy(x => x.UnboundFunctionAttribute!.RoutePrefix ?? _defaultPrefix);
-        foreach (var group in unboundFunctionMetadataGroup)
-        {
-            var routePrefix = group.Key;
-            var container = containers.FirstOrDefault(x => x.RoutePrefix == routePrefix);
-            if (container is null)
-            {
-                container = new ODataMetadataContainer(routePrefix);
-                containers.Add(container);
-            }
-
-            var unboundFunctionMetadataList = group
-                .Select(x => CreateUnboundFunctionMetadata(x.HandlerType, x.UnboundFunctionAttribute))
-                .ToList();
-            container.AddUnboundFunctions(unboundFunctionMetadataList);
+            container.AddUnboundOperations(unboundOperationMetadataList);
         }
 
         containers.ForEach(x => x.Build());

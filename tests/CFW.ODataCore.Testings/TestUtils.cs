@@ -1,6 +1,4 @@
-﻿using CFW.ODataCore.Features.BoundOperations;
-using CFW.ODataCore.Features.UnBoundActions;
-using CFW.ODataCore.Features.UnboundFunctions;
+﻿using CFW.ODataCore.Features.UnBoundOperations;
 using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
 using System.Reflection;
@@ -37,13 +35,13 @@ public static class TestUtils
 
     public static string GetUnboundActionUrl(this Type handlerType, string? routePrefix = null)
     {
-        var unboundActionAttribute = handlerType.GetCustomAttribute<UnboundActionAttribute>();
+        var unboundActionAttribute = handlerType.GetCustomAttribute<UnboundOperationAttribute>();
         if (unboundActionAttribute == null)
         {
             throw new InvalidOperationException($"The handler type {handlerType.Name} does not have UnboundActionAttribute");
         }
 
-        return $"{routePrefix ?? unboundActionAttribute.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{unboundActionAttribute.Name}";
+        return $"{routePrefix ?? unboundActionAttribute.RoutePrefix ?? Constants.DefaultODataRoutePrefix}/{unboundActionAttribute.Name}";
     }
 
     public static string GetUnboundFunctionUrl(this Type handlerType, object requestParams, string? routePrefix = null)

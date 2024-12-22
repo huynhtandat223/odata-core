@@ -2,11 +2,10 @@
 using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
-using CFW.ODataCore.Features.BoundOperations;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
 
-namespace CFW.ODataCore.Testings.TestCases.Actions;
+namespace CFW.ODataCore.Testings.TestCases.Functions;
 
 public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
@@ -31,7 +30,7 @@ public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFacto
     }
 
     [BoundFunction<NonKeyBoundFunctionViewModel, Guid>(nameof(NonKeyFunctionHandler))]
-    public class NonKeyFunctionHandler : IODataActionHandler<Request, Response>
+    public class NonKeyFunctionHandler : IODataOperationHandler<Request, Response>
     {
         private readonly List<object> _requests;
 
@@ -74,12 +73,12 @@ public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFacto
     public async Task Request_NonKeyFunction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<,>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<,>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 
         var client = _factory.CreateClient();
-        var actionUrl = TestUtils.GetNonKeyFunctionUrl(resourceType, actionHandlerType, request);
+        var actionUrl = resourceType.GetNonKeyFunctionUrl(actionHandlerType, request);
 
         var response = await client.GetAsync(actionUrl);
         response.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -7,7 +7,7 @@ namespace CFW.ODataCore.Features.BoundOperations;
 public class BoundOperationsController<TODataViewModel, TKey, TRequest, TResponse> : ODataController
     where TODataViewModel : class, IODataViewModel<TKey>
 {
-    public async Task<ActionResult> ExecuteFunction(
+    public async Task<ActionResult> ExecuteBoundFunction(
         [FromServices] IBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse> requestHandler,
         [FromQuery] TRequest request, CancellationToken cancellationToken)
     {
@@ -15,7 +15,7 @@ public class BoundOperationsController<TODataViewModel, TKey, TRequest, TRespons
         return result;
     }
 
-    public async Task<ActionResult> ExecuteAction(
+    public async Task<ActionResult> ExecuteBoundAction(
         [FromServices] IBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse> requestHandler,
         [BodyBinder] TRequest request, CancellationToken cancellationToken)
     {

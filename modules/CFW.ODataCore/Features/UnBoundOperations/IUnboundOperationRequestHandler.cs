@@ -1,18 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 
-namespace CFW.ODataCore.Features.BoundOperations;
+namespace CFW.ODataCore.Features.UnBoundOperations;
 
-public interface IBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse>
-    where TODataViewModel : class, IODataViewModel<TKey>
+public interface IUnboundOperationRequestHandler<TRequest, TResponse>
 {
     Task<ActionResult> Handle(ODataController controller
         , TRequest request, CancellationToken cancellationToken);
 }
 
-public class DefaultBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse>
-    : IBoundOperationRequestHandler<TODataViewModel, TKey, TRequest, TResponse>
-    where TODataViewModel : class, IODataViewModel<TKey>
+public class DefaultUnboundOperationRequestHandler<TRequest, TResponse>
+    : IUnboundOperationRequestHandler<TRequest, TResponse>
 {
     public async Task<ActionResult> Handle(ODataController controller
         , TRequest request, CancellationToken cancellationToken)
@@ -20,3 +18,5 @@ public class DefaultBoundOperationRequestHandler<TODataViewModel, TKey, TRequest
         return await controller.Execute<TRequest, TResponse>(request, cancellationToken);
     }
 }
+
+

@@ -1,7 +1,7 @@
 ﻿using CFW.ODataCore.Features.BoundOperations;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Core;
+namespace CFW.ODataCore.Core;
 
 public class ODataBoundOperationMetadata
 {

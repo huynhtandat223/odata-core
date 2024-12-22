@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.Features.Core;
+﻿using CFW.ODataCore.Core;
 
 namespace CFW.ODataCore.Features.BoundOperations;
 

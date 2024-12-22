@@ -1,9 +1,9 @@
-﻿using CFW.ODataCore.Features.UnBoundActions;
+﻿using CFW.ODataCore.Features.UnBoundOperations;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Core;
+namespace CFW.ODataCore.Core;
 
-public class UnboundActionMetadata
+public class UnboundOperationMetadata
 {
     public required Type RequestType { get; set; }
 
@@ -11,7 +11,7 @@ public class UnboundActionMetadata
 
     public required Type HandlerType { get; set; }
 
-    public required UnboundActionAttribute Attribute { get; set; }
+    public required UnboundOperationAttribute Attribute { get; set; }
 
     public required IEnumerable<Attribute> SetupAttributes { get; set; }
 

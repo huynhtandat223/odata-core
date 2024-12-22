@@ -28,7 +28,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     }
 
     [BoundAction<KeyedBoundActionViewModel, Guid>(nameof(KeyedActionHandler))]
-    public class KeyedActionHandler : IODataActionHandler<KeyedActionRequest>
+    public class KeyedActionHandler : IODataOperationHandler<KeyedActionRequest>
     {
         private readonly List<object> _requests;
         public KeyedActionHandler(List<object> requests)
@@ -65,7 +65,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task Request_KeyedAction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
         var routeId = Guid.NewGuid();
@@ -88,7 +88,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task Request_NonKeyAction_WrapBody_ShouldSuccess(Type resourceType, Type actionHandlerType, string bodyPropValue)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
             .GetGenericArguments().First();
         var routeId = Guid.NewGuid();
 

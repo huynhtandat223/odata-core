@@ -1,10 +1,10 @@
-﻿using CFW.ODataCore.Features.UnboundFunctions;
+﻿using CFW.ODataCore.Core.MetadataResolvers;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Core;
+namespace CFW.ODataCore.Core;
 
 public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvider
 {
@@ -12,9 +12,7 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
     private readonly List<ODataMetadataEntity> _entityMetadataList = new List<ODataMetadataEntity>();
 
-    public List<UnboundActionMetadata> UnBoundActions { get; private set; } = new List<UnboundActionMetadata>();
-
-    public List<UnboundFunctionMetadata> UnboundFunctions { get; private set; } = new List<UnboundFunctionMetadata>();
+    public List<UnboundOperationMetadata> UnBoundOperationMetadataList { get; private set; } = new List<UnboundOperationMetadata>();
 
     public IReadOnlyCollection<ODataMetadataEntity> EntityMetadataList => _entityMetadataList.AsReadOnly();
 
@@ -89,53 +87,47 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         }
     }
 
-    internal void AddUnboundActions(List<UnboundActionMetadata> unboudActionMetadataList)
+    internal void AddUnboundOperations(List<UnboundOperationMetadata> unboundOperations)
     {
-        if (!unboudActionMetadataList.Any())
+        if (!unboundOperations.Any())
             return;
 
-        foreach (var unBoundActionMetadata in unboudActionMetadataList)
+        foreach (var operation in unboundOperations)
         {
-            var action = _modelBuilder.Action(unBoundActionMetadata.Attribute.Name);
-            action.Parameter(unBoundActionMetadata.RequestType, "body");
-
-            if (unBoundActionMetadata.ResponseType == typeof(Result))
-                continue;
-
-            if (unBoundActionMetadata.ResponseType.IsCommonGenericCollectionType())
+            if (operation.Attribute.OperationType == OperationType.Action)
             {
-                var elementType = unBoundActionMetadata.ResponseType.GetGenericArguments().Single();
-                action.ReturnsCollection(elementType);
+                var action = _modelBuilder.Action(operation.Attribute.Name);
+                action.Parameter(operation.RequestType, "body");
+                if (operation.ResponseType == typeof(Result))
+                    continue;
+                if (operation.ResponseType.IsCommonGenericCollectionType())
+                {
+                    var elementType = operation.ResponseType.GetGenericArguments().Single();
+                    action.ReturnsCollection(elementType);
+                }
+                else
+                {
+                    action.Returns(operation.ResponseType);
+                }
             }
             else
             {
-                action.Returns(unBoundActionMetadata.ResponseType);
+                var function = _modelBuilder.Function(operation.Attribute.Name);
+                function.Parameter(operation.RequestType, "body");
+                if (operation.ResponseType == typeof(Result))
+                    continue;
+                if (operation.ResponseType.IsCommonGenericCollectionType())
+                {
+                    var elementType = operation.ResponseType.GetGenericArguments().Single();
+                    function.ReturnsCollection(elementType);
+                }
+                else
+                {
+                    function.Returns(operation.ResponseType);
+                }
             }
         }
-        UnBoundActions = unboudActionMetadataList.ToList();
-    }
-
-    internal void AddUnboundFunctions(List<UnboundFunctionMetadata> metadataList)
-    {
-        if (!metadataList.Any())
-            return;
-
-        foreach (var metadata in metadataList)
-        {
-            var function = _modelBuilder.Function(metadata.RoutingAttribute.Name);
-            function.Parameter(metadata.RequestType, "body");
-
-            if (metadata.ResponseType.IsCommonGenericCollectionType())
-            {
-                var elementType = metadata.ResponseType.GetGenericArguments().Single();
-                function.ReturnsCollection(elementType);
-            }
-            else
-            {
-                function.Returns(metadata.ResponseType);
-            }
-        }
-        UnboundFunctions = metadataList.ToList();
+        UnBoundOperationMetadataList = unboundOperations.ToList();
     }
 
     private IEdmModel? _edmModel;
@@ -163,14 +155,9 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
             yield return controllerType;
         }
 
-        foreach (var unboundAction in UnBoundActions)
+        foreach (var unboundOperation in UnBoundOperationMetadataList)
         {
-            yield return unboundAction.ControllerType;
-        }
-
-        foreach (var unboundFunction in UnboundFunctions)
-        {
-            yield return unboundFunction.ControllerType;
+            yield return unboundOperation.ControllerType;
         }
     }
 }

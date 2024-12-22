@@ -1,45 +1,50 @@
-﻿using CFW.ODataCore.Features.Core;
+﻿using CFW.ODataCore.Core;
 using CFW.ODataCore.Features.Shared;
-using CFW.ODataCore.Features.UnBoundActions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 
-namespace CFW.ODataCore.Features.UnboundFunctions;
+namespace CFW.ODataCore.Features.UnBoundOperations;
 
-public class UnboundFunctionsConvention : IControllerModelConvention
+public class UnboundOperationsConvention : IControllerModelConvention
 {
     private readonly ODataMetadataContainer _container;
 
-    public UnboundFunctionsConvention(ODataMetadataContainer container)
+    public UnboundOperationsConvention(ODataMetadataContainer container)
     {
         _container = container;
     }
 
     public void Apply(ControllerModel controller)
     {
-        var metadata = _container.UnboundFunctions.FirstOrDefault(x => x.ControllerType == controller.ControllerType);
+        var metadata = _container.UnBoundOperationMetadataList.FirstOrDefault(x => x.ControllerType == controller.ControllerType);
         if (metadata == null)
             return;
 
         var routePrefix = _container.RoutePrefix;
         var edmModel = _container.EdmModel;
 
-        var name = metadata.RoutingAttribute.Name;
+        var name = metadata.Attribute.Name;
 
-        var edmAction = edmModel.SchemaElements
-            .OfType<IEdmFunction>()
+        var edmOperation = edmModel.SchemaElements
+            .OfType<IEdmOperation>()
             .Single(x => !x.IsBound && x.Name == name);
 
         var requestType = metadata.RequestType;
+        var oprationType = metadata.Attribute.OperationType;
 
-        var controlerAction = controller.Actions
-                .Single(a => a.ActionName == nameof(UnboundFunctionsController<object, object>.Execute));
-        var template = new ODataPathTemplate(new UnboundOperationTemplate(edmAction));
+        var controlerAction = oprationType == OperationType.Action
+            ? controller.Actions
+                .Single(a => a.ActionName == nameof(UnboundOperationsController<object, object>.ExecuteUnboundAction))
+            : controller.Actions
+                .Single(a => a.ActionName == nameof(UnboundOperationsController<object, object>.ExecuteUnboundFunction));
 
-        controlerAction.AddSelector(HttpMethod.Get.Method, routePrefix, edmModel, template);
+        var template = new ODataPathTemplate(new UnboundOperationTemplate(edmOperation));
+
+        var httpMethod = oprationType == OperationType.Action ? HttpMethod.Post.Method : HttpMethod.Get.Method;
+        controlerAction.AddSelector(httpMethod, routePrefix, edmModel, template);
 
         var authAttr = metadata.SetupAttributes.OfType<ODataAuthorizeAttribute>().SingleOrDefault();
         var anonymousAttr = metadata.SetupAttributes.OfType<ODataAllowAnonymousAttribute>().SingleOrDefault();

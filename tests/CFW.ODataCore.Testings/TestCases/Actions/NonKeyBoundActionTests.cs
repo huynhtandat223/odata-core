@@ -23,7 +23,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
     }
 
     [BoundAction<NonKeyBoundActionViewModel, Guid>(nameof(NonKeyActionHandler))]
-    public class NonKeyActionHandler : IODataActionHandler<NonKeyActionRequest>
+    public class NonKeyActionHandler : IODataOperationHandler<NonKeyActionRequest>
     {
         private readonly List<object> _requests;
 
@@ -61,7 +61,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
     public async Task Request_NonKeyAction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 
@@ -81,7 +81,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
     {
         var client = _factory.CreateClient();
         var requestType = actionHandlerType.GetInterfaces()
-                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<>))
+                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
                     .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 

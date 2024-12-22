@@ -2,7 +2,6 @@
 using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
-using CFW.ODataCore.Features.Shared;
 using CFW.ODataCore.Features.UnBoundActions;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
@@ -17,7 +16,7 @@ public class UnboundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     }
 
     [UnboundAction(nameof(UnboundActionHandler))]
-    public class UnboundActionHandler : IODataActionHandler<UnboundActionRequest>
+    public class UnboundActionHandler : IODataOperationHandler<UnboundActionRequest>
     {
         private readonly List<object> _requests;
 
@@ -55,7 +54,7 @@ public class UnboundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task Request_NonKeyAction_ShouldSuccess(Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataActionHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 

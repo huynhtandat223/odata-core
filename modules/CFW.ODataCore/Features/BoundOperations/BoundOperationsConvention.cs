@@ -1,4 +1,4 @@
-﻿using CFW.ODataCore.Features.Core;
+﻿using CFW.ODataCore.Core;
 using CFW.ODataCore.Features.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -50,9 +50,9 @@ public class BoundOperationsConvention : IControllerModelConvention
 
         var controllerActionMethod = metadata.OperationType == OperationType.Action
             ? controller.Actions
-                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteAction))
+                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteBoundAction))
             : controller.Actions
-                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteFunction));
+                .Single(a => a.ActionName == nameof(BoundOperationsController<RefODataViewModel, int, object, object>.ExecuteBoundFunction));
 
         var httpMethod = metadata.OperationType == OperationType.Action ? HttpMethod.Post.Method : HttpMethod.Get.Method;
         controllerActionMethod.AddSelector(httpMethod, routePrefix, edmModel, template);

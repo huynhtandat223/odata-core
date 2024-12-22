@@ -1,5 +1,4 @@
-﻿
-using CFW.ODataCore.Features.Core;
+﻿using CFW.ODataCore.Core.MetadataResolvers;
 
 namespace CFW.ODataCore.Testings;
 

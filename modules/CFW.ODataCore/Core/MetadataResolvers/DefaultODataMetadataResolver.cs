@@ -1,10 +1,9 @@
 ﻿using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.EntitySets;
-using CFW.ODataCore.Features.UnBoundActions;
-using CFW.ODataCore.Features.UnboundFunctions;
+using CFW.ODataCore.Features.UnBoundOperations;
 using System.Reflection;
 
-namespace CFW.ODataCore.Features.Core;
+namespace CFW.ODataCore.Core.MetadataResolvers;
 
 public class DefaultODataMetadataResolver : BaseODataMetadataResolver
 {
@@ -13,8 +12,7 @@ public class DefaultODataMetadataResolver : BaseODataMetadataResolver
         .SelectMany(a => a.GetTypes())
         .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null
             || x.GetCustomAttribute<BoundOperationAttribute>() is not null
-            || x.GetCustomAttribute<UnboundActionAttribute>() is not null
-            || x.GetCustomAttribute<UnboundFunctionAttribute>() is not null)
+            || x.GetCustomAttribute<UnboundOperationAttribute>() is not null)
         .ToList();
 
     public DefaultODataMetadataResolver(string defaultPrefix) : base(defaultPrefix)

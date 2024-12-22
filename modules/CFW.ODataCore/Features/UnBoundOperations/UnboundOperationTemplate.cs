@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 
-namespace CFW.ODataCore.Features.UnBoundActions;
+namespace CFW.ODataCore.Features.UnBoundOperations;
 
 public class UnboundOperationTemplate : ODataSegmentTemplate
 {
