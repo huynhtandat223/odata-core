@@ -3,31 +3,31 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace CFW.ODataCore.Features.EntitySets.Handlers;
+namespace CFW.ODataCore.Features.EntityCreate;
 
-public interface ICreateHandler<TODataViewModel, TKey>
-    where TODataViewModel : class, IODataViewModel<TKey>
-{
-    Task<Result<TODataViewModel>> Create(TODataViewModel model, CancellationToken cancellationToken);
-}
-
-public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TODataViewModel, TKey>
+public class EntityCreateDefaultHandler<TODataViewModel, TKey> : IEntityCreateHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>
 {
     private readonly IODataDbContextProvider _dbContextProvider;
     private readonly ILogger _logger;
     private readonly IActionContextAccessor _actionContextAccessor;
+    private readonly BoundAPIMetadata _metadataEntity;
+    private readonly IMapper _mapper;
 
-    public DefaultCreateHandler(IODataDbContextProvider dbContextProvider
-        , ILogger<DefaultCreateHandler<TODataViewModel, TKey>> logger
-        , IActionContextAccessor actionContextAccessor)
+    public EntityCreateDefaultHandler(IODataDbContextProvider dbContextProvider
+        , ILogger<EntityCreateDefaultHandler<TODataViewModel, TKey>> logger
+        , IActionContextAccessor actionContextAccessor
+        , IMapper mapper
+        , BoundAPIMetadata metadataEntity)
     {
         _dbContextProvider = dbContextProvider;
         _logger = logger;
         _actionContextAccessor = actionContextAccessor;
+        _mapper = mapper;
+        _metadataEntity = metadataEntity;
     }
 
-    public async Task<Result<TODataViewModel>> Create(TODataViewModel model, CancellationToken cancellationToken)
+    public async Task<Result<TODataViewModel>> Handle(TODataViewModel model, CancellationToken cancellationToken)
     {
         if (_actionContextAccessor.ActionContext is not null && _actionContextAccessor.ActionContext.ModelState is not null)
         {
@@ -40,11 +40,24 @@ public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TOData
             return model.Failed("Model is null.")!;
 
         var db = _dbContextProvider.GetContext();
-        db.ChangeTracker.TrackGraph(model, async rootEntity =>
+        var dbSetType = _metadataEntity.DbSetType ?? typeof(TODataViewModel);
+
+        var dbModel = typeof(TODataViewModel) == dbSetType
+            ? model
+            : _mapper.Map(model, dbSetType);
+
+        if (dbModel is null)
+            this.Failed("Mapping failed.");
+
+        var entityType = db.Model.FindEntityType(dbModel!.GetType());
+        if (entityType is null)
+            throw new InvalidOperationException("Entity type not found.");
+
+        db.ChangeTracker.TrackGraph(dbModel!, async rootEntity =>
         {
             try
             {
-                await TrackGraph(db, model, rootEntity, cancellationToken);
+                await TrackGraph(db, dbModel!, rootEntity, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -57,9 +70,10 @@ public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TOData
         return model.Created();
     }
 
-    private async Task TrackGraph(DbContext db, TODataViewModel model, EntityEntryGraphNode rootEntity, CancellationToken cancellationToken)
+    private async Task TrackGraph(DbContext db
+        , object dbModel, EntityEntryGraphNode rootEntity, CancellationToken cancellationToken)
     {
-        if (rootEntity.Entry.Entity != model)
+        if (rootEntity.Entry.Entity != dbModel)
             return;
 
         rootEntity.Entry.State = EntityState.Added;

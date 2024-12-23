@@ -1,7 +1,4 @@
-﻿using CFW.ODataCore.Features.BoundOperations;
-using CFW.ODataCore.Features.EntitySets;
-using CFW.ODataCore.Features.UnBoundOperations;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace CFW.ODataCore.Core.MetadataResolvers;
 
@@ -10,10 +7,7 @@ public class DefaultODataMetadataResolver : BaseODataMetadataResolver
     private static readonly List<Type> _cachedType = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
         .SelectMany(a => a.GetTypes())
-        .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null
-            || x.GetCustomAttribute<BoundOperationAttribute>() is not null
-            || x.GetCustomAttribute<ODataAPIRoutingAttribute>() is not null
-            || x.GetCustomAttribute<UnboundOperationAttribute>() is not null)
+        .Where(x => x.GetCustomAttributes<ODataAPIRoutingAttribute>().Any())
         .ToList();
 
     public DefaultODataMetadataResolver(string defaultPrefix) : base(defaultPrefix)

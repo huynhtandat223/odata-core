@@ -1,8 +1,6 @@
 ﻿using CFW.ODataCore.Core.MetadataResolvers;
 using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.EFCore;
-using CFW.ODataCore.Features.EntityCreate;
-using CFW.ODataCore.Features.EntitySets.Handlers;
 using CFW.ODataCore.Features.UnBoundOperations;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.OData;
@@ -29,11 +27,6 @@ public static class ServicesCollectionExtensions
         var containers = oDataTypeResolver.CreateContainers();
 
         var services = mvcBuilder.Services;
-        services.AddScoped(typeof(IRequestHandler<,>), typeof(DefaultRequestHandler<,>));
-        services.AddScoped(typeof(IQueryHandler<,>), typeof(DefaultQueryHandler<,>));
-        services.AddScoped(typeof(IGetByKeyHandler<,>), typeof(DefaultGetByKeyHandler<,>));
-        services.AddScoped(typeof(IDeleteHandler<,>), typeof(DefaultDeleteHandler<,>));
-        services.AddScoped(typeof(IPatchHandler<,>), typeof(DefaultPatchHandler<,>));
 
         services.AddScoped(typeof(IBoundOperationRequestHandler<,,,>), typeof(DefaultBoundOperationRequestHandler<,,,>));
         services.AddScoped(typeof(IUnboundOperationRequestHandler<,>), typeof(DefaultUnboundOperationRequestHandler<,>));
@@ -43,19 +36,7 @@ public static class ServicesCollectionExtensions
             var metadataList = container.APIMetadataList;
             foreach (var metadata in metadataList)
             {
-                if (metadata is BoundAPIMetadata boundAPIMetadata)
-                {
-                    var viewModelType = boundAPIMetadata.ViewModelType;
-                    var keyType = boundAPIMetadata.KeyType;
-                    var serviceType = typeof(IEntityCreateHandler<,>).MakeGenericType(viewModelType, keyType);
-                    var implementationType = typeof(DefaultEntityCreateHandler<,>).MakeGenericType(viewModelType, keyType);
-
-                    services.AddScoped(serviceType, s => ActivatorUtilities.CreateInstance(s, implementationType, metadata));
-                    continue;
-                }
-                throw new NotImplementedException();
-                //TODO: need use keyed service
-
+                metadata.AddDependencies(services);
             }
 
             //var boundOperationMetadata = container.EntityMetadataList
@@ -97,7 +78,7 @@ public static class ServicesCollectionExtensions
         {
             foreach (var container in containers)
             {
-                options.Conventions.Add(new EntityCreateConvention(container));
+                options.Conventions.Add(new EntityRoutingConvention(container));
 
                 //options.Conventions.Add(new EntitySetsConvention(container));
 

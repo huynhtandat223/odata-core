@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 
-namespace CFW.ODataCore.Features.EntitySets;
+namespace CFW.ODataCore.Core;
 
-internal class EntitySetsTemplate : ODataSegmentTemplate
+internal class ODataEntitiesTemplate : ODataSegmentTemplate
 {
     private readonly EntitySetSegment _entitySetSegment;
     private readonly bool _ignoreKeyTemplates;
 
-    public EntitySetsTemplate(IEdmEntitySet edmEntitySet, bool ignoreKeyTemplates)
+    public ODataEntitiesTemplate(IEdmEntitySet edmEntitySet, bool ignoreKeyTemplates)
     {
         _entitySetSegment = new EntitySetSegment(edmEntitySet);
         _ignoreKeyTemplates = ignoreKeyTemplates;

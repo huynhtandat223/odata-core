@@ -1,21 +1,16 @@
 ﻿using CFW.ODataCore.Features.EFCore;
 
-namespace CFW.ODataCore.Features.EntitySets.Handlers;
+namespace CFW.ODataCore.Features.EntityQuery;
 
-public interface IDeleteHandler<TODataViewModel, TKey>
-{
-    Task<Result> Delete(TKey key, CancellationToken cancellationToken);
-}
-
-public class DefaultDeleteHandler<TODataViewModel, TKey> : IDeleteHandler<TODataViewModel, TKey>
+public class EntityDeleteDefaultHandler<TODataViewModel, TKey> : IEntityDeleteHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>
 {
     private readonly IODataDbContextProvider _dbContextProvider;
-    public DefaultDeleteHandler(IODataDbContextProvider dbContextProvider)
+    public EntityDeleteDefaultHandler(IODataDbContextProvider dbContextProvider)
     {
         _dbContextProvider = dbContextProvider;
     }
-    public async Task<Result> Delete(TKey key, CancellationToken cancellationToken)
+    public async Task<Result> Handle(TKey key, CancellationToken cancellationToken)
     {
         var db = _dbContextProvider.GetContext();
         var entity = await db.FindAsync<TODataViewModel>([key], cancellationToken);

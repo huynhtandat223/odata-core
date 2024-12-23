@@ -1,6 +1,6 @@
 ﻿namespace CFW.ODataCore.Core;
 
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
 public abstract class ODataAPIRoutingAttribute : Attribute
 {
     public string Name { get; set; }
@@ -23,15 +23,21 @@ public abstract class BoundEntityRoutingAttribute : ODataAPIRoutingAttribute
 {
     public Type? DbSetType { get; set; }
 
-    public Type ViewModelType { get; set; }
+    public Type ViewModelType { get; set; } = default!;
 
-    public Type KeyType { set; get; }
+    public Type KeyType { set; get; } = default!;
 
     public BoundEntityRoutingAttribute(string name, ODataMethod method, Type viewModelType, Type keyType)
         : base(name, method)
     {
         ViewModelType = viewModelType;
         KeyType = keyType;
+    }
+
+    public BoundEntityRoutingAttribute(string name, ODataMethod method)
+        : base(name, method)
+    {
+
     }
 }
 

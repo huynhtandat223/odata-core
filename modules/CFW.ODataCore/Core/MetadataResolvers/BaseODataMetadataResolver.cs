@@ -1,5 +1,6 @@
 ﻿using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.EntityCreate;
+using CFW.ODataCore.Features.EntityQuery;
 using CFW.ODataCore.Features.EntitySets;
 using CFW.ODataCore.Features.Shared;
 using CFW.ODataCore.Features.UnBoundOperations;
@@ -99,7 +100,7 @@ public abstract class BaseODataMetadataResolver
     /// <summary>
     /// Create metadata entity for the given type
     /// </summary>
-    /// <param name="applyType">The type apply ODataAPIRoutingAttribute</param>
+    /// <param name="applyType">The type apply ODataAPIRoutingAttribute, can be VIewModel or Handler</param>
     /// <param name="routingAttribute"></param>
     /// <param name="container"></param>
     /// <returns></returns>
@@ -108,43 +109,52 @@ public abstract class BaseODataMetadataResolver
     {
         if (routingAttribute is BoundEntityRoutingAttribute boundEntityRoutingAttribute)
         {
+            var viewModelType = boundEntityRoutingAttribute.ViewModelType;
+            var keyType = boundEntityRoutingAttribute.KeyType;
+
+            if (viewModelType is null)
+            {
+                var odataViewModelInterface = applyType.GetInterfaces()
+                    .Single(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
+
+                viewModelType = applyType;
+                keyType = odataViewModelInterface.GetGenericArguments().Single();
+            }
+
+            var controlerInfoByMethod = new Dictionary<ODataMethod, (string ActionName, Type ControllerType)>
+            {
+                [ODataMethod.PostCreate] = (nameof(EntityCreateController<RefODataViewModel, int>.Post)
+                    , typeof(EntityCreateController<,>).MakeGenericType(viewModelType, keyType)),
+
+                [ODataMethod.Query] = (nameof(EntityQueryController<RefODataViewModel, int>.Query)
+                    , typeof(EntityQueryController<,>).MakeGenericType(viewModelType, keyType)),
+
+                [ODataMethod.GetByKey] = (nameof(EntityGetByKeyController<RefODataViewModel, int>.GetByKey)
+                    , typeof(EntityGetByKeyController<,>).MakeGenericType(viewModelType, keyType)),
+
+                [ODataMethod.PatchUpdate] = (nameof(EntityPatchController<RefODataViewModel, int>.Patch)
+                    , typeof(EntityPatchController<,>).MakeGenericType(viewModelType, keyType)),
+
+                [ODataMethod.Delete] = (nameof(EntityDeleteController<RefODataViewModel, int>.Delete)
+                    , typeof(EntityDeleteController<,>).MakeGenericType(viewModelType, keyType)),
+            };
+
             return new BoundAPIMetadata
             {
+                Method = routingAttribute.Method,
                 DbSetType = boundEntityRoutingAttribute.DbSetType,
                 RoutingAttribute = routingAttribute,
                 Container = container,
-                ViewModelType = boundEntityRoutingAttribute.ViewModelType,
-                KeyType = boundEntityRoutingAttribute.KeyType,
-                ControllerType = typeof(EntityCreateController<,>)
-                    .MakeGenericType(applyType, boundEntityRoutingAttribute.KeyType).GetTypeInfo(),
-                BoundOperationMetadataList = GetBoundOperationMetadataList(applyType, boundEntityRoutingAttribute.KeyType, container, routingAttribute.Name),
+                ViewModelType = viewModelType,
+                KeyType = keyType,
+                ControllerActionMethodName = controlerInfoByMethod[routingAttribute.Method].ActionName,
+                ControllerType = controlerInfoByMethod[routingAttribute.Method].ControllerType.GetTypeInfo(),
+                BoundOperationMetadataList = GetBoundOperationMetadataList(viewModelType, keyType, container, routingAttribute.Name),
                 SetupAttributes = applyType.GetCustomAttributes(),
             };
         }
 
         throw new NotImplementedException();
-    }
-
-    [Obsolete]
-    private ODataMetadataEntity CreateMetadataEntity(Type viewModelType, ODataEntitySetAttribute routingAttribute
-        , ODataMetadataContainer container)
-    {
-        var odataViewModelInterface = viewModelType.GetInterfaces()
-            .Single(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IODataViewModel<>));
-        var keyType = odataViewModelInterface.GetGenericArguments().Single();
-
-        return new ODataMetadataEntity
-        {
-            DbSetType = viewModelType,
-            DataRoutingAttribute = routingAttribute,
-            Container = container,
-            ViewModelType = viewModelType,
-            KeyType = keyType,
-            ControllerType = typeof(EntitySetsController<,>).MakeGenericType(viewModelType, keyType).GetTypeInfo(),
-            Name = routingAttribute.Name,
-            BoundOperationMetadataList = GetBoundOperationMetadataList(viewModelType, keyType, container, routingAttribute.Name),
-            SetupAttributes = viewModelType.GetCustomAttributes(),
-        };
     }
 
     private UnboundOperationMetadata CreateUnboundOperationMetadata(Type handlerType
@@ -185,8 +195,7 @@ public abstract class BaseODataMetadataResolver
     {
         var containers = new List<ODataMetadataContainer>();
         var routePrefixes = CachedType
-            .Where(x => x.GetCustomAttribute<ODataAPIRoutingAttribute>() is not null)
-            .Select(x => new { ApplyType = x, RoutingAttribute = x.GetCustomAttribute<ODataAPIRoutingAttribute>()! })
+            .SelectMany(x => x.GetCustomAttributes<ODataAPIRoutingAttribute>().Select(c => new { ApplyType = x, RoutingAttribute = c }))
             .GroupBy(x => x.RoutingAttribute!.RouteRefix ?? _defaultPrefix);
 
         foreach (var group in routePrefixes)
@@ -225,56 +234,6 @@ public abstract class BaseODataMetadataResolver
 
         //    container.AddUnboundOperations(unboundOperationMetadataList);
         //}
-
-        containers.ForEach(x => x.Build());
-        return containers;
-    }
-
-    [Obsolete]
-    public IEnumerable<ODataMetadataContainer> CreateTContainers()
-    {
-        var containers = new List<ODataMetadataContainer>();
-        var routePrefixes = CachedType
-            .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null)
-            .Select(x => new { ViewModelType = x, RoutingAttribute = x.GetCustomAttribute<ODataEntitySetAttribute>()! })
-            .GroupBy(x => x.RoutingAttribute!.RouteRefix ?? _defaultPrefix);
-
-        foreach (var group in routePrefixes)
-        {
-            var routePrefix = group.Key;
-            var container = new ODataMetadataContainer(routePrefix);
-
-            var oDataTypes = group
-                .Select(x => CreateMetadataEntity(x.ViewModelType, x.RoutingAttribute, container));
-
-            container.AddEntitySets(routePrefix, this, oDataTypes);
-            containers.Add(container);
-        }
-
-        var unboudOperationMetadataGroup = CachedType
-            .Where(x => x.GetCustomAttribute<UnboundOperationAttribute>() is not null)
-            .Select(x => new
-            {
-                HandlerType = x,
-                Attribute = x.GetCustomAttribute<UnboundOperationAttribute>()!,
-            })
-            .GroupBy(x => x.Attribute!.RoutePrefix ?? _defaultPrefix);
-        foreach (var group in unboudOperationMetadataGroup)
-        {
-            var routePrefix = group.Key;
-            var container = containers.FirstOrDefault(x => x.RoutePrefix == routePrefix);
-            if (container is null)
-            {
-                container = new ODataMetadataContainer(routePrefix);
-                containers.Add(container);
-            }
-
-            var unboundOperationMetadataList = group
-                .Select(x => CreateUnboundOperationMetadata(x.HandlerType, x.Attribute))
-                .ToList();
-
-            container.AddUnboundOperations(unboundOperationMetadataList);
-        }
 
         containers.ForEach(x => x.Build());
         return containers;

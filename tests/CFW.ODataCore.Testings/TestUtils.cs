@@ -10,10 +10,14 @@ public static class TestUtils
 {
     public static string GetBaseUrl(this Type resourceType, string? routePrefix = null)
     {
-        var odataRouting = resourceType.GetCustomAttribute<ODataEntitySetAttribute>();
-        if (odataRouting == null)
+        var odataRouting = resourceType
+            .GetCustomAttributes<ODataAPIRoutingAttribute>()
+            .GroupBy(x => new { x.Name, x.RouteRefix })
+            .Select(x => x.Key)
+            .SingleOrDefault();
+        if (odataRouting is null)
         {
-            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have ODataEntitySetAttribute");
+            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have ODataAPIRoutingAttribute");
         }
 
         return $"{routePrefix ?? odataRouting.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
