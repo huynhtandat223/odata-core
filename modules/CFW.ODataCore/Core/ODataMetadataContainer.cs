@@ -16,6 +16,8 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
     public IReadOnlyCollection<ODataMetadataEntity> EntityMetadataList => _entityMetadataList.AsReadOnly();
 
+    public IEnumerable<APIMetadata> APIMetadataList { get; private set; } = Array.Empty<APIMetadata>();
+
     public string RoutePrefix { get; }
 
     public override string Name => "ODataMetadataContainer";
@@ -26,7 +28,32 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
         RoutePrefix = routePrefix;
     }
 
-    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver, IEnumerable<ODataMetadataEntity> metadataEntities)
+    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver
+        , IEnumerable<APIMetadata> metadataList)
+    {
+        foreach (var apiMetadataItem in metadataList)
+        {
+            if (apiMetadataItem is BoundAPIMetadata boundAPIMetadata)
+            {
+                var entityType = _modelBuilder.AddEntityType(boundAPIMetadata.ViewModelType);
+                _modelBuilder.AddEntitySet(boundAPIMetadata.RoutingAttribute.Name, entityType);
+                foreach (var boundOperationMetadata in boundAPIMetadata.BoundOperationMetadataList)
+                {
+                    AddOperation(entityType, boundOperationMetadata);
+                }
+
+                continue;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        APIMetadataList = metadataList;
+    }
+
+    [Obsolete]
+    public void AddEntitySets(string routePrefix, BaseODataMetadataResolver typeResolver
+        , IEnumerable<ODataMetadataEntity> metadataEntities)
     {
         foreach (var metadataEntity in metadataEntities)
         {
@@ -150,14 +177,9 @@ public class ODataMetadataContainer : ApplicationPart, IApplicationPartTypeProvi
 
     private IEnumerable<TypeInfo> GetAllController()
     {
-        foreach (var controllerType in _entityMetadataList.SelectMany(x => x.GetAllControllerTypes()))
+        foreach (var apiMetadata in APIMetadataList)
         {
-            yield return controllerType;
-        }
-
-        foreach (var unboundOperation in UnBoundOperationMetadataList)
-        {
-            yield return unboundOperation.ControllerType;
+            yield return apiMetadata.ControllerType;
         }
     }
 }

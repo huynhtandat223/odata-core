@@ -1,8 +1,10 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Features.EntityCreate;
 
 namespace CFW.ODataCore.Testings.Models;
 
 [ODataEntitySet("categories")]
+[EntityCreate<Category, Guid>("categories")]
 public class Category : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

@@ -1,5 +1,4 @@
-﻿using CFW.ODataCore.Features.EntitySets;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 

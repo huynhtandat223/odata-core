@@ -1,5 +1,6 @@
 ﻿namespace CFW.ODataCore.Features.EntitySets;
 
+[Obsolete("Use ODataAPIRoutingAttribute instead")]
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public class ODataEntitySetAttribute : Attribute
 {
@@ -16,13 +17,4 @@ public class ODataEntitySetAttribute : Attribute
 
         Name = name;
     }
-}
-
-public enum ODataMethod
-{
-    Query = 1,
-    GetByKey,
-    PostCreate,
-    PatchUpdate,
-    Delete,
 }

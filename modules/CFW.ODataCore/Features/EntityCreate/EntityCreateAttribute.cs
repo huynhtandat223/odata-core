@@ -1,30 +1,81 @@
 ﻿using CFW.ODataCore.Features.EFCore;
+using CFW.ODataCore.Features.EntitySets;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.OData.Extensions;
+using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.AspNetCore.OData.Routing.Template;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace CFW.ODataCore.Features.EntitySets.Handlers;
+namespace CFW.ODataCore.Features.EntityCreate;
 
-public interface ICreateHandler<TODataViewModel, TKey>
+public class EntityCreateConvention : IControllerModelConvention
+{
+    private readonly ODataMetadataContainer _container;
+
+    public EntityCreateConvention(ODataMetadataContainer container)
+    {
+        _container = container;
+    }
+
+    public void Apply(ControllerModel controller)
+    {
+        var metadata = _container.APIMetadataList.OfType<BoundAPIMetadata>()
+            .FirstOrDefault(x => x.ControllerType == controller.ControllerType
+                && x.RoutingAttribute.Method == ODataMethod.PostCreate);
+
+        if (metadata is null)
+            return;
+
+        var entitySet = metadata.Container.EdmModel.EntityContainer.FindEntitySet(metadata.RoutingAttribute.Name);
+        var withoutKeyTemplate = new ODataPathTemplate(new EntitySetsTemplate(entitySet, ignoreKeyTemplates: true));
+        var routePrefix = metadata.Container.RoutePrefix;
+        var edmModel = metadata.Container.EdmModel;
+
+        var actionModel = controller.Actions.Single(a => a.ActionName == nameof(EntityCreateController<RefODataViewModel, int>.Post));
+
+        actionModel.AddSelector(HttpMethod.Post.Method, routePrefix, edmModel, withoutKeyTemplate);
+        metadata.AddAuthorizationInfo(actionModel);
+    }
+}
+
+public class EntityCreateAttribute<TODataViewModel, TKey>
+    : BoundEntityRoutingAttribute
+{
+    public EntityCreateAttribute(string name)
+        : base(name, ODataMethod.PostCreate, typeof(TODataViewModel), typeof(TKey))
+    {
+    }
+}
+
+public interface IEntityCreateHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>
 {
     Task<Result<TODataViewModel>> Create(TODataViewModel model, CancellationToken cancellationToken);
 }
 
-public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TODataViewModel, TKey>
+public class DefaultEntityCreateHandler<TODataViewModel, TKey> : IEntityCreateHandler<TODataViewModel, TKey>
     where TODataViewModel : class, IODataViewModel<TKey>
 {
     private readonly IODataDbContextProvider _dbContextProvider;
     private readonly ILogger _logger;
     private readonly IActionContextAccessor _actionContextAccessor;
+    private readonly BoundAPIMetadata _metadataEntity;
+    private readonly IMapper _mapper;
 
-    public DefaultCreateHandler(IODataDbContextProvider dbContextProvider
-        , ILogger<DefaultCreateHandler<TODataViewModel, TKey>> logger
-        , IActionContextAccessor actionContextAccessor)
+    public DefaultEntityCreateHandler(IODataDbContextProvider dbContextProvider
+        , ILogger<DefaultEntityCreateHandler<TODataViewModel, TKey>> logger
+        , IActionContextAccessor actionContextAccessor
+        , IMapper mapper
+        , BoundAPIMetadata metadataEntity)
     {
         _dbContextProvider = dbContextProvider;
         _logger = logger;
         _actionContextAccessor = actionContextAccessor;
+        _mapper = mapper;
+        _metadataEntity = metadataEntity;
     }
 
     public async Task<Result<TODataViewModel>> Create(TODataViewModel model, CancellationToken cancellationToken)
@@ -40,11 +91,24 @@ public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TOData
             return model.Failed("Model is null.")!;
 
         var db = _dbContextProvider.GetContext();
-        db.ChangeTracker.TrackGraph(model, async rootEntity =>
+        var dbSetType = _metadataEntity.DbSetType ?? typeof(TODataViewModel);
+
+        var dbModel = typeof(TODataViewModel) == dbSetType
+            ? model
+            : _mapper.Map(model, dbSetType);
+
+        if (dbModel is null)
+            this.Failed("Mapping failed.");
+
+        var entityType = db.Model.FindEntityType(dbModel!.GetType());
+        if (entityType is null)
+            throw new InvalidOperationException("Entity type not found.");
+
+        db.ChangeTracker.TrackGraph(dbModel!, async rootEntity =>
         {
             try
             {
-                await TrackGraph(db, model, rootEntity, cancellationToken);
+                await TrackGraph(db, dbModel!, rootEntity, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -57,9 +121,10 @@ public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TOData
         return model.Created();
     }
 
-    private async Task TrackGraph(DbContext db, TODataViewModel model, EntityEntryGraphNode rootEntity, CancellationToken cancellationToken)
+    private async Task TrackGraph(DbContext db
+        , object dbModel, EntityEntryGraphNode rootEntity, CancellationToken cancellationToken)
     {
-        if (rootEntity.Entry.Entity != model)
+        if (rootEntity.Entry.Entity != dbModel)
             return;
 
         rootEntity.Entry.State = EntityState.Added;
@@ -133,5 +198,17 @@ public class DefaultCreateHandler<TODataViewModel, TKey> : ICreateHandler<TOData
                 }
             }
         }
+    }
+}
+
+public class EntityCreateController<TODataViewModel, TKey> : ODataController
+    where TODataViewModel : class, IODataViewModel<TKey>
+{
+    public async Task<ActionResult<TODataViewModel>> Post([FromBody] TODataViewModel viewModel
+        , [FromServices] IEntityCreateHandler<TODataViewModel, TKey> handler
+        , CancellationToken cancellationToken)
+    {
+        var result = await handler.Create(viewModel, cancellationToken);
+        return result.ToActionResult();
     }
 }

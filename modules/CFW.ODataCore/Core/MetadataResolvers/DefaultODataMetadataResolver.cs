@@ -12,6 +12,7 @@ public class DefaultODataMetadataResolver : BaseODataMetadataResolver
         .SelectMany(a => a.GetTypes())
         .Where(x => x.GetCustomAttribute<ODataEntitySetAttribute>() is not null
             || x.GetCustomAttribute<BoundOperationAttribute>() is not null
+            || x.GetCustomAttribute<ODataAPIRoutingAttribute>() is not null
             || x.GetCustomAttribute<UnboundOperationAttribute>() is not null)
         .ToList();
 

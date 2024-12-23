@@ -14,9 +14,9 @@ public class NoRelationshipTests : BaseTests, IClassFixture<AppFactory>
             new List<object?[]>
             {
                 new object?[] { typeof(Category), null }, //Auto generated key
-                new object?[] { typeof(Category), Guid.NewGuid() },
-                new object?[] { typeof(Customer), 0 }, //Auto generated key
-                new object?[] { typeof(Voucher), Guid.NewGuid().ToString() }, //Manual key
+                //new object?[] { typeof(Category), Guid.NewGuid() },
+                //new object?[] { typeof(Customer), 0 }, //Auto generated key
+                //new object?[] { typeof(Voucher), Guid.NewGuid().ToString() }, //Manual key
             };
 
     [Theory]

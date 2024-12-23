@@ -13,31 +13,33 @@ public static class ObjectUtils
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static TTarget JsonConvert<TTarget>(this object source)
+    public static object JsonConvert(this object source, Type targetType, JsonSerializerOptions? jsonSerializerOptions = null)
     {
-        if (typeof(TTarget).IsEnum && source is string enumStr)
+        if (targetType.IsEnum && source is string enumStr)
         {
-            var enumResult = Enum.Parse(typeof(TTarget), enumStr, ignoreCase: true);
-            return (TTarget)enumResult;
+            var enumResult = Enum.Parse(targetType, enumStr, ignoreCase: true);
+            return enumResult;
         }
 
         var sourceStr = source is string str
             ? str
             : source.ToJsonString();
 
+        jsonSerializerOptions ??= _serializerOptions;
         if (string.IsNullOrEmpty(sourceStr))
             return default!;
 
-        var result = JsonSerializer.Deserialize<TTarget>(sourceStr, _serializerOptions);
+        var result = JsonSerializer.Deserialize(sourceStr, targetType, jsonSerializerOptions);
         return result!;
     }
 
-    public static object JsonConvert(this string source, Type targetType)
+    public static object JsonConvert(this string source, Type targetType, JsonSerializerOptions? jsonSerializerOptions = null)
     {
         if (string.IsNullOrEmpty(source))
             return default!;
 
-        var result = JsonSerializer.Deserialize(source, targetType, _serializerOptions);
+        jsonSerializerOptions ??= _serializerOptions;
+        var result = JsonSerializer.Deserialize(source, targetType, jsonSerializerOptions);
         return result!;
     }
 
