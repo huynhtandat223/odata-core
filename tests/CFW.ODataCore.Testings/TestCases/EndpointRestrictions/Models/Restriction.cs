@@ -1,15 +1,16 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Core.Attributes;
 
 namespace CFW.ODataCore.Testings.TestCases.EndpointRestrictions.Models;
 
-[ODataEntitySet("restrictions", AllowMethods = [ODataMethod.Query, ODataMethod.GetByKey])]
+[EndpointEntity("restrictions", AllowMethods = [EndpointAction.Query, EndpointAction.GetByKey])]
 public class Restriction : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
 }
 
-[ODataEntitySet("restrictions-postcreates", AllowMethods = [ODataMethod.PostCreate, ODataMethod.PatchUpdate, ODataMethod.Delete])]
+[EndpointEntity("restrictions-postcreates", AllowMethods = [EndpointAction.PostCreate, EndpointAction.PatchUpdate, EndpointAction.Delete])]
 public class RestrictionPostCreate : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

@@ -1,7 +1,6 @@
 ﻿using CFW.ODataCore.Core.MetadataResolvers;
-using CFW.ODataCore.Features.BoundOperations;
 using CFW.ODataCore.Features.EFCore;
-using CFW.ODataCore.Features.UnBoundOperations;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
@@ -28,68 +27,49 @@ public static class ServicesCollectionExtensions
 
         var services = mvcBuilder.Services;
 
-        services.AddScoped(typeof(IBoundOperationRequestHandler<,,,>), typeof(DefaultBoundOperationRequestHandler<,,,>));
-        services.AddScoped(typeof(IUnboundOperationRequestHandler<,>), typeof(DefaultUnboundOperationRequestHandler<,>));
-
         foreach (var container in containers)
         {
-            var metadataList = container.APIMetadataList;
-            foreach (var metadata in metadataList)
+            foreach (var metadata in container.EntitySetMetadataList)
             {
-                metadata.AddDependencies(services);
+                services.AddScoped(metadata.ServiceHandlerType, metadata.ServiceImplemenationType);
+
+                var serviceType = typeof(ODataRequestHandler);
+                var requestHandlerType = typeof(ODataRequestHandler<>).MakeGenericType(metadata.ViewModelType);
+                var keyName = metadata.Container.RoutePrefix + metadata.RoutingAttribute.Name;
+
+                services.AddKeyedScoped(serviceType, keyName, (s, key) =>
+                {
+                    return ActivatorUtilities.CreateInstance(s, requestHandlerType, metadata.Container);
+                });
             }
 
-            //var boundOperationMetadata = container.EntityMetadataList
-            //    .SelectMany(x => x.BoundOperationMetadataList)
-            //    .ToList();
-            //foreach (var metadata in boundOperationMetadata)
-            //{
-            //    var serviceType = metadata.ResponseType == typeof(Result)
-            //        ? typeof(IODataOperationHandler<>).MakeGenericType(metadata.RequestType)
-            //        : typeof(IODataOperationHandler<,>).MakeGenericType(metadata.RequestType, metadata.ResponseType);
+            foreach (var metadata in container.BoundOperationMetadataList)
+            {
+                services.AddScoped(metadata.ServiceHandlerType, metadata.ServiceImplemenationType);
+            }
 
-            //    services.AddScoped(serviceType, metadata.HandlerType);
-            //}
-
-            //foreach (var metadata in container.UnBoundOperationMetadataList)
-            //{
-            //    var serviceType = metadata.ResponseType == typeof(Result)
-            //        ? typeof(IODataOperationHandler<>).MakeGenericType(metadata.RequestType)
-            //        : typeof(IODataOperationHandler<,>).MakeGenericType(metadata.RequestType, metadata.ResponseType);
-
-            //    services.AddScoped(serviceType, metadata.HandlerType);
-            //}
+            foreach (var metadata in container.UnBoundOperationMetadataList)
+            {
+                services.AddScoped(metadata.ServiceHandlerType, metadata.ServiceImplemenationType);
+            }
         }
 
         services.AddSingleton(new GenericODataConfig { IsEnabled = true });
-        services.AddScoped<IActionContextAccessor, ActionContextAccessor>();
+        services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
         services.AddSingleton<IMapper, JsonMapper>();
 
-        return Build(containers, mvcBuilder, odataOptions);
+        mvcBuilder = Build(containers, mvcBuilder, odataOptions);
+        return mvcBuilder;
     }
 
     public static IMvcBuilder Build(IEnumerable<ODataMetadataContainer> containers
         , IMvcBuilder mvcBuilder, Action<ODataOptions>? odataOptions)
     {
-        var entitySetControllerTypes = containers
-            .SelectMany(x => x.EntityMetadataList.Select(x => x.ControllerType))
-            .ToList();
         mvcBuilder = mvcBuilder.AddMvcOptions(options =>
         {
             foreach (var container in containers)
             {
-                options.Conventions.Add(new EntityRoutingConvention(container));
-
-                //options.Conventions.Add(new EntitySetsConvention(container));
-
-                //var hasBoundOperations = container.EntityMetadataList
-                //    .SelectMany(x => x.BoundOperationMetadataList)
-                //    .Any();
-                //if (hasBoundOperations)
-                //    options.Conventions.Add(new BoundOperationsConvention(container));
-
-                //if (container.UnBoundOperationMetadataList.Any())
-                //    options.Conventions.Add(new UnboundOperationsConvention(container));
+                options.Conventions.Add(new EntityAPIRoutingConvention(container));
             }
         });
 
@@ -120,6 +100,17 @@ public static class ServicesCollectionExtensions
         var odataConfig = app.Services.GetService<GenericODataConfig>();
         if (odataConfig is null || !odataConfig.IsEnabled)
             return;
+
+        app.MapGet("{routePrefix}/{entitySetName}", async (HttpRequest httpRequest
+            , [FromServices] IServiceProvider serviceProvider
+            , string routePrefix
+            , string entitySetName) =>
+        {
+            var key = routePrefix + entitySetName;
+            var requestHandler = serviceProvider.GetRequiredKeyedService<ODataRequestHandler>(key);
+            await requestHandler.Execute(httpRequest, routePrefix, entitySetName);
+        });
+
 
         app.UseRouting();
         app.MapControllers();

@@ -31,7 +31,8 @@ public class Category : IEntity<Guid>, IODataViewModel<Guid>
     public DateTime? DeletedAt { get; set; }
 }
 
-[ODataEntitySet("orders")]
+[EntityCreate("orders")]
+[EntityQuery("orders")]
 public class Order : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

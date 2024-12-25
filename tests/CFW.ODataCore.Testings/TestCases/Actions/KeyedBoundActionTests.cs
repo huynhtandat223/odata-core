@@ -2,6 +2,9 @@
 using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
+using CFW.ODataCore.Features.BoundOperations;
+using CFW.ODataCore.Features.EntityCreate;
+using CFW.ODataCore.Features.EntityOperations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
@@ -11,7 +14,7 @@ namespace CFW.ODataCore.Testings.TestCases.Actions;
 public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
 
-    [ODataEntitySet(nameof(KeyedBoundActionViewModel))]
+    [EntityCreate(nameof(KeyedBoundActionViewModel))]
     public class KeyedBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -27,8 +30,8 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
         public string Name { get; set; } = string.Empty;
     }
 
-    [BoundAction<KeyedBoundActionViewModel, Guid>(nameof(KeyedActionHandler))]
-    public class KeyedActionHandler : IODataOperationHandler<KeyedActionRequest>
+    [EntityAction<KeyedBoundActionViewModel, Guid>(nameof(KeyedActionHandler))]
+    public class KeyedActionHandler : IEntityOperationHandler<KeyedActionRequest>
     {
         private readonly List<object> _requests;
         public KeyedActionHandler(List<object> requests)
@@ -36,7 +39,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
             _requests = requests;
         }
 
-        public async Task<Result> Execute(KeyedActionRequest request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(KeyedActionRequest request, CancellationToken cancellationToken)
         {
             _requests.Add(request);
             return await Task.FromResult(this.Success());
@@ -65,7 +68,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task Request_KeyedAction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
         var routeId = Guid.NewGuid();
@@ -88,7 +91,7 @@ public class KeyedBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task Request_NonKeyAction_WrapBody_ShouldSuccess(Type resourceType, Type actionHandlerType, string bodyPropValue)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<>))
             .GetGenericArguments().First();
         var routeId = Guid.NewGuid();
 

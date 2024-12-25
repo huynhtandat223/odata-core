@@ -1,8 +1,9 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Features.EntityCreate;
 
 namespace CFW.ODataCore.Testings.Models;
 
-[ODataEntitySet("customers")]
+[EntityCreate("customers")]
 public class Customer : IEntity<int>, IODataViewModel<int>
 {
     public int Id { get; set; }
@@ -12,7 +13,7 @@ public class Customer : IEntity<int>, IODataViewModel<int>
     public string? Address { get; set; }
 }
 
-[ODataEntitySet("vouchers")]
+[EntityCreate("vouchers")]
 public class Voucher : IEntity<string>, IODataViewModel<string>
 {
     public string Id { get; set; } = string.Empty;

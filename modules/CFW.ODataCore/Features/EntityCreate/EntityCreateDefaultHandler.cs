@@ -1,4 +1,5 @@
-﻿using CFW.ODataCore.Features.EFCore;
+﻿using CFW.ODataCore.Core.Metadata;
+using CFW.ODataCore.Features.EFCore;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -11,14 +12,14 @@ public class EntityCreateDefaultHandler<TODataViewModel, TKey> : IEntityCreateHa
     private readonly IODataDbContextProvider _dbContextProvider;
     private readonly ILogger _logger;
     private readonly IActionContextAccessor _actionContextAccessor;
-    private readonly BoundAPIMetadata _metadataEntity;
+    private readonly EntitySetMetadata _metadataEntity;
     private readonly IMapper _mapper;
 
     public EntityCreateDefaultHandler(IODataDbContextProvider dbContextProvider
         , ILogger<EntityCreateDefaultHandler<TODataViewModel, TKey>> logger
         , IActionContextAccessor actionContextAccessor
         , IMapper mapper
-        , BoundAPIMetadata metadataEntity)
+        , EntitySetMetadata metadataEntity)
     {
         _dbContextProvider = dbContextProvider;
         _logger = logger;

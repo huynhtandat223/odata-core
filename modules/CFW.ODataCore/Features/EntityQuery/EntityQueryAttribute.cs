@@ -1,19 +1,21 @@
-﻿namespace CFW.ODataCore.Features.EntityQuery;
+﻿using CFW.ODataCore.Core.Attributes;
+
+namespace CFW.ODataCore.Features.EntityQuery;
 
 public class EntityQueryAttribute<TODataViewModel, TKey>
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityQueryAttribute(string name)
-        : base(name, ODataMethod.Query, typeof(TODataViewModel), typeof(TKey))
+        : base(name, EndpointAction.Query, typeof(TODataViewModel), typeof(TKey))
     {
     }
 }
 
 public class EntityQueryAttribute
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityQueryAttribute(string name)
-        : base(name, ODataMethod.Query)
+        : base(name, EndpointAction.Query)
     {
     }
 }

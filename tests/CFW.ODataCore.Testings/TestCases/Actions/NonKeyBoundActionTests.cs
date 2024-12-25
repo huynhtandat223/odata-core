@@ -2,6 +2,9 @@
 using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
+using CFW.ODataCore.Features.BoundOperations;
+using CFW.ODataCore.Features.EntityCreate;
+using CFW.ODataCore.Features.EntityOperations;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
 
@@ -9,7 +12,7 @@ namespace CFW.ODataCore.Testings.TestCases.Actions;
 
 public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
-    [ODataEntitySet(nameof(NonKeyBoundActionViewModel))]
+    [EntityCreate(nameof(NonKeyBoundActionViewModel))]
     public class NonKeyBoundActionViewModel : IODataViewModel<Guid>, IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -22,8 +25,8 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
         public string Name { get; set; } = string.Empty;
     }
 
-    [BoundAction<NonKeyBoundActionViewModel, Guid>(nameof(NonKeyActionHandler))]
-    public class NonKeyActionHandler : IODataOperationHandler<NonKeyActionRequest>
+    [EntityAction<NonKeyBoundActionViewModel, Guid>(nameof(NonKeyActionHandler))]
+    public class NonKeyActionHandler : IEntityOperationHandler<NonKeyActionRequest>
     {
         private readonly List<object> _requests;
 
@@ -32,7 +35,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
             _requests = requests;
         }
 
-        public async Task<Result> Execute(NonKeyActionRequest request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(NonKeyActionRequest request, CancellationToken cancellationToken)
         {
             _requests.Add(request);
             return await Task.FromResult(this.Success());
@@ -61,7 +64,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
     public async Task Request_NonKeyAction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 
@@ -81,7 +84,7 @@ public class NonKeyBoundActionTests : BaseTests, IClassFixture<NonInitAppFactory
     {
         var client = _factory.CreateClient();
         var requestType = actionHandlerType.GetInterfaces()
-                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<>))
+                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<>))
                     .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 

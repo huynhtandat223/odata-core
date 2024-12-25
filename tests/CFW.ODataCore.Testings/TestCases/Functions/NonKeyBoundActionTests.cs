@@ -2,6 +2,9 @@
 using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
+using CFW.ODataCore.Features.BoundOperations;
+using CFW.ODataCore.Features.EntityCreate;
+using CFW.ODataCore.Features.EntityOperations;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
 
@@ -9,7 +12,7 @@ namespace CFW.ODataCore.Testings.TestCases.Functions;
 
 public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFactory>
 {
-    [ODataEntitySet(nameof(NonKeyBoundFunctionViewModel))]
+    [EntityCreate(nameof(NonKeyBoundFunctionViewModel))]
     public class NonKeyBoundFunctionViewModel : IODataViewModel<Guid>, IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -29,8 +32,8 @@ public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFacto
         public string Name { get; set; } = string.Empty;
     }
 
-    [BoundFunction<NonKeyBoundFunctionViewModel, Guid>(nameof(NonKeyFunctionHandler))]
-    public class NonKeyFunctionHandler : IODataOperationHandler<Request, Response>
+    [EntityFunction<NonKeyBoundFunctionViewModel, Guid>(nameof(NonKeyFunctionHandler))]
+    public class NonKeyFunctionHandler : IEntityOperationHandler<Request, Response>
     {
         private readonly List<object> _requests;
 
@@ -39,7 +42,7 @@ public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFacto
             _requests = requests;
         }
 
-        public async Task<Result<Response>> Execute(Request request, CancellationToken cancellationToken)
+        public async Task<Result<Response>> Handle(Request request, CancellationToken cancellationToken)
         {
             _requests.Add(request);
             var response = new Response
@@ -73,7 +76,7 @@ public class NonKeyBoundFunctionTests : BaseTests, IClassFixture<NonInitAppFacto
     public async Task Request_NonKeyFunction_ShouldSuccess(Type resourceType, Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<,>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<,>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 

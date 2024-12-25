@@ -5,13 +5,13 @@ using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.Features.BoundOperations;
 
-internal class BoundOperationTemplate : ODataSegmentTemplate
+internal class EntityOperationsTemplate : ODataSegmentTemplate
 {
     private readonly EntitySetSegment _entitySetSegment;
     private readonly bool _ignoreKeyTemplates;
     private readonly IEdmOperation _operation;
 
-    public BoundOperationTemplate(IEdmEntitySet edmEntitySet
+    public EntityOperationsTemplate(IEdmEntitySet edmEntitySet
         , bool ignoreKeyTemplates
         , IEdmOperation operation)
     {

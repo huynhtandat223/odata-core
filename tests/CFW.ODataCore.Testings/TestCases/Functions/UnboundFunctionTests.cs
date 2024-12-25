@@ -1,6 +1,7 @@
 ﻿using CFW.Core.Results;
 using CFW.CoreTestings.DataGenerations;
 using CFW.ODataCore.Extensions;
+using CFW.ODataCore.Features.BoundOperations;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
 
@@ -19,7 +20,7 @@ public class UnboundFunctionTests : BaseTests, IClassFixture<NonInitAppFactory>
     }
 
     [UnboundFunction(nameof(UnboundFunctionHandler))]
-    public class UnboundFunctionHandler : IODataOperationHandler<Request, Response>
+    public class UnboundFunctionHandler : IUnboundOperationHandler<Request, Response>
     {
         private readonly List<object> _requests;
 
@@ -28,7 +29,7 @@ public class UnboundFunctionTests : BaseTests, IClassFixture<NonInitAppFactory>
             _requests = requests;
         }
 
-        public async Task<Result<Response>> Execute(Request request, CancellationToken cancellationToken)
+        public async Task<Result<Response>> Handle(Request request, CancellationToken cancellationToken)
         {
             _requests.Add(request);
             var response = new Response { TestProperty = 1 };
@@ -58,7 +59,7 @@ public class UnboundFunctionTests : BaseTests, IClassFixture<NonInitAppFactory>
     public async Task UnboundFunctionRequest_NonKeyAction_ShouldSuccess(Type actionHandlerType)
     {
         var requestType = actionHandlerType.GetInterfaces()
-            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IODataOperationHandler<,>))
+            .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityOperationHandler<,>))
             .GetGenericArguments().First();
         var request = DataGenerator.Create(requestType);
 

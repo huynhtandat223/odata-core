@@ -1,8 +1,9 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Core.Attributes;
 
 namespace CFW.ODataCore.Testings.Models;
 
-[ODataEntitySet("products")]
+[EndpointEntity("products")]
 public class Product : IEntity<Guid>, IODataViewModel<Guid>
 {
     public Guid Id { get; set; }

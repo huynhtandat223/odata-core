@@ -5,6 +5,7 @@ using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.Core;
 
+[Obsolete("Use minimal api")]
 internal class ODataEntitiesTemplate : ODataSegmentTemplate
 {
     private readonly EntitySetSegment _entitySetSegment;

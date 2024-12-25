@@ -1,19 +1,21 @@
-﻿namespace CFW.ODataCore.Features.EntityQuery;
+﻿using CFW.ODataCore.Core.Attributes;
+
+namespace CFW.ODataCore.Features.EntityQuery;
 
 public class EntityPatchAttribute<TODataViewModel, TKey>
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityPatchAttribute(string name)
-        : base(name, ODataMethod.PatchUpdate, typeof(TODataViewModel), typeof(TKey))
+        : base(name, EndpointAction.PatchUpdate, typeof(TODataViewModel), typeof(TKey))
     {
     }
 }
 
 public class EntityPatchAttribute
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityPatchAttribute(string name)
-        : base(name, ODataMethod.PatchUpdate)
+        : base(name, EndpointAction.PatchUpdate)
     {
     }
 }

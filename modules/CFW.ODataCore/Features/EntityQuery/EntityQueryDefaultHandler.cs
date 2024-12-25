@@ -1,4 +1,5 @@
-﻿using CFW.ODataCore.Features.EFCore;
+﻿using CFW.ODataCore.Core.Metadata;
+using CFW.ODataCore.Features.EFCore;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
@@ -10,11 +11,11 @@ public class EntityQueryDefaultHandler<TODataViewModel, TKey> : IEntityQueryHand
 {
     private readonly IODataDbContextProvider _dbContextProvider;
     private readonly IActionContextAccessor _actionContextAccessor;
-    private readonly BoundAPIMetadata _metadataEntity;
+    private readonly EntitySetMetadata _metadataEntity;
 
     public EntityQueryDefaultHandler(IODataDbContextProvider dbContextProvider
         , IActionContextAccessor actionContextAccessor
-        , BoundAPIMetadata metadataEntity)
+        , EntitySetMetadata metadataEntity)
     {
         _dbContextProvider = dbContextProvider;
         _actionContextAccessor = actionContextAccessor;

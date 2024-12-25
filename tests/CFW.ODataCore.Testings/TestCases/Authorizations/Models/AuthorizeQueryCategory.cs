@@ -1,9 +1,10 @@
 ﻿using CFW.Core.Entities;
+using CFW.ODataCore.Core.Attributes;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
-[ODataEntitySet("authorize-query-categories")]
-[ODataAuthorize(ApplyMethods = [ODataMethod.Query])]
+[EndpointEntity("authorize-query-categories")]
+[ODataAuthorize(ApplyMethods = [EndpointAction.Query])]
 public class AuthorizeQueryCategory : IODataViewModel<Guid>, IEntity<Guid>
 {
     public Guid Id { get; set; }

@@ -29,6 +29,9 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<TestingDbContext>();
 
+//TODO: Remove it when the issue is fixed
+builder.Services.AddScoped(s => new List<object>());
+
 var app = builder.Build();
 
 app.UseGenericODataEndpoints();

@@ -1,19 +1,21 @@
-﻿namespace CFW.ODataCore.Features.EntityQuery;
+﻿using CFW.ODataCore.Core.Attributes;
+
+namespace CFW.ODataCore.Features.EntityQuery;
 
 public class EntityDeleteAttribute<TODataViewModel, TKey>
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityDeleteAttribute(string name)
-        : base(name, ODataMethod.Delete, typeof(TODataViewModel), typeof(TKey))
+        : base(name, EndpointAction.Delete, typeof(TODataViewModel), typeof(TKey))
     {
     }
 }
 
 public class EntityDeleteAttribute
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityDeleteAttribute(string name)
-        : base(name, ODataMethod.Delete)
+        : base(name, EndpointAction.Delete)
     {
     }
 }

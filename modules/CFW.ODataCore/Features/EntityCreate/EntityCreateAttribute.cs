@@ -1,21 +1,23 @@
-﻿namespace CFW.ODataCore.Features.EntityCreate;
+﻿using CFW.ODataCore.Core.Attributes;
+
+namespace CFW.ODataCore.Features.EntityCreate;
 
 public class EntityCreateAttribute<TODataViewModel, TKey>
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
     where TODataViewModel : IODataViewModel<TKey>
 
 {
     public EntityCreateAttribute(string name)
-        : base(name, ODataMethod.PostCreate, typeof(TODataViewModel), typeof(TKey))
+        : base(name, EndpointAction.PostCreate, typeof(TODataViewModel), typeof(TKey))
     {
     }
 }
 
 public class EntityCreateAttribute
-    : BoundEntityRoutingAttribute
+    : EndpointEntityActionAttribute
 {
     public EntityCreateAttribute(string name)
-        : base(name, ODataMethod.PostCreate)
+        : base(name, EndpointAction.PostCreate)
     {
     }
 }

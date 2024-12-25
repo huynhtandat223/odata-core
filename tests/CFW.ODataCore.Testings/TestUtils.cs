@@ -1,4 +1,6 @@
-﻿using CFW.ODataCore.Testings;
+﻿using CFW.ODataCore.Core.Attributes;
+using CFW.ODataCore.Features.EntityOperations;
+using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
 using System.Reflection;
 using System.Text;
@@ -11,8 +13,8 @@ public static class TestUtils
     public static string GetBaseUrl(this Type resourceType, string? routePrefix = null)
     {
         var odataRouting = resourceType
-            .GetCustomAttributes<ODataAPIRoutingAttribute>()
-            .GroupBy(x => new { x.Name, x.RouteRefix })
+            .GetCustomAttributes<EndpointAttribute>()
+            .GroupBy(x => new { x.Name, x.RoutePrefix })
             .Select(x => x.Key)
             .SingleOrDefault();
         if (odataRouting is null)
@@ -20,18 +22,18 @@ public static class TestUtils
             throw new InvalidOperationException($"The resource type {resourceType.Name} does not have ODataAPIRoutingAttribute");
         }
 
-        return $"{routePrefix ?? odataRouting.RouteRefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
+        return $"{routePrefix ?? odataRouting.RoutePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
     }
 
     public static string GetNonKeyActionUrl(this Type resourceType, Type handlerType, string? routePrefix = null)
     {
-        var actionName = handlerType.GetCustomAttribute<BoundOperationAttribute>()!.Name;
+        var actionName = handlerType.GetCustomAttribute<EntityOperationAttribute>()!.Name;
         return $"{GetBaseUrl(resourceType, routePrefix)}/{actionName}";
     }
 
     public static string GetNonKeyFunctionUrl(this Type resourceType, Type handlerType, object queryParams, string? routePrefix = null)
     {
-        var actionName = handlerType.GetCustomAttribute<BoundOperationAttribute>()!.Name;
+        var actionName = handlerType.GetCustomAttribute<EntityOperationAttribute>()!.Name;
         var queryString = queryParams.ParseToQueryString();
         return $"{GetBaseUrl(resourceType, routePrefix)}/{actionName}?{queryString}";
     }
@@ -84,7 +86,7 @@ public static class TestUtils
 
     public static IEnumerable<string> GetKeyedActionUrl(this Type resourceType, Type handlerType, object keyValue, string? routePrefix = null)
     {
-        var actionName = handlerType.GetCustomAttribute<BoundOperationAttribute>()!.Name;
+        var actionName = handlerType.GetCustomAttribute<EntityOperationAttribute>()!.Name;
         yield return $"{GetBaseUrl(resourceType, routePrefix)}/{keyValue}/{actionName}";
         yield return $"{GetBaseUrl(resourceType, routePrefix)}({keyValue})/{actionName}";
     }

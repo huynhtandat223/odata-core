@@ -2,18 +2,19 @@
 
 namespace CFW.ODataCore.Core;
 
-public class EntityRoutingConvention : IControllerModelConvention
+[Obsolete("Use minimal api")]
+public class EntityAPIRoutingConvention : IControllerModelConvention
 {
     private readonly ODataMetadataContainer _container;
 
-    public EntityRoutingConvention(ODataMetadataContainer container)
+    public EntityAPIRoutingConvention(ODataMetadataContainer container)
     {
         _container = container;
     }
 
     public void Apply(ControllerModel controller)
     {
-        var metadata = _container.APIMetadataList
+        var metadata = _container.EntitySetMetadataList
             .FirstOrDefault(x => x.ControllerType == controller.ControllerType);
 
         if (metadata is null)

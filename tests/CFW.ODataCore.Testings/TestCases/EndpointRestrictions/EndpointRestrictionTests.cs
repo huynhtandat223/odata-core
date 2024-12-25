@@ -1,6 +1,6 @@
 ﻿using CFW.Core.Entities;
 using CFW.CoreTestings.DataGenerations;
-using CFW.ODataCore.Features.EntitySets;
+using CFW.ODataCore.Core.Attributes;
 using CFW.ODataCore.Testings.TestCases.EndpointRestrictions.Models;
 using CFW.ODataCore.Testings.TestCases.EntitySetsQuery;
 using System.Collections;
@@ -23,7 +23,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     {
         // Arrange
         var baseUrl = odataViewModelType.GetBaseUrl();
-        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataEntitySetAttribute>();
+        var routingAttribute = odataViewModelType.GetCustomAttribute<EndpointEntityAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
         if (methodsArray!.Length == 0)
@@ -45,7 +45,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
 
         foreach (var method in methodsArray)
         {
-            if (method == ODataMethod.Query)
+            if (method == EndpointAction.Query)
             {
                 // Act
                 var odataFilterIds = $"$filter=id in ({string.Join(", ", ids.Select(id => $"'{id}'"))})";
@@ -61,7 +61,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 value!.Cast<object>().Count().Should().Be(data.Count);
             }
 
-            if (method == ODataMethod.GetByKey)
+            if (method == EndpointAction.GetByKey)
             {
                 var expectedEntity = data.Cast<object>().Random();
                 var keyValue = expectedEntity.GetPropertyValue(keyProp);
@@ -75,7 +75,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 actualEntity.Should().BeEquivalentTo(expectedEntity);
             }
 
-            if (method == ODataMethod.PostCreate)
+            if (method == EndpointAction.PostCreate)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
 
@@ -88,7 +88,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 data = data.Cast<object>().Append(newEntity).ToList();
             }
 
-            if (method == ODataMethod.PatchUpdate)
+            if (method == EndpointAction.PatchUpdate)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -104,7 +104,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
 
             }
 
-            if (method == ODataMethod.Delete)
+            if (method == EndpointAction.Delete)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -125,7 +125,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
     public async Task Request_WithoutCustomAlowMethods_ShouldMethodNotAllow(Type odataViewModelType)
     {
         var baseUrl = odataViewModelType.GetBaseUrl();
-        var routingAttribute = odataViewModelType.GetCustomAttribute<ODataEntitySetAttribute>();
+        var routingAttribute = odataViewModelType.GetCustomAttribute<EndpointEntityAttribute>();
         var methodsArray = routingAttribute!.AllowMethods;
 
         if (methodsArray!.Length == 0)
@@ -133,7 +133,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
             throw new Exception("Test data invalid. Methods are allowed for this endpoint.");
         }
 
-        var notAllowedMethods = Enum.GetValues<ODataMethod>().Except(methodsArray).ToArray();
+        var notAllowedMethods = Enum.GetValues<EndpointAction>().Except(methodsArray).ToArray();
         if (notAllowedMethods.Length == 0)
         {
             throw new Exception("Test data invalid. No methods are not allowed for this endpoint.");
@@ -149,7 +149,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
         var client = _factory.CreateClient();
         foreach (var method in notAllowedMethods)
         {
-            if (method == ODataMethod.Query)
+            if (method == EndpointAction.Query)
             {
                 // Act
                 var queryResponseMessage = await client.GetAsync(baseUrl);
@@ -158,7 +158,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 queryResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == ODataMethod.GetByKey)
+            if (method == EndpointAction.GetByKey)
             {
                 var getByKeyResponseMessage = await client.GetAsync($"{baseUrl}/{keyValue}");
                 // Assert
@@ -166,7 +166,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 getByKeyResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == ODataMethod.PostCreate)
+            if (method == EndpointAction.PostCreate)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
                 // Act
@@ -176,7 +176,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 postResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == ODataMethod.PatchUpdate)
+            if (method == EndpointAction.PatchUpdate)
             {
                 var updatingEntity = DataGenerator.Create(odataViewModelType)
                     .SetPropertyValue(nameof(IEntity<object>.Id), keyValue);
@@ -187,7 +187,7 @@ public class EndpointRestrictionTests : BaseTests, IClassFixture<AppFactory>
                 patchResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == ODataMethod.Delete)
+            if (method == EndpointAction.Delete)
             {
                 // Act
                 var deleteResponseMessage = await client.DeleteAsync($"{baseUrl}/{keyValue}");
