@@ -9,12 +9,12 @@
 
   <ItemGroup>
     <!--<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.7" />-->
+    <PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\AspNetCoreOData\src\Microsoft.AspNetCore.OData\Microsoft.AspNetCore.OData.csproj" />
     <ProjectReference Include="..\CFW.Core\CFW.Core.csproj" />
   </ItemGroup>
 
