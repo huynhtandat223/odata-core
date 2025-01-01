@@ -122,7 +122,7 @@ public class EntityCRUDRoutingMetadata
             AuthorizeDataList = authorizeDataList
         };
 
-        Type? serviceType = null, implementationType = null;
+        Type? serviceType = null, implementationType = null, dbType = entityAttribute.DbType;
         foreach (var availableMethod in availableMethods)
         {
             if (availableMethod == ODataHttpMethod.Query)
@@ -130,7 +130,9 @@ public class EntityCRUDRoutingMetadata
                 serviceType = typeof(IEntityQueryHandler<>).MakeGenericType(entityType);
                 implementationType = targetTypeIsHandler
                     ? targetType
-                    : typeof(EntityQueryDefaultHandler<>).MakeGenericType(entityType);
+                    : dbType is null
+                        ? typeof(EntityQueryDefaultHandler<>).MakeGenericType(entityType)
+                        : typeof(EntityQueryDefaultHandler<,>).MakeGenericType(entityType, dbType);
             }
 
             if (availableMethod == ODataHttpMethod.Post)

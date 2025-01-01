@@ -12,6 +12,8 @@ public class EntityAttribute : ODataRoutingAttribute
 {
     public string Name { get; }
 
+    public Type? DbType { get; set; }
+
     /// <summary>
     /// Only effective for viewModel class. Handler class methods resolved by CRUD interfaces.
     /// </summary>
@@ -25,5 +27,12 @@ public class EntityAttribute : ODataRoutingAttribute
     public EntityAttribute(string name, params string[] odataHttpMethods)
     {
         Name = name;
+    }
+}
+
+public class BasicProjectorAttribute<TDbModel> : Attribute
+{
+    public BasicProjectorAttribute()
+    {
     }
 }
