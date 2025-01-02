@@ -41,7 +41,9 @@ public class ODataMetadataContainer
         if (!_entityRouteGroupBuider.TryGetValue(metadata.Name, out var group))
         {
             group = CreateOrGetContainerRoutingGroup(app)
-                .MapGroup(metadata.Name).WithMetadata(metadata);
+                .MapGroup(metadata.Name)
+                .WithTags(metadata.Name)
+                .WithMetadata(metadata);
             _entityRouteGroupBuider.Add(metadata.Name, group);
         }
 

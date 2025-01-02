@@ -33,7 +33,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
         foreach (var method in _metadata.ServiceDescriptors.Keys)
         {
             RouteHandlerBuilder routeHandlerBuilder = null;
-            if (method == ODataHttpMethod.GetByKey)
+            if (method == EntityMethod.GetByKey)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/{key}", async (HttpContext httpContext
                     , [FromServices] IEntityGetByKeyHandler<TViewModel, TKey> handler
@@ -54,7 +54,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 });
             }
 
-            if (method == ODataHttpMethod.Patch)
+            if (method == EntityMethod.Patch)
             {
                 routeHandlerBuilder = entityGroup.MapPatch("/{key}", async (HttpRequest httpRequest
                     , ODataModel<TViewModel, TKey, Delta<TViewModel>> model
@@ -67,7 +67,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 });
             }
 
-            if (method == ODataHttpMethod.Post)
+            if (method == EntityMethod.Post)
             {
                 routeHandlerBuilder = entityGroup.MapPost("/", async (TViewModel viewModel
                     , [FromServices] IEntityCreateHandler<TViewModel> handler
@@ -81,7 +81,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 });
             }
 
-            if (method == ODataHttpMethod.Query)
+            if (method == EntityMethod.Query)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/", async (HttpContext httpContext
                     , [FromServices] IEntityQueryHandler<TViewModel> handler
@@ -97,7 +97,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 });
             }
 
-            if (method == ODataHttpMethod.Delete)
+            if (method == EntityMethod.Delete)
             {
                 routeHandlerBuilder = entityGroup.MapDelete("/{key}", async (HttpRequest httpRequest
                     , TKey key

@@ -18,7 +18,7 @@ if (!isTesting)
                .UseSqlite($@"Data Source=appdbcontext.db"));
 
     builder.Services.AddControllers()
-        .AddEntityMinimalApi<TestingDbContext>();
+        .AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
 }
 
 //Authentication
@@ -35,7 +35,7 @@ app.MapIdentityApi<IdentityUser>();
 app.UseAuthorization();
 
 
-app.UseODataMinimalApi();
+app.UseEntityMinimalApi();
 app.MapPost("/logout", async (SignInManager<IdentityUser> signInManager,
     [FromBody] object empty) =>
 {

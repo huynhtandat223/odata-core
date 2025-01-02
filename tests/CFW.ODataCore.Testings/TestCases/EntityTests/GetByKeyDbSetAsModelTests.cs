@@ -5,7 +5,7 @@ namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
 public class GetByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
 {
-    [Entity(nameof(SimpleGetByKeyEntity), Methods = [ODataHttpMethod.GetByKey])]
+    [Entity(nameof(SimpleGetByKeyEntity), Methods = [EntityMethod.GetByKey])]
     public class SimpleGetByKeyEntity : IEntity<Guid>
     {
         public Guid Id { get; set; }

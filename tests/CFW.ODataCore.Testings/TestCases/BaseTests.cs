@@ -46,7 +46,8 @@ public abstract class BaseTests
                        .EnableSensitiveDataLogging()
                        .UseSqlite($"Data Source={dbPath}"));
 
-                    services.AddControllers().AddEntityMinimalApi<TestingDbContext>();
+                    services.AddControllers()
+                        .AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
                     services.AddSingleton(requestObjects);
                 })
                 .ConfigureLogging(logging =>
@@ -80,7 +81,9 @@ public abstract class BaseTests
                            .UseSqlite($"Data Source={dbPath}"));
 
                 services.AddControllers()
-                    .AddEntityMinimalApi<TestingDbContext>(new TestMetadataContainerFactory(types));
+                    .AddEntityMinimalApi(o => o
+                        .UseDefaultDbContext<TestingDbContext>()
+                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
                 services.AddSingleton(requestObjects);
             });
         });
@@ -108,8 +111,9 @@ public abstract class BaseTests
                            .UseSqlite($"Data Source={dbPath}"));
 
                 services.AddControllers()
-                    .AddEntityMinimalApi<TestingDbContext>(new TestMetadataContainerFactory(types), defaultRoutePrefix: odataPrefix);
-
+                    .AddEntityMinimalApi(o => o
+                        .UseDefaultDbContext<TestingDbContext>()
+                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
                 services.AddSingleton(requestObjects);
             });
         });

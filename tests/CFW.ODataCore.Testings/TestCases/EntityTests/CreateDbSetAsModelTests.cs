@@ -14,7 +14,7 @@ public class CreateDbSetAsModelTests : BaseTests, IAssemblyFixture<AppFactory>
         public string? Name { set; get; }
     }
 
-    [Entity(nameof(SetupPostEntity), Methods = [ODataHttpMethod.Post])]
+    [Entity(nameof(SetupPostEntity), Methods = [EntityMethod.Post])]
     public class SetupPostEntity : IEntity<Guid>
     {
         public Guid Id { set; get; }
@@ -22,7 +22,7 @@ public class CreateDbSetAsModelTests : BaseTests, IAssemblyFixture<AppFactory>
         public string? Name { set; get; }
     }
 
-    [Entity("withoutPostSimpleEntities", Methods = [ODataHttpMethod.Query])]
+    [Entity("withoutPostSimpleEntities", Methods = [EntityMethod.Query])]
     public class WithoutPostSimpleEntity : IEntity<Guid>
     {
         public Guid Id { set; get; }

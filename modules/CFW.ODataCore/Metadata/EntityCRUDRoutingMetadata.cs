@@ -18,11 +18,11 @@ public class EntityCRUDRoutingMetadata
 
     public required bool TargetTypeIsHandler { set; get; }
 
-    public Dictionary<ODataHttpMethod, ServiceDescriptor> ServiceDescriptors { set; get; }
-        = new Dictionary<ODataHttpMethod, ServiceDescriptor>();
+    public Dictionary<EntityMethod, ServiceDescriptor> ServiceDescriptors { set; get; }
+        = new Dictionary<EntityMethod, ServiceDescriptor>();
 
-    public Dictionary<ODataHttpMethod, IAuthorizeData> AuthorizeDataList { set; get; }
-        = new Dictionary<ODataHttpMethod, IAuthorizeData>();
+    public Dictionary<EntityMethod, IAuthorizeData> AuthorizeDataList { set; get; }
+        = new Dictionary<EntityMethod, IAuthorizeData>();
 
     internal static EntityCRUDRoutingMetadata Create(Type targetType, EntityAttribute entityAttribute)
     {
@@ -31,7 +31,7 @@ public class EntityCRUDRoutingMetadata
         var interfaces = targetType.GetInterfaces().Where(x => x.IsGenericType);
 
         var authorizes = targetType.GetCustomAttributes<EntityAuthorizeAttribute>().ToArray();
-        var authorizeDataList = new Dictionary<ODataHttpMethod, IAuthorizeData>();
+        var authorizeDataList = new Dictionary<EntityMethod, IAuthorizeData>();
 
         var implementationInterfaces = interfaces
             .Where(x => _supportHandlers.Values.Contains(x.GetGenericTypeDefinition()))
@@ -42,7 +42,7 @@ public class EntityCRUDRoutingMetadata
             throw new InvalidOperationException("Only set Method values for Entity class");
 
         //Add all methods as default if apply type is viewModel and no method set
-        IEnumerable<ODataHttpMethod> availableMethods = entityAttribute.Methods;
+        IEnumerable<EntityMethod> availableMethods = entityAttribute.Methods;
         if (!targetTypeIsHandler && !availableMethods.Any())
             availableMethods = _supportHandlers.Keys;
 
@@ -125,7 +125,7 @@ public class EntityCRUDRoutingMetadata
         Type? serviceType = null, implementationType = null, dbType = entityAttribute.DbType;
         foreach (var availableMethod in availableMethods)
         {
-            if (availableMethod == ODataHttpMethod.Query)
+            if (availableMethod == EntityMethod.Query)
             {
                 serviceType = typeof(IEntityQueryHandler<>).MakeGenericType(entityType);
                 implementationType = targetTypeIsHandler
@@ -135,7 +135,7 @@ public class EntityCRUDRoutingMetadata
                         : typeof(EntityQueryDefaultHandler<,>).MakeGenericType(entityType, dbType);
             }
 
-            if (availableMethod == ODataHttpMethod.Post)
+            if (availableMethod == EntityMethod.Post)
             {
                 serviceType = typeof(IEntityCreateHandler<>).MakeGenericType(entityType);
                 implementationType = targetTypeIsHandler
@@ -143,7 +143,7 @@ public class EntityCRUDRoutingMetadata
                     : typeof(EntityCreateDefaultHandler<>).MakeGenericType(entityType);
             }
 
-            if (availableMethod == ODataHttpMethod.GetByKey)
+            if (availableMethod == EntityMethod.GetByKey)
             {
                 serviceType = typeof(IEntityGetByKeyHandler<,>).MakeGenericType(entityType, keyType);
                 implementationType = targetTypeIsHandler
@@ -151,7 +151,7 @@ public class EntityCRUDRoutingMetadata
                     : typeof(EntityGetByKeyDefaultHandler<,>).MakeGenericType(entityType, keyType);
             }
 
-            if (availableMethod == ODataHttpMethod.Patch)
+            if (availableMethod == EntityMethod.Patch)
             {
                 serviceType = typeof(IEntityPatchHandler<,>).MakeGenericType(entityType, keyType);
                 implementationType = targetTypeIsHandler
@@ -159,7 +159,7 @@ public class EntityCRUDRoutingMetadata
                     : typeof(EntityPatchDefaultHandler<,>).MakeGenericType(entityType, keyType);
             }
 
-            if (availableMethod == ODataHttpMethod.Delete)
+            if (availableMethod == EntityMethod.Delete)
             {
                 serviceType = typeof(IEntityDeleteHandler<,>).MakeGenericType(entityType, keyType);
                 implementationType = targetTypeIsHandler
@@ -177,13 +177,13 @@ public class EntityCRUDRoutingMetadata
         return metadata;
     }
 
-    private static Dictionary<ODataHttpMethod, Type> _supportHandlers = new Dictionary<ODataHttpMethod, Type>
+    private static Dictionary<EntityMethod, Type> _supportHandlers = new Dictionary<EntityMethod, Type>
     {
-        { ODataHttpMethod.Post, typeof(IEntityCreateHandler<>) },
-        { ODataHttpMethod.Query, typeof(IEntityQueryHandler<>) },
-        { ODataHttpMethod.GetByKey, typeof(IEntityGetByKeyHandler<,>) },
-        { ODataHttpMethod.Patch, typeof(IEntityPatchHandler<,>) },
-        { ODataHttpMethod.Delete, typeof(IEntityDeleteHandler<,>) }
+        { EntityMethod.Post, typeof(IEntityCreateHandler<>) },
+        { EntityMethod.Query, typeof(IEntityQueryHandler<>) },
+        { EntityMethod.GetByKey, typeof(IEntityGetByKeyHandler<,>) },
+        { EntityMethod.Patch, typeof(IEntityPatchHandler<,>) },
+        { EntityMethod.Delete, typeof(IEntityDeleteHandler<,>) }
     };
 }
 

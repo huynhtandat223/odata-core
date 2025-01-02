@@ -7,20 +7,52 @@ using System.Diagnostics;
 
 namespace CFW.ODataCore;
 
-public static class ServicesCollectionExtensions
+public class EntityMimimalApiOptions
 {
-    public static IMvcBuilder AddEntityMinimalApi<TDbContext>(this IMvcBuilder mvcBuilder
-        , MetadataContainerFactory? metadataContainerFactory = null
-        , string defaultRoutePrefix = Constants.DefaultODataRoutePrefix
-        , Action<ODataOptions>? odataOptions = null)
+    internal Type DefaultDbContext { get; set; } = default!;
+
+    internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;
+
+    public Action<ODataOptions> ODataOptions { get; set; } = (options) => options.EnableQueryFeatures();
+
+    public MetadataContainerFactory MetadataContainerFactory { get; set; } = new MetadataContainerFactory();
+
+    public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
         where TDbContext : DbContext
     {
-        metadataContainerFactory ??= new MetadataContainerFactory();
+        DefaultDbContext = typeof(TDbContext);
+        DbServiceLifetime = serviceLifetime;
+
+        return this;
+    }
+
+    public EntityMimimalApiOptions UseODataOptions(Action<ODataOptions> odataOptions)
+    {
+        ODataOptions = odataOptions;
+        return this;
+    }
+
+    public EntityMimimalApiOptions UseMetadataContainerFactory(MetadataContainerFactory metadataContainerFactory)
+    {
+        MetadataContainerFactory = metadataContainerFactory;
+        return this;
+    }
+}
+
+public static class ServicesCollectionExtensions
+{
+    public static IMvcBuilder AddEntityMinimalApi(this IMvcBuilder mvcBuilder
+        , Action<EntityMimimalApiOptions>? setupAction = null
+        , string defaultRoutePrefix = Constants.DefaultODataRoutePrefix)
+    {
         var services = mvcBuilder.Services;
+        var coreOptions = new EntityMimimalApiOptions();
+        if (setupAction is not null)
+            setupAction(coreOptions);
 
         defaultRoutePrefix = SanitizeRoutePrefix(defaultRoutePrefix);
 
-        var containers = metadataContainerFactory
+        var containers = coreOptions.MetadataContainerFactory
             .CreateContainers(services, defaultRoutePrefix)
             .ToList();
 
@@ -38,10 +70,7 @@ public static class ServicesCollectionExtensions
 
         mvcBuilder.AddOData(options =>
         {
-            if (odataOptions is null)
-                options.EnableQueryFeatures();
-            else
-                odataOptions(options);
+            coreOptions.ODataOptions(options);
 
             foreach (var container in containers)
             {
@@ -51,12 +80,16 @@ public static class ServicesCollectionExtensions
             }
         });
 
-        services.AddEfCoreProjector<TDbContext>();
-
+        if (coreOptions.DefaultDbContext is not null)
+        {
+            var contextProvider = typeof(ContextProvider<>).MakeGenericType(coreOptions.DefaultDbContext);
+            services.Add(new ServiceDescriptor(typeof(IODataDbContextProvider)
+                , contextProvider, coreOptions.DbServiceLifetime));
+        }
         return mvcBuilder;
     }
 
-    public static void UseODataMinimalApi(this WebApplication app)
+    public static void UseEntityMinimalApi(this WebApplication app)
     {
         var httpRequestHandlers = app.Services.GetServices<IHttpRequestHandler>();
         foreach (var requestHandler in httpRequestHandlers)

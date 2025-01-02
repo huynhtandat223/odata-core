@@ -1,6 +1,6 @@
 ﻿using CFW.Core.Entities;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.EntityMimimalApi.Samples.Models;
 
 [Entity("categories")]
 public class Category : IEntity<Guid>

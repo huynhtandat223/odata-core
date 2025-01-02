@@ -4,7 +4,7 @@ using CFW.ODataCore.Models;
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
 [Entity("authorize-query-categories")]
-[EntityAuthorize(ApplyMethods = [ODataHttpMethod.Query])]
+[EntityAuthorize(ApplyMethods = [EntityMethod.Query])]
 public class AuthorizeQueryCategory : IEntity<Guid>
 {
     public Guid Id { get; set; }

@@ -5,7 +5,7 @@ namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
 public class PatchByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
 {
-    [Entity(nameof(PatchByKeyEntity), Methods = [ODataHttpMethod.Patch])]
+    [Entity(nameof(PatchByKeyEntity), Methods = [EntityMethod.Patch])]
     public class PatchByKeyEntity : IEntity<Guid>
     {
         public Guid Id { get; set; }
