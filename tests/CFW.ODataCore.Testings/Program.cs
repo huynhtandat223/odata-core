@@ -17,8 +17,8 @@ if (!isTesting)
                .EnableSensitiveDataLogging()
                .UseSqlite($@"Data Source=appdbcontext.db"));
 
-    builder.Services.AddControllers().AddODataMinimalApi();
-    builder.Services.AddEfCoreProjector<TestingDbContext>();
+    builder.Services.AddControllers()
+        .AddEntityMinimalApi<TestingDbContext>();
 }
 
 //Authentication

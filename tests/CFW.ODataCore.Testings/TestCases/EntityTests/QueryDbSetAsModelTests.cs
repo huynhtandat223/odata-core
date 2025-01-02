@@ -39,7 +39,7 @@ public class QueryDbSetAsModelTests : BaseTests, IClassFixture<NonInitAppFactory
                            .UseSqlite($"Data Source={dbPath}"));
 
                 services.AddControllers()
-                .AddODataMinimalApi(new TestMetadataContainerFactory(typeof(SimpleQueryEntity)));
+                .AddEntityMinimalApi<TestingDbContext>(new TestMetadataContainerFactory(typeof(SimpleQueryEntity)));
             });
         });
     }

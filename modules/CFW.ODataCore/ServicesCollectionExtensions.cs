@@ -2,18 +2,23 @@
 using CFW.ODataCore.RequestHandlers;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace CFW.ODataCore;
 
 public static class ServicesCollectionExtensions
 {
-    public static IMvcBuilder AddODataMinimalApi(this IMvcBuilder mvcBuilder
+    public static IMvcBuilder AddEntityMinimalApi<TDbContext>(this IMvcBuilder mvcBuilder
         , MetadataContainerFactory? metadataContainerFactory = null
         , string defaultRoutePrefix = Constants.DefaultODataRoutePrefix
         , Action<ODataOptions>? odataOptions = null)
+        where TDbContext : DbContext
     {
         metadataContainerFactory ??= new MetadataContainerFactory();
         var services = mvcBuilder.Services;
+
+        defaultRoutePrefix = SanitizeRoutePrefix(defaultRoutePrefix);
 
         var containers = metadataContainerFactory
             .CreateContainers(services, defaultRoutePrefix)
@@ -31,8 +36,7 @@ public static class ServicesCollectionExtensions
         }
         services.AddSingleton<IEnumerable<ODataOutputFormatter>>(formatters);
 
-
-        return mvcBuilder.AddOData(options =>
+        mvcBuilder.AddOData(options =>
         {
             if (odataOptions is null)
                 options.EnableQueryFeatures();
@@ -47,7 +51,9 @@ public static class ServicesCollectionExtensions
             }
         });
 
+        services.AddEfCoreProjector<TDbContext>();
 
+        return mvcBuilder;
     }
 
     public static void UseODataMinimalApi(this WebApplication app)
@@ -57,5 +63,23 @@ public static class ServicesCollectionExtensions
         {
             requestHandler.MappRouters(app);
         }
+    }
+
+    /// <summary>
+    /// From Microsoft.AspNetCore.OData source code
+    /// Sanitizes the route prefix by stripping leading and trailing forward slashes.
+    /// </summary>
+    /// <param name="routePrefix">Route prefix to sanitize.</param>
+    /// <returns>Sanitized route prefix.</returns>
+    private static string SanitizeRoutePrefix(string routePrefix)
+    {
+        Debug.Assert(routePrefix != null);
+
+        if (routePrefix.Length > 0 && routePrefix[0] != '/' && routePrefix[^1] != '/')
+        {
+            return routePrefix;
+        }
+
+        return routePrefix.Trim('/');
     }
 }
