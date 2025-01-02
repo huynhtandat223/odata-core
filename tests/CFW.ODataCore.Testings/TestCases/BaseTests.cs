@@ -42,12 +42,12 @@ public abstract class BaseTests
                     var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                     services.AddDbContext<TestingDbContext>(
                        options => options
-                       .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                       .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                        .EnableSensitiveDataLogging()
                        .UseSqlite($"Data Source={dbPath}"));
 
-                    services.AddControllers()
-                        .AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
+
+                    services.AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
                     services.AddSingleton(requestObjects);
                 })
                 .ConfigureLogging(logging =>
@@ -76,11 +76,11 @@ public abstract class BaseTests
                 var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                 services.AddDbContext<TestingDbContext>(
                            options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                            .EnableSensitiveDataLogging()
                            .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
+                services
                     .AddEntityMinimalApi(o => o
                         .UseDefaultDbContext<TestingDbContext>()
                         .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
@@ -106,11 +106,11 @@ public abstract class BaseTests
                 var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                 services.AddDbContext<TestingDbContext>(
                            options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                            .EnableSensitiveDataLogging()
                            .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
+                services
                     .AddEntityMinimalApi(o => o
                         .UseDefaultDbContext<TestingDbContext>()
                         .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));

@@ -1,8 +1,14 @@
 ﻿using CFW.ODataCore.Projectors.EFCore;
 using CFW.ODataCore.RequestHandlers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.AspNetCore.OData.Routing.Parser;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using Microsoft.OData.ModelBuilder;
 using System.Diagnostics;
 
 namespace CFW.ODataCore;
@@ -41,11 +47,10 @@ public class EntityMimimalApiOptions
 
 public static class ServicesCollectionExtensions
 {
-    public static IMvcBuilder AddEntityMinimalApi(this IMvcBuilder mvcBuilder
+    public static IServiceCollection AddEntityMinimalApi(this IServiceCollection services
         , Action<EntityMimimalApiOptions>? setupAction = null
         , string defaultRoutePrefix = Constants.DefaultODataRoutePrefix)
     {
-        var services = mvcBuilder.Services;
         var coreOptions = new EntityMimimalApiOptions();
         if (setupAction is not null)
             setupAction(coreOptions);
@@ -68,13 +73,33 @@ public static class ServicesCollectionExtensions
         }
         services.AddSingleton<IEnumerable<ODataOutputFormatter>>(formatters);
 
-        mvcBuilder.AddOData(options =>
-        {
-            coreOptions.ODataOptions(options);
+        //services.AddODataCore();
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<ODataOptions>, ODataOptionsSetup>());
 
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, ODataMvcOptionsSetup>());
+
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<JsonOptions>, ODataJsonOptionsSetup>());
+
+        //
+        // Parser & Resolver & Provider
+        //
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IODataQueryRequestParser, DefaultODataQueryRequestParser>());
+
+        services.TryAddSingleton<IAssemblyResolver, DefaultAssemblyResolver>();
+        services.TryAddSingleton<IODataPathTemplateParser, DefaultODataPathTemplateParser>();
+        //End AddODataCore
+
+
+        services.AddOptions<ODataOptions>().Configure(odataOptions =>
+        {
+            coreOptions.ODataOptions(odataOptions);
             foreach (var container in containers)
             {
-                options.AddRouteComponents(
+                odataOptions.AddRouteComponents(
                     routePrefix: container.RoutePrefix
                     , model: container.EdmModel);
             }
@@ -86,7 +111,7 @@ public static class ServicesCollectionExtensions
             services.Add(new ServiceDescriptor(typeof(IODataDbContextProvider)
                 , contextProvider, coreOptions.DbServiceLifetime));
         }
-        return mvcBuilder;
+        return services;
     }
 
     public static void UseEntityMinimalApi(this WebApplication app)

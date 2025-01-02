@@ -32,7 +32,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
         foreach (var method in _metadata.ServiceDescriptors.Keys)
         {
-            RouteHandlerBuilder routeHandlerBuilder = null;
+            RouteHandlerBuilder? routeHandlerBuilder = null;
             if (method == EntityMethod.GetByKey)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/{key}", async (HttpContext httpContext
@@ -51,7 +51,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
                     var query = result.Data;
                     return new ODataResults<dynamic> { Data = query };
-                });
+                }).Produces<TViewModel>();
             }
 
             if (method == EntityMethod.Patch)
@@ -64,7 +64,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 {
                     var result = await handler.Handle(key, model.Value!, cancellationToken);
                     return new ODataResults<TViewModel> { Data = result.Data };
-                });
+                }).Produces<TViewModel>();
             }
 
             if (method == EntityMethod.Post)
@@ -78,7 +78,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                         return Results.Created("", result.Data);
 
                     return Results.BadRequest(result.Message);
-                });
+                }).Produces<TViewModel>();
             }
 
             if (method == EntityMethod.Query)
@@ -94,7 +94,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
                     var result = await handler.Handle(opdataQueryOptions, cancellationToken);
                     return new ODataResults<IQueryable> { Data = result.Data };
-                });
+                }).Produces<ODataQueryResult<TViewModel>>();
             }
 
             if (method == EntityMethod.Delete)
@@ -109,7 +109,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                         return Results.NotFound();
 
                     return Results.Ok();
-                });
+                }).Produces(200);
             }
 
             if (routeHandlerBuilder is null)

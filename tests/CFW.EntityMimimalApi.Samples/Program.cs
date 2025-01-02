@@ -8,19 +8,16 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<SampleDbContext>(
                options => options
-               .ReplaceService<IModelCustomizer, ODataModelCustomizer<SampleDbContext>>()
+               .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<SampleDbContext>>()
                .EnableSensitiveDataLogging()
-               .UseSqlite($@"Data Source=appdbcontext.db"));
+               .UseSqlite($@"Data Source=sample_db.db"));
 
-builder.Services.AddControllers()
-    .AddEntityMinimalApi(o => o.UseDefaultDbContext<SampleDbContext>());
+builder.Services.AddEntityMinimalApi(o => o.UseDefaultDbContext<SampleDbContext>());
 
 var app = builder.Build();
 
@@ -33,9 +30,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseRouting();
-
 app.UseEntityMinimalApi();
-//app.MapControllers();
+
+
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetService<SampleDbContext>();
+if (db is not null && !db.Database.CanConnect())
+    db.Database.EnsureCreated();
 
 app.Run();
