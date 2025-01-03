@@ -122,7 +122,11 @@ public class EntityCRUDRoutingMetadata
             AuthorizeDataList = authorizeDataList
         };
 
-        Type? serviceType = null, implementationType = null, dbType = entityAttribute.DbType;
+        Type? serviceType = null, implementationType = null;
+        Type dbType = entityAttribute.DbType
+            ?? entityType
+            ?? throw new ArgumentNullException(nameof(dbType));
+
         foreach (var availableMethod in availableMethods)
         {
             if (availableMethod == EntityMethod.Query)
@@ -140,7 +144,7 @@ public class EntityCRUDRoutingMetadata
                 serviceType = typeof(IEntityCreateHandler<>).MakeGenericType(entityType);
                 implementationType = targetTypeIsHandler
                     ? targetType
-                    : typeof(EntityCreateDefaultHandler<>).MakeGenericType(entityType);
+                    : typeof(EntityCreateDefaultHandler<,>).MakeGenericType(entityType, dbType!);
             }
 
             if (availableMethod == EntityMethod.GetByKey)

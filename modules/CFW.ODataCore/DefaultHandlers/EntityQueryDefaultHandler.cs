@@ -163,6 +163,9 @@ public class EntityQueryDefaultHandler<TODataViewModel, TDbModel>
 
     protected override IQueryable<TODataViewModel> GetQueryable(DbContext db)
     {
+        if (typeof(TODataViewModel) == typeof(TDbModel))
+            return db.Set<TODataViewModel>().AsQueryable();
+
         var query = db.Set<TDbModel>().Select(_projection.Value).AsNoTracking();
         return query;
     }

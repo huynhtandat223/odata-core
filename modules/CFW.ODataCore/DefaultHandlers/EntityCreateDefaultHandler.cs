@@ -1,46 +1,33 @@
-﻿using CFW.ODataCore.Intefaces;
+﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Projectors.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace CFW.ODataCore.DefaultHandlers;
 
-public class EntityCreateDefaultHandler<TODataViewModel> : IEntityCreateHandler<TODataViewModel>
+
+public class EntityCreateDefaultHandler<TODataViewModel, TDbModel> : IEntityCreateHandler<TODataViewModel>
     where TODataViewModel : class
 {
     private readonly IODataDbContextProvider _dbContextProvider;
     private readonly ILogger _logger;
-    private readonly IMapper _mapper;
 
     public EntityCreateDefaultHandler(IODataDbContextProvider dbContextProvider
-        , ILogger<EntityCreateDefaultHandler<TODataViewModel>> logger
-        , IMapper mapper)
+        , ILogger<EntityCreateDefaultHandler<TODataViewModel, TDbModel>> logger)
     {
         _dbContextProvider = dbContextProvider;
         _logger = logger;
-        _mapper = mapper;
     }
 
     public async Task<Result<TODataViewModel>> Handle(TODataViewModel model, CancellationToken cancellationToken)
     {
-        if (model is null)
-            return model.Failed("Model is null.")!;
-
         var db = _dbContextProvider.GetContext();
-        var dbSetType = typeof(TODataViewModel);
-
-        var dbModel = typeof(TODataViewModel) == dbSetType
-        ? model
-            : _mapper.Map(model, dbSetType);
-
-        if (dbModel is null)
-            this.Failed("Mapping failed.");
-
-        var entityType = db.Model.FindEntityType(dbModel!.GetType());
-        if (entityType is null)
-            throw new InvalidOperationException("Entity type not found.");
 
         Result<TODataViewModel>? result = null;
+        var dbModel = Map(model);
         db.ChangeTracker.TrackGraph(dbModel!, async rootEntity =>
         {
             try
@@ -64,6 +51,175 @@ public class EntityCreateDefaultHandler<TODataViewModel> : IEntityCreateHandler<
         return model.Created();
     }
 
+    private TDbModel Map(TODataViewModel viewModel)
+    {
+        if (viewModel is TDbModel dbModel)
+            return dbModel;
+
+        var projection = _reverseProjection.Value;
+        dbModel = projection.Compile()(viewModel);
+
+        return dbModel;
+    }
+
+    private static Type? GetCollectionElementType(Type type)
+    {
+        return type.IsGenericType ? type.GetGenericArguments()[0] : null;
+    }
+
+    private static LambdaExpression? CreateNestedProjection(Type sourceType, Type destinationType)
+    {
+        var parameter = Expression.Parameter(sourceType, "x");
+
+        var destinationProperties = destinationType
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        var bindings = destinationProperties
+            .Select(destProp =>
+            {
+                var entityPropertyNameAttr = destProp.GetCustomAttribute<EntityPropertyNameAttribute>();
+                var sourcePropName = entityPropertyNameAttr?.DbModelPropertyName ?? destProp.Name;
+
+                var sourceProp = sourceType.GetProperty(sourcePropName, BindingFlags.Public | BindingFlags.Instance);
+                if (sourceProp == null)
+                    return null;
+
+                if (!destProp.PropertyType.IsValueType && !destProp.PropertyType.IsPrimitive && destProp.PropertyType != typeof(string))
+                {
+                    var nestedProjection = CreateNestedProjection(sourceProp.PropertyType, destProp.PropertyType);
+                    if (nestedProjection == null)
+                        return null;
+
+                    var sourcePropertyAccess = Expression.Property(parameter, sourceProp);
+                    var nestedExpression = Expression.Invoke(nestedProjection, sourcePropertyAccess);
+                    return Expression.Bind(destProp, nestedExpression);
+                }
+
+                if (destProp.PropertyType.IsAssignableFrom(sourceProp.PropertyType) ||
+                    (Nullable.GetUnderlyingType(destProp.PropertyType) != null &&
+                     Nullable.GetUnderlyingType(destProp.PropertyType) == sourceProp.PropertyType))
+                {
+                    var sourcePropertyAccess = Expression.Property(parameter, sourceProp);
+                    return Expression.Bind(destProp, sourcePropertyAccess);
+                }
+
+                return null;
+            })
+            .Where(binding => binding != null)
+            .ToArray();
+
+        if (!bindings.Any())
+            return null;
+
+        var newExpression = Expression.New(destinationType);
+        var memberInit = Expression.MemberInit(newExpression, bindings!);
+
+        return Expression.Lambda(memberInit, parameter);
+    }
+
+    private readonly Lazy<Expression<Func<TODataViewModel, TDbModel>>> _reverseProjection = new(() =>
+    {
+        var parameter = Expression.Parameter(typeof(TODataViewModel), "x");
+
+        var destinationProperties = typeof(TDbModel)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        var bindings = destinationProperties
+            .Select(destProp =>
+            {
+                // Check if there's a matching ViewModel property by attribute or name
+                var viewModelProp = typeof(TODataViewModel)
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .FirstOrDefault(vmProp =>
+                    {
+                        var attr = vmProp.GetCustomAttribute<EntityPropertyNameAttribute>();
+                        return (attr != null && attr.DbModelPropertyName == destProp.Name) ||
+                               vmProp.Name == destProp.Name;
+                    });
+
+                if (viewModelProp == null)
+                    return null;
+
+                var sourcePropertyAccess = Expression.Property(parameter, viewModelProp);
+
+                // Handle collections
+                if (destProp.PropertyType.IsCommonGenericCollectionType()
+                    && viewModelProp.PropertyType.IsCommonGenericCollectionType())
+                {
+                    var sourceElementType = GetCollectionElementType(viewModelProp.PropertyType);
+                    var destinationElementType = GetCollectionElementType(destProp.PropertyType);
+
+                    if (sourceElementType != null && destinationElementType != null)
+                    {
+                        var nestedProjection = CreateNestedProjection(sourceElementType, destinationElementType);
+                        if (nestedProjection == null)
+                            return null;
+
+                        // Call LINQ Select to transform the collection
+                        var selectMethod = typeof(Enumerable)
+                            .GetMethods(BindingFlags.Static | BindingFlags.Public)
+                            .First(m => m.Name == "Select" && m.GetParameters().Length == 2)
+                            .MakeGenericMethod(sourceElementType, destinationElementType);
+
+                        var selectCall = Expression.Call(selectMethod, sourcePropertyAccess, nestedProjection);
+
+                        // Convert the result to the appropriate collection type (e.g., List<T>)
+                        var toListMethod = typeof(Enumerable)
+                            .GetMethods(BindingFlags.Static | BindingFlags.Public)
+                            .First(m => m.Name == "ToList" && m.GetParameters().Length == 1)
+                            .MakeGenericMethod(destinationElementType);
+
+                        var toListCall = Expression.Call(toListMethod, selectCall);
+
+                        // Add null check for collection
+                        var nullCheck = Expression.Condition(
+                            Expression.Equal(sourcePropertyAccess, Expression.Constant(null)),
+                            Expression.Constant(null, destProp.PropertyType),
+                            toListCall
+                        );
+
+                        return Expression.Bind(destProp, nullCheck);
+                    }
+                }
+
+                // Handle nested complex types
+                if (!destProp.PropertyType.IsValueType && !destProp.PropertyType.IsPrimitive && destProp.PropertyType != typeof(string))
+                {
+                    var nestedProjection = CreateNestedProjection(viewModelProp.PropertyType, destProp.PropertyType);
+                    if (nestedProjection == null)
+                        return null;
+
+                    var nestedExpression = Expression.Invoke(nestedProjection, sourcePropertyAccess);
+
+                    // Add null check for complex properties
+                    var nullCheck = Expression.Condition(
+                        Expression.Equal(sourcePropertyAccess, Expression.Constant(null)),
+                        Expression.Constant(null, destProp.PropertyType),
+                        nestedExpression
+                    );
+
+                    return Expression.Bind(destProp, nullCheck);
+                }
+
+                // Handle simple properties
+                if (destProp.PropertyType.IsAssignableFrom(viewModelProp.PropertyType) ||
+                    (Nullable.GetUnderlyingType(destProp.PropertyType) != null &&
+                     Nullable.GetUnderlyingType(destProp.PropertyType) == viewModelProp.PropertyType))
+                {
+                    return Expression.Bind(destProp, sourcePropertyAccess);
+                }
+
+                return null;
+            })
+            .Where(binding => binding != null)
+            .ToArray();
+
+        var newExpression = Expression.New(typeof(TDbModel));
+        var memberInit = Expression.MemberInit(newExpression, bindings!);
+
+        var lambda = Expression.Lambda<Func<TODataViewModel, TDbModel>>(memberInit, parameter);
+        return lambda;
+    });
 
     private async Task TrackGraph(DbContext db
         , object dbModel, EntityEntryGraphNode rootEntity, CancellationToken cancellationToken)
@@ -81,7 +237,7 @@ public class EntityCreateDefaultHandler<TODataViewModel> : IEntityCreateHandler<
         {
             var targetEntity = navigation.TargetEntry;
             if (targetEntity is null)
-                throw new NotImplementedException();
+                continue;
 
             var keyProperty = targetEntity.Metadata.FindPrimaryKey()?.Properties.SingleOrDefault();
             if (keyProperty is null)
@@ -114,7 +270,7 @@ public class EntityCreateDefaultHandler<TODataViewModel> : IEntityCreateHandler<
         {
             var targetEntities = collection.CurrentValue;
             if (targetEntities is null)
-                throw new NotImplementedException();
+                continue;
 
             foreach (var targetEntity in targetEntities)
             {

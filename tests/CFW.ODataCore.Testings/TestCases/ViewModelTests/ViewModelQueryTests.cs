@@ -4,9 +4,9 @@ using CFW.ODataCore.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.ViewModelTests;
 
-public class BasicViewModelTests : BaseTests, IAssemblyFixture<AppFactory>
+public class ViewModelQueryTests : BaseTests, IAssemblyFixture<AppFactory>
 {
-    public BasicViewModelTests(ITestOutputHelper testOutputHelper
+    public ViewModelQueryTests(ITestOutputHelper testOutputHelper
         , AppFactory factory) : base(testOutputHelper, factory)
     {
     }
