@@ -113,7 +113,8 @@ public abstract class BaseTests
                 services
                     .AddEntityMinimalApi(o => o
                         .UseDefaultDbContext<TestingDbContext>()
-                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
+                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types))
+                        , defaultRoutePrefix: odataPrefix);
                 services.AddSingleton(requestObjects);
             });
         });

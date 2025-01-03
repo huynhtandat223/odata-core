@@ -1,24 +1,32 @@
-# ODataCoreAPI
+# Entity Minimal API
 
-**ODataCoreAPI** is a lightweight and efficient .NET 9 project designed to simplify API development. By combining the power of OData and Entity Framework Core (EF Core), it allows developers to publish robust APIs with minimal configuration. The project supports seamless CRUD (Create, Read, Update, Delete) operations, enabling quick and efficient development and extension of API solutions.
-
----
-
-## Features
-
-- **OData Integration**: Offers advanced querying capabilities such as filtering, sorting, pagination, and more.
-- **EF Core Integration**: Simplifies database interactions with efficient entity mappings and operations.
-- **CRUD Operations**: Provides built-in support for `GET`, `POST`, `PATCH`, and `DELETE` endpoints without extensive setup.
-- **Minimal Configuration**: Quickly generate APIs for CRUD operations with OData and EF Core, reducing the need for boilerplate code.
-- **Scalable Design**: Built for rapid development while maintaining flexibility for future extensions.
+**Entity Minimal API** is a lightweight framework built on **ASP.NET Core OData** and **Minimal API**, designed to simplify entity management by focusing on clean, extensible handlers. Instead of manually managing HTTP status codes and request-response models, it leverages a **Result Pattern** to streamline operation outcomes.
 
 ---
 
-## Prerequisites
+# Key Features
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- A SQL-based database for EF Core
-- Visual Studio or Visual Studio Code for development
+### **1. Common CRUD Entity API**
+Automatically generate CRUD endpoints (POST, GET, DELETE, PATCH) for database entities or ViewModels with minimal configuration.
+#### Example:
+```csharp
+[Entity(nameof(Product))]
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+### Generated endpoints:
+
+| HTTP Method | Endpoint           | Description                                   |
+|-------------|--------------------|-----------------------------------------------|
+| **POST**    | `/products`        | Create a new `Product`.                       |
+| **PATCH**   | `/products/{id}`   | Update specific fields of an existing `Product`. |
+| **GET**     | `/products`        | Retrieve a list of all `Products`.            |
+| **GET**     | `/products/{id}`   | Retrieve details of a specific `Product` by ID. |
+| **DELETE**  | `/products/{id}`   | Delete an existing `Product` by ID.           |
 
 ---
 
