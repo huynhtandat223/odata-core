@@ -1,6 +1,6 @@
 ﻿namespace CFW.ODataCore.Attributes;
 
-public abstract class ODataRoutingAttribute : Attribute
+public abstract class BaseRoutingAttribute : Attribute
 {
     /// <summary>
     /// If empty, the value will be taken from user configuration 

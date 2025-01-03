@@ -8,7 +8,7 @@ namespace CFW.ODataCore.Attributes;
 /// If handler class: the CRUD operations will be generated base on CRUD interfaces.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public class EntityAttribute : ODataRoutingAttribute
+public class EntityAttribute : BaseRoutingAttribute
 {
     public string Name { get; }
 
