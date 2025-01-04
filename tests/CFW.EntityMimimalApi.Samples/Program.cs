@@ -17,7 +17,8 @@ builder.Services.AddDbContext<SampleDbContext>(
                .EnableSensitiveDataLogging()
                .UseSqlite($@"Data Source=sample_db.db"));
 
-builder.Services.AddEntityMinimalApi(o => o.UseDefaultDbContext<SampleDbContext>());
+builder.Services.AddEntityMinimalApi(o => o
+    .UseDefaultDbContext<SampleDbContext>());
 
 var app = builder.Build();
 
