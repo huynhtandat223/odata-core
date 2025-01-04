@@ -4,23 +4,27 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace CFW.ODataCore.Projectors.EFCore;
 
-public class ODataModelCustomizer<TDbContext> : ModelCustomizer, IModelCustomizer
+public class AutoScanModelCustomizer<TDbContext> : ModelCustomizer, IModelCustomizer
     where TDbContext : DbContext
 {
+    public static Type[] EntityMarkerTypes { get; set; } =
+    [
+        typeof(IEntity<>)
+    ];
+
     private readonly Lazy<Type[]> _entityTypes = new(() =>
     {
-        var entityInterface = typeof(IEntity<>);
         var entityTypes = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(assembly => assembly.GetTypes())
-            .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == entityInterface))
+            .Where(type => type.GetInterfaces()
+                .Any(i => EntityMarkerTypes.Contains(i) || (i.IsGenericType && EntityMarkerTypes.Contains(i.GetGenericTypeDefinition()))))
             .ToArray();
 
         return entityTypes;
     });
 
-    public ODataModelCustomizer(ModelCustomizerDependencies dependencies) : base(dependencies)
+    public AutoScanModelCustomizer(ModelCustomizerDependencies dependencies) : base(dependencies)
     {
-
     }
 
     public override void Customize(ModelBuilder modelBuilder, DbContext context)

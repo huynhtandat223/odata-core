@@ -1,6 +1,6 @@
 ﻿namespace CFW.ODataCore.Models;
 
-public enum ODataHttpMethod
+public enum EntityMethod
 {
     GetByKey,
     Post,

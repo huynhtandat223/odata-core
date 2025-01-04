@@ -11,13 +11,3 @@ public class Customer : IEntity<int>
 
     public string? Address { get; set; }
 }
-
-[Entity("vouchers")]
-public class Voucher : IEntity<string>
-{
-    public string Id { get; set; } = string.Empty;
-
-    public string? Code { get; set; }
-
-    public decimal Discount { get; set; }
-}

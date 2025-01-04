@@ -104,8 +104,7 @@ public class CommonAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
         responseMessage = await client.GetAsync($"{baseUrl}/{id}");
         responseMessage.IsSuccessStatusCode.Should().BeTrue();
 
-
-        responseMessage = await client.PatchAsJsonAsync($"{baseUrl}/{id}", defaultModel);
+        responseMessage = await client.PatchAsJsonAsync($"{baseUrl}/{id}", DataGenerator.Create(resourceType));
         responseMessage.IsSuccessStatusCode.Should().BeTrue();
 
 

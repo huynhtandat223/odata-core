@@ -9,7 +9,7 @@ public class MetadataContainerFactory
     private static readonly List<Type> _cachedType = AppDomain.CurrentDomain.GetAssemblies()
         .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
         .SelectMany(a => a.GetTypes())
-        .Where(x => x.GetCustomAttributes<ODataRoutingAttribute>().Any())
+        .Where(x => x.GetCustomAttributes<BaseRoutingAttribute>().Any())
         .ToList();
 
     public IEnumerable<Type> CacheType { protected set; get; } = _cachedType;
@@ -17,7 +17,7 @@ public class MetadataContainerFactory
     public IEnumerable<ODataMetadataContainer> CreateContainers(IServiceCollection services, string defaultRoutePrefix)
     {
         var routingAttributes = CacheType
-            .SelectMany(x => x.GetCustomAttributes<ODataRoutingAttribute>()
+            .SelectMany(x => x.GetCustomAttributes<BaseRoutingAttribute>()
                 .Select(attr => new { TargetType = x, RoutingAttribute = attr }))
             .GroupBy(x => x.RoutingAttribute.RoutePrefix ?? defaultRoutePrefix)
             .ToDictionary(x => new ODataMetadataContainer(x.Key), x => x.ToList());

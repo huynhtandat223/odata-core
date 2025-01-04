@@ -40,7 +40,9 @@ public class OverrideHandlerAuthorizeTests : BaseTests, IAssemblyFixture<AppFact
         // Act
         var createResponse = await httpClient.PostAsJsonAsync($"{Constants.DefaultODataRoutePrefix}/{nameof(OverridedModel)}", data);
         var getByIdResponse = await httpClient.GetAsync($"{Constants.DefaultODataRoutePrefix}/{nameof(OverridedModel)}/{data.Id}");
-        var patchResponse = await httpClient.PatchAsJsonAsync($"{Constants.DefaultODataRoutePrefix}/{nameof(OverridedModel)}/{data.Id}", data);
+
+        var patchData = DataGenerator.Create<OverridedModel>();
+        var patchResponse = await httpClient.PatchAsJsonAsync($"{Constants.DefaultODataRoutePrefix}/{nameof(OverridedModel)}/{data.Id}", patchData);
         var deleteResponse = await httpClient.DeleteAsync($"{Constants.DefaultODataRoutePrefix}/{nameof(OverridedModel)}/{data.Id}");
 
         // Assert

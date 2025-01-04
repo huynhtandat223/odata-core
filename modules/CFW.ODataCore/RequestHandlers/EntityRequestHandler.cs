@@ -12,7 +12,6 @@ using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.RequestHandlers;
 
-
 public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
     where TViewModel : class
 {
@@ -32,8 +31,8 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
         foreach (var method in _metadata.ServiceDescriptors.Keys)
         {
-            RouteHandlerBuilder routeHandlerBuilder = null;
-            if (method == ODataHttpMethod.GetByKey)
+            RouteHandlerBuilder? routeHandlerBuilder = null;
+            if (method == EntityMethod.GetByKey)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/{key}", async (HttpContext httpContext
                     , [FromServices] IEntityGetByKeyHandler<TViewModel, TKey> handler
@@ -51,10 +50,10 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
                     var query = result.Data;
                     return new ODataResults<dynamic> { Data = query };
-                });
+                }).Produces<TViewModel>();
             }
 
-            if (method == ODataHttpMethod.Patch)
+            if (method == EntityMethod.Patch)
             {
                 routeHandlerBuilder = entityGroup.MapPatch("/{key}", async (HttpRequest httpRequest
                     , ODataModel<TViewModel, TKey, Delta<TViewModel>> model
@@ -62,12 +61,21 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     , [FromServices] IEntityPatchHandler<TViewModel, TKey> handler
                     , CancellationToken cancellationToken) =>
                 {
+                    if (model.Value is null)
+                        return Results.BadRequest("Invalid model");
+
                     var result = await handler.Handle(key, model.Value!, cancellationToken);
-                    return new ODataResults<TViewModel> { Data = result.Data };
-                });
+                    if (result.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                        return Results.NotFound();
+
+                    if (result.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
+                        return Results.BadRequest(result.Message);
+
+                    return Results.Accepted();
+                }).Produces(201);
             }
 
-            if (method == ODataHttpMethod.Post)
+            if (method == EntityMethod.Post)
             {
                 routeHandlerBuilder = entityGroup.MapPost("/", async (TViewModel viewModel
                     , [FromServices] IEntityCreateHandler<TViewModel> handler
@@ -78,10 +86,10 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                         return Results.Created("", result.Data);
 
                     return Results.BadRequest(result.Message);
-                });
+                }).Produces<TViewModel>();
             }
 
-            if (method == ODataHttpMethod.Query)
+            if (method == EntityMethod.Query)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/", async (HttpContext httpContext
                     , [FromServices] IEntityQueryHandler<TViewModel> handler
@@ -94,10 +102,10 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
 
                     var result = await handler.Handle(opdataQueryOptions, cancellationToken);
                     return new ODataResults<IQueryable> { Data = result.Data };
-                });
+                }).Produces<ODataQueryResult<TViewModel>>();
             }
 
-            if (method == ODataHttpMethod.Delete)
+            if (method == EntityMethod.Delete)
             {
                 routeHandlerBuilder = entityGroup.MapDelete("/{key}", async (HttpRequest httpRequest
                     , TKey key
@@ -109,7 +117,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                         return Results.NotFound();
 
                     return Results.Ok();
-                });
+                }).Produces(200);
             }
 
             if (routeHandlerBuilder is null)

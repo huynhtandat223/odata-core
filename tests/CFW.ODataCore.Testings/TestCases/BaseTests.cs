@@ -42,13 +42,12 @@ public abstract class BaseTests
                     var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                     services.AddDbContext<TestingDbContext>(
                        options => options
-                       .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                       .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                        .EnableSensitiveDataLogging()
                        .UseSqlite($"Data Source={dbPath}"));
 
-                    services.AddControllers().AddODataMinimalApi();
-                    services.AddEfCoreProjector<TestingDbContext>();
 
+                    services.AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
                     services.AddSingleton(requestObjects);
                 })
                 .ConfigureLogging(logging =>
@@ -77,15 +76,14 @@ public abstract class BaseTests
                 var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                 services.AddDbContext<TestingDbContext>(
                            options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                            .EnableSensitiveDataLogging()
                            .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
-                    .AddODataMinimalApi(new TestMetadataContainerFactory(types));
-                services.AddEfCoreProjector<TestingDbContext>();
-
-
+                services
+                    .AddEntityMinimalApi(o => o
+                        .UseDefaultDbContext<TestingDbContext>()
+                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
                 services.AddSingleton(requestObjects);
             });
         });
@@ -108,15 +106,15 @@ public abstract class BaseTests
                 var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
                 services.AddDbContext<TestingDbContext>(
                            options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
+                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
                            .EnableSensitiveDataLogging()
                            .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
-                    .AddODataMinimalApi(new TestMetadataContainerFactory(types), defaultRoutePrefix: odataPrefix);
-                services.AddEfCoreProjector<TestingDbContext>();
-
-
+                services
+                    .AddEntityMinimalApi(o => o
+                        .UseDefaultDbContext<TestingDbContext>()
+                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types))
+                        , defaultRoutePrefix: odataPrefix);
                 services.AddSingleton(requestObjects);
             });
         });

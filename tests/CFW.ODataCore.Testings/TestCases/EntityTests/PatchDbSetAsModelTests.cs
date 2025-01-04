@@ -1,15 +1,11 @@
 ﻿using CFW.Core.Entities;
 using CFW.ODataCore.Models;
-using CFW.ODataCore.Projectors.EFCore;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
-public class PatchByKeyDbSetAsModelTests : BaseTests, IClassFixture<NonInitAppFactory>
+public class PatchByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
 {
-    [Entity(nameof(PatchByKeyEntity), Methods = [ODataHttpMethod.Patch])]
+    [Entity(nameof(PatchByKeyEntity), Methods = [EntityMethod.Patch])]
     public class PatchByKeyEntity : IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -18,29 +14,9 @@ public class PatchByKeyDbSetAsModelTests : BaseTests, IClassFixture<NonInitAppFa
     }
 
     public PatchByKeyDbSetAsModelTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory)
-        : base(testOutputHelper, factory)
+        : base(testOutputHelper, factory, typeof(PatchByKeyEntity))
     {
-        _factory = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                var currentDirectory = Directory.GetCurrentDirectory();
-                var dbDir = Path.Combine(currentDirectory, "testDbs");
-                if (!Directory.Exists(dbDir))
-                {
-                    Directory.CreateDirectory(dbDir);
-                }
-                var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
-                services.AddDbContext<TestingDbContext>(
-                           options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
-                           .EnableSensitiveDataLogging()
-                           .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
-                    .AddODataMinimalApi(new TestMetadataContainerFactory(typeof(PatchByKeyEntity)));
-            });
-        });
     }
 
     [Fact]

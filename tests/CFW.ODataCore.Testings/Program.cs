@@ -1,5 +1,4 @@
 using CFW.ODataCore;
-using CFW.ODataCore.Projectors.EFCore;
 using CFW.ODataCore.Testings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,12 +12,10 @@ if (!isTesting)
 {
     builder.Services.AddDbContext<TestingDbContext>(
                options => options
-               .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
                .EnableSensitiveDataLogging()
                .UseSqlite($@"Data Source=appdbcontext.db"));
 
-    builder.Services.AddControllers().AddODataMinimalApi();
-    builder.Services.AddEfCoreProjector<TestingDbContext>();
+    builder.Services.AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
 }
 
 //Authentication
@@ -29,13 +26,13 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>()
 
 var app = builder.Build();
 
-app.UseRouting();
-
 app.MapIdentityApi<IdentityUser>();
 app.UseAuthorization();
 
 
-app.UseODataMinimalApi();
+app.UseEntityMinimalApi();
+
+
 app.MapPost("/logout", async (SignInManager<IdentityUser> signInManager,
     [FromBody] object empty) =>
 {
@@ -47,8 +44,6 @@ app.MapPost("/logout", async (SignInManager<IdentityUser> signInManager,
     return Results.Unauthorized();
 })
 .RequireAuthorization();
-
-app.MapControllers();
 
 using var scope = app.Services.CreateScope();
 var db = scope.ServiceProvider.GetService<TestingDbContext>();

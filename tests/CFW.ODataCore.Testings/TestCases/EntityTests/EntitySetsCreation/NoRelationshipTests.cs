@@ -1,6 +1,5 @@
 ﻿using CFW.Core.Entities;
 using CFW.ODataCore.Testings.Models;
-using Xunit.Extensions.AssemblyFixture;
 
 namespace CFW.ODataCore.Testings.TestCases.EntityTests.EntitySetsCreation;
 

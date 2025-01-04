@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Attributes;
 
-public abstract class UnboundOperationAttribute : ODataRoutingAttribute
+public abstract class UnboundOperationAttribute : BaseRoutingAttribute
 {
     public string OperationName { get; init; }
 

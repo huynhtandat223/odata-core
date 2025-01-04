@@ -1,15 +1,11 @@
 ﻿using CFW.Core.Entities;
 using CFW.ODataCore.Models;
-using CFW.ODataCore.Projectors.EFCore;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
-public class GetByKeyDbSetAsModelTests : BaseTests, IClassFixture<NonInitAppFactory>
+public class GetByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
 {
-    [Entity(nameof(SimpleGetByKeyEntity), Methods = [ODataHttpMethod.GetByKey])]
+    [Entity(nameof(SimpleGetByKeyEntity), Methods = [EntityMethod.GetByKey])]
     public class SimpleGetByKeyEntity : IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -18,29 +14,9 @@ public class GetByKeyDbSetAsModelTests : BaseTests, IClassFixture<NonInitAppFact
     }
 
     public GetByKeyDbSetAsModelTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory)
-        : base(testOutputHelper, factory)
+        : base(testOutputHelper, factory, typeof(SimpleGetByKeyEntity))
     {
-        _factory = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                var currentDirectory = Directory.GetCurrentDirectory();
-                var dbDir = Path.Combine(currentDirectory, "testDbs");
-                if (!Directory.Exists(dbDir))
-                {
-                    Directory.CreateDirectory(dbDir);
-                }
-                var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
-                services.AddDbContext<TestingDbContext>(
-                           options => options
-                           .ReplaceService<IModelCustomizer, ODataModelCustomizer<TestingDbContext>>()
-                           .EnableSensitiveDataLogging()
-                           .UseSqlite($"Data Source={dbPath}"));
 
-                services.AddControllers()
-                    .AddODataMinimalApi(new TestMetadataContainerFactory(typeof(SimpleGetByKeyEntity)));
-            });
-        });
     }
 
     [Fact]

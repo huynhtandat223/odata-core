@@ -8,7 +8,7 @@ namespace CFW.ODataCore.Attributes;
 /// If handler class: the CRUD operations will be generated base on CRUD interfaces.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public class EntityAttribute : ODataRoutingAttribute
+public class EntityAttribute : BaseRoutingAttribute
 {
     public string Name { get; }
 
@@ -17,7 +17,7 @@ public class EntityAttribute : ODataRoutingAttribute
     /// <summary>
     /// Only effective for viewModel class. Handler class methods resolved by CRUD interfaces.
     /// </summary>
-    public ODataHttpMethod[] Methods { get; set; } = Array.Empty<ODataHttpMethod>();
+    public EntityMethod[] Methods { get; set; } = Array.Empty<EntityMethod>();
 
     public EntityAttribute(string name)
     {
