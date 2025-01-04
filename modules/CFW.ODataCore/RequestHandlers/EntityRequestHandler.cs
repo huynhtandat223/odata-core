@@ -12,7 +12,6 @@ using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore.RequestHandlers;
 
-
 public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
     where TViewModel : class
 {
@@ -62,9 +61,18 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     , [FromServices] IEntityPatchHandler<TViewModel, TKey> handler
                     , CancellationToken cancellationToken) =>
                 {
+                    if (model.Value is null)
+                        return Results.BadRequest("Invalid model");
+
                     var result = await handler.Handle(key, model.Value!, cancellationToken);
-                    return new ODataResults<TViewModel> { Data = result.Data };
-                }).Produces<TViewModel>();
+                    if (result.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                        return Results.NotFound();
+
+                    if (result.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
+                        return Results.BadRequest(result.Message);
+
+                    return Results.Accepted();
+                }).Produces(201);
             }
 
             if (method == EntityMethod.Post)

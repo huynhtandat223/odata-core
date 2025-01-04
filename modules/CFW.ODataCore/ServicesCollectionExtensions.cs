@@ -63,15 +63,19 @@ public static class ServicesCollectionExtensions
 
         services.AddSingleton<IMapper, JsonMapper>();
 
-        var formatters = ODataOutputFormatterFactory.Create();
-        foreach (var formatter in formatters)
+        //input, output formatters
+        var outputFormaters = ODataOutputFormatterFactory.Create();
+        foreach (var formatter in outputFormaters)
         {
             // Fix for issue where JSON formatter does include charset in the Content-Type header
             if (formatter.SupportedMediaTypes.Contains("application/json")
                 && !formatter.SupportedMediaTypes.Contains("application/json; charset=utf-8"))
                 formatter.SupportedMediaTypes.Add("application/json; charset=utf-8");
         }
-        services.AddSingleton<IEnumerable<ODataOutputFormatter>>(formatters);
+        services.AddSingleton<IEnumerable<ODataOutputFormatter>>(outputFormaters);
+
+        var inputFormatters = ODataInputFormatterFactory.Create().Reverse();
+        services.AddSingleton(inputFormatters);
 
         //services.AddODataCore();
         services.TryAddEnumerable(

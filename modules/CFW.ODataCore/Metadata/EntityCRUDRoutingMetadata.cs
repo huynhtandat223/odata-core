@@ -12,6 +12,8 @@ public class EntityCRUDRoutingMetadata
 {
     public required Type EntityType { set; get; }
 
+    public required Type DbType { set; get; }
+
     public required Type KeyType { set; get; }
 
     public required string Name { set; get; }
@@ -116,6 +118,7 @@ public class EntityCRUDRoutingMetadata
         var metadata = new EntityCRUDRoutingMetadata
         {
             EntityType = entityType,
+            DbType = entityAttribute.DbType ?? entityType,
             KeyType = keyType,
             Name = entityAttribute.Name,
             TargetTypeIsHandler = targetTypeIsHandler,
@@ -160,7 +163,7 @@ public class EntityCRUDRoutingMetadata
                 serviceType = typeof(IEntityPatchHandler<,>).MakeGenericType(entityType, keyType);
                 implementationType = targetTypeIsHandler
                     ? targetType
-                    : typeof(EntityPatchDefaultHandler<,>).MakeGenericType(entityType, keyType);
+                    : typeof(EntityPatchDefaultHandler<,,>).MakeGenericType(entityType, dbType!, keyType);
             }
 
             if (availableMethod == EntityMethod.Delete)

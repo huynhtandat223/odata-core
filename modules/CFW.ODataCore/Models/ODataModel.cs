@@ -36,7 +36,8 @@ public class ODataModel<TODataViewModel, TKey, TBindingModel>
             );
 
         InputFormatterResult? inputResult = default;
-        foreach (var inputFormatter in ODataInputFormatterFactory.Create().Reverse())
+        var odataInputFormatters = context.RequestServices.GetRequiredService<IEnumerable<ODataInputFormatter>>();
+        foreach (var inputFormatter in odataInputFormatters)
         {
             var canRead = inputFormatter.CanRead(inputContext);
 
