@@ -112,7 +112,7 @@ public class BoundNonKeyFunctionTests : BaseTests, IAssemblyFixture<AppFactory>
     }
 
     [Fact]
-    public async Task BoundFunction_NonKeyWithResponse_EmptyQueryString_Failed()
+    public async Task BoundFunction_NonKeyWithResponse_EmptyQueryString_HandleWithNullRequest()
     {
         //Arrage
         var httpClient = _factory.CreateClient();
@@ -123,7 +123,10 @@ public class BoundNonKeyFunctionTests : BaseTests, IAssemblyFixture<AppFactory>
             $"/{nameof(NonKeyFunctionHandler)}");
 
         //Assert
-        response.IsSuccessStatusCode.Should().BeFalse();
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var requests = _factory.Server.Services.GetRequiredService<List<object>>();
 
+        var request = requests.First().Should().BeNull();
+        var responseObj = requests.Last().Should().BeOfType<FunctionResponse>();
     }
 }

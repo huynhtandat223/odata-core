@@ -48,11 +48,11 @@ where TODataViewModel : class
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                _keySetter?.Invoke(request, key!);
+                if (request is not null)
+                    _keySetter?.Invoke(request, key!);
+
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok();
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
         else
@@ -64,9 +64,7 @@ where TODataViewModel : class
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok();
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
 
@@ -117,14 +115,11 @@ where TODataViewModel : class
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                if (request is null)
-                    return Results.BadRequest("Invalid request");
+                if (request is not null)
+                    _keySetter?.Invoke(request, key!);
 
-                _keySetter?.Invoke(request, key!);
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok(result.Data);
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
         else
@@ -135,14 +130,8 @@ where TODataViewModel : class
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                if (request is null)
-                    return Results.BadRequest("Invalid request");
-
                 var result = await requestHandler.Handle(request, cancellationToken);
-
-                if (result.IsSuccess)
-                    return Results.Ok(result.Data);
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
 

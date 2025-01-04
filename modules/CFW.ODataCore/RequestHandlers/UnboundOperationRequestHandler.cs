@@ -45,14 +45,11 @@ public class UnboundOperationRequestHandler<TKey, TRequest> : IHttpRequestHandle
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                if (request is null)
-                    return Results.BadRequest("Invalid Request");
+                if (request is not null)
+                    _keySetter?.Invoke(request, key!);
 
-                _keySetter?.Invoke(request, key!);
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok();
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
         else
@@ -64,9 +61,7 @@ public class UnboundOperationRequestHandler<TKey, TRequest> : IHttpRequestHandle
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok();
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
         return Task.CompletedTask;
@@ -113,14 +108,11 @@ public class UnboundOperationRequestHandler<TKey, TRequest, TResponse> : IHttpRe
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                if (request is null)
-                    return Results.BadRequest("Invalid Request");
+                if (request is not null)
+                    _keySetter?.Invoke(request, key!);
 
-                _keySetter?.Invoke(request, key!);
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok(result.Data);
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
         else
@@ -131,13 +123,8 @@ public class UnboundOperationRequestHandler<TKey, TRequest, TResponse> : IHttpRe
                 , CancellationToken cancellationToken) =>
             {
                 TRequest request = await this.ParseRequest<TRequest>(httpRequest)!;
-                if (request is null)
-                    return Results.BadRequest("Invalid Request");
-
                 var result = await requestHandler.Handle(request, cancellationToken);
-                if (result.IsSuccess)
-                    return Results.Ok(result.Data);
-                return Results.BadRequest(result.Message);
+                return result.ToResults();
             });
         }
 

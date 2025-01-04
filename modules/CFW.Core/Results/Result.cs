@@ -11,9 +11,20 @@ public class Result
     public Exception? Exception { get; set; }
 
     public HttpStatusCode HttpStatusCode { get; set; }
+
+    public object? Data { get; set; }
+
+    /// <summary>
+    /// Return directly the custom result if it is not null.
+    /// </summary>
+    public object? CustomResult { get; set; }
 }
 
 public class Result<T> : Result
 {
-    public T? Data { get; set; }
+    public new T? Data
+    {
+        get => (T?)base.Data;
+        set => base.Data = value;
+    }
 }

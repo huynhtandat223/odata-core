@@ -45,11 +45,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     var opdataQueryOptions = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
 
                     var result = await handler.Handle(key, opdataQueryOptions, cancellationToken);
-                    if (result.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
-                        return Results.NotFound();
-
-                    var query = result.Data;
-                    return new ODataResults<dynamic> { Data = query };
+                    return result.ToODataResults();
                 }).Produces<TViewModel>();
             }
 
@@ -62,16 +58,10 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     , CancellationToken cancellationToken) =>
                 {
                     if (model.Value is null)
-                        return Results.BadRequest("Invalid model");
+                        return model.Failed("Invalid model").ToResults();
 
                     var result = await handler.Handle(key, model.Value!, cancellationToken);
-                    if (result.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
-                        return Results.NotFound();
-
-                    if (result.HttpStatusCode == System.Net.HttpStatusCode.BadRequest)
-                        return Results.BadRequest(result.Message);
-
-                    return Results.Accepted();
+                    return result.ToResults();
                 }).Produces(201);
             }
 
@@ -82,10 +72,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     , CancellationToken cancellationToken) =>
                 {
                     var result = await handler.Handle(viewModel!, cancellationToken);
-                    if (result.IsSuccess)
-                        return Results.Created("", result.Data);
-
-                    return Results.BadRequest(result.Message);
+                    return result.ToResults();
                 }).Produces<TViewModel>();
             }
 
@@ -101,7 +88,8 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     var opdataQueryOptions = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
 
                     var result = await handler.Handle(opdataQueryOptions, cancellationToken);
-                    return new ODataResults<IQueryable> { Data = result.Data };
+                    return result.ToODataResults();
+
                 }).Produces<ODataQueryResult<TViewModel>>();
             }
 
@@ -113,10 +101,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     , CancellationToken cancellationToken) =>
                 {
                     var result = await handler.Handle(key, cancellationToken);
-                    if (result.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
-                        return Results.NotFound();
-
-                    return Results.Ok();
+                    return result.ToResults();
                 }).Produces(200);
             }
 

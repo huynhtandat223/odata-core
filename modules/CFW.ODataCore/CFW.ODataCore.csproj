@@ -13,7 +13,6 @@
     <PackageTags>CRUD;API;MinimalAPI;EntityFramework;OData;DotNet</PackageTags>
     <RepositoryUrl>https://github.com/huynhtandat223/entity-mimimal-api</RepositoryUrl>
     <IsPackable>true</IsPackable>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>

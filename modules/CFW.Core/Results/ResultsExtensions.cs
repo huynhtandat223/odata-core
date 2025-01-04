@@ -19,4 +19,7 @@ public static class ResultsExtensions
 
     public static Result<T> Notfound<T>(this T? _, string? message = null)
         => new Result<T> { IsSuccess = false, Message = message, HttpStatusCode = System.Net.HttpStatusCode.NotFound };
+
+    public static bool IsNotSuccess(this Result result)
+        => !result.IsSuccess;
 }
