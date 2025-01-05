@@ -85,9 +85,9 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                     var feature = AddODataFeature(httpContext);
 
                     var odataQueryContext = new ODataQueryContext(feature.Model, typeof(TViewModel), feature.Path);
-                    var opdataQueryOptions = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
+                    var options = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
 
-                    var result = await handler.Handle(opdataQueryOptions, cancellationToken);
+                    var result = await handler.Handle(options, cancellationToken);
                     return result.ToODataResults();
 
                 }).Produces<ODataQueryResult<TViewModel>>();
@@ -157,7 +157,6 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
         httpContext.Features.Set<IODataFeature>(feature);
         return feature;
     }
-
 }
 
 

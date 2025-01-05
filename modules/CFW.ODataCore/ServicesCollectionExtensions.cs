@@ -5,45 +5,12 @@ using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Parser;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OData.ModelBuilder;
 using System.Diagnostics;
 
 namespace CFW.ODataCore;
-
-public class EntityMimimalApiOptions
-{
-    internal Type DefaultDbContext { get; set; } = default!;
-
-    internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;
-
-    public Action<ODataOptions> ODataOptions { get; set; } = (options) => options.EnableQueryFeatures();
-
-    public MetadataContainerFactory MetadataContainerFactory { get; set; } = new MetadataContainerFactory();
-
-    public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
-        where TDbContext : DbContext
-    {
-        DefaultDbContext = typeof(TDbContext);
-        DbServiceLifetime = serviceLifetime;
-
-        return this;
-    }
-
-    public EntityMimimalApiOptions UseODataOptions(Action<ODataOptions> odataOptions)
-    {
-        ODataOptions = odataOptions;
-        return this;
-    }
-
-    public EntityMimimalApiOptions UseMetadataContainerFactory(MetadataContainerFactory metadataContainerFactory)
-    {
-        MetadataContainerFactory = metadataContainerFactory;
-        return this;
-    }
-}
 
 public static class ServicesCollectionExtensions
 {
@@ -57,11 +24,28 @@ public static class ServicesCollectionExtensions
 
         defaultRoutePrefix = SanitizeRoutePrefix(defaultRoutePrefix);
 
-        var containers = coreOptions.MetadataContainerFactory
-            .CreateContainers(services, defaultRoutePrefix)
-            .ToList();
+        if (coreOptions.IsLazyBuildMetadata)
+        {
 
-        services.AddSingleton<IMapper, JsonMapper>();
+        }
+        else
+        {
+            var containers = coreOptions.MetadataContainerFactory
+                .CreateContainers(services, defaultRoutePrefix)
+                .ToList();
+
+            services.AddOptions<ODataOptions>().Configure(odataOptions =>
+            {
+                coreOptions.ODataOptions(odataOptions);
+                foreach (var container in containers)
+                {
+                    odataOptions.AddRouteComponents(
+                        routePrefix: container.RoutePrefix
+                        , model: container.EdmModel);
+                }
+            });
+
+        }
 
         //input, output formatters
         var outputFormaters = ODataOutputFormatterFactory.Create();
@@ -96,18 +80,6 @@ public static class ServicesCollectionExtensions
         services.TryAddSingleton<IAssemblyResolver, DefaultAssemblyResolver>();
         services.TryAddSingleton<IODataPathTemplateParser, DefaultODataPathTemplateParser>();
         //End AddODataCore
-
-
-        services.AddOptions<ODataOptions>().Configure(odataOptions =>
-        {
-            coreOptions.ODataOptions(odataOptions);
-            foreach (var container in containers)
-            {
-                odataOptions.AddRouteComponents(
-                    routePrefix: container.RoutePrefix
-                    , model: container.EdmModel);
-            }
-        });
 
         if (coreOptions.DefaultDbContext is not null)
         {

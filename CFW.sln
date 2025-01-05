@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFW.EntityMimimalApi.Samples", "tests\CFW.EntityMimimalApi.Samples\CFW.EntityMimimalApi.Samples.csproj", "{449B9844-8015-4955-8E3F-61499B2D2950}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.AspNetCore.OData", "..\AspNetCoreOData\src\Microsoft.AspNetCore.OData\Microsoft.AspNetCore.OData.csproj", "{01E30845-03E1-4D63-A68C-092557C34AD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{449B9844-8015-4955-8E3F-61499B2D2950}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{449B9844-8015-4955-8E3F-61499B2D2950}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{449B9844-8015-4955-8E3F-61499B2D2950}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01E30845-03E1-4D63-A68C-092557C34AD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01E30845-03E1-4D63-A68C-092557C34AD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01E30845-03E1-4D63-A68C-092557C34AD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01E30845-03E1-4D63-A68C-092557C34AD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,5 +65,6 @@ Global
 		{DE1AF031-11A6-43ED-AE7F-E810E707371C} = {DE7E20C8-EB32-4608-B488-984B7B088E4D}
 		{D2CEE5EC-2D37-483E-B3C6-A09F52AB14AC} = {DE7E20C8-EB32-4608-B488-984B7B088E4D}
 		{449B9844-8015-4955-8E3F-61499B2D2950} = {DE7E20C8-EB32-4608-B488-984B7B088E4D}
+		{01E30845-03E1-4D63-A68C-092557C34AD2} = {5005F3E5-E5B3-40C7-91A3-787A8275B9C5}
 	EndGlobalSection
 EndGlobal
