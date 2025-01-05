@@ -29,10 +29,3 @@ public class EntityAttribute : BaseRoutingAttribute
         Name = name;
     }
 }
-
-public class BasicProjectorAttribute<TDbModel> : Attribute
-{
-    public BasicProjectorAttribute()
-    {
-    }
-}

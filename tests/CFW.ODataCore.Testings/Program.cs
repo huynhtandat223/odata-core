@@ -15,6 +15,8 @@ if (!isTesting)
                .EnableSensitiveDataLogging()
                .UseSqlite($@"Data Source=appdbcontext.db"));
 
+    //Fix testing mock service
+    builder.Services.AddSingleton(new List<object>());
     builder.Services.AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
 }
 
