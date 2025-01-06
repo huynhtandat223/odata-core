@@ -24,28 +24,20 @@ public static class ServicesCollectionExtensions
 
         defaultRoutePrefix = SanitizeRoutePrefix(defaultRoutePrefix);
 
-        if (coreOptions.IsLazyBuildMetadata)
-        {
-
-        }
-        else
-        {
-            var containers = coreOptions.MetadataContainerFactory
+        var containers = coreOptions.MetadataContainerFactory
                 .CreateContainers(services, defaultRoutePrefix)
                 .ToList();
 
-            services.AddOptions<ODataOptions>().Configure(odataOptions =>
+        services.AddOptions<ODataOptions>().Configure(odataOptions =>
+        {
+            coreOptions.ODataOptions(odataOptions);
+            foreach (var container in containers)
             {
-                coreOptions.ODataOptions(odataOptions);
-                foreach (var container in containers)
-                {
-                    odataOptions.AddRouteComponents(
-                        routePrefix: container.RoutePrefix
-                        , model: container.EdmModel);
-                }
-            });
-
-        }
+                odataOptions.AddRouteComponents(
+                    routePrefix: container.RoutePrefix
+                    , model: container.EdmModel);
+            }
+        });
 
         //input, output formatters
         var outputFormaters = ODataOutputFormatterFactory.Create();

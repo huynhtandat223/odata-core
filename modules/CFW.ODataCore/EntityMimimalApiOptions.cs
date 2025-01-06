@@ -5,8 +5,6 @@ namespace CFW.ODataCore;
 
 public class EntityMimimalApiOptions
 {
-    public bool IsLazyBuildMetadata { get; set; }
-
     internal Type DefaultDbContext { get; set; } = default!;
 
     internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;
@@ -33,12 +31,6 @@ public class EntityMimimalApiOptions
     public EntityMimimalApiOptions UseMetadataContainerFactory(MetadataContainerFactory metadataContainerFactory)
     {
         MetadataContainerFactory = metadataContainerFactory;
-        return this;
-    }
-
-    public EntityMimimalApiOptions UseLazyBuildMetadata(bool useLazyStartup = true)
-    {
-        IsLazyBuildMetadata = useLazyStartup;
         return this;
     }
 }

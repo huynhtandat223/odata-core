@@ -158,11 +158,6 @@ public class ODataMetadataContainer
         {
             var entityType = entityKey.EntityType;
             var odataEntityType = modelBuilder.AddEntityType(entityType);
-
-            var propertyInfo = entityType.GetProperties().First(x => x.Name == "Name");
-            var prop = odataEntityType.AddProperty(propertyInfo);
-            prop.Name = "NewName";
-
             modelBuilder.AddEntitySet(metadata.Name, odataEntityType);
             var boundOperations = _boundOperations
                 .Where(x => x.Key.EntityType == entityType)
