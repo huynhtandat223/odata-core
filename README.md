@@ -6,12 +6,12 @@
 ### Installation
 Using .NET CLI:
 ```bash
-dotnet add package EntityMinimalApi
+dotnet add package CFW.EntityMinimalApi
 ```
 
 Using Package Manager:
 ```bash
-Install-Package EntityMinimalApi 
+Install-Package CFW.EntityMinimalApi
 ```
 
 In the ASP.NET Core Mimimal API project, update your `Program.cs` as below:
