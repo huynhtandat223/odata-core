@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[Entity("products")]
+[ConfigurableEntity("products")]
 public class Product : IEntity<Guid>
 {
     public Guid Id { get; set; }
@@ -12,4 +12,14 @@ public class Product : IEntity<Guid>
     public string? Description { get; set; }
 
     public Category? Category { get; set; } = default!;
+
+    public ProductType ProductType { get; set; }
+}
+
+public enum ProductType
+{
+    Unknown,
+    Physical,
+    Digital,
+    Service,
 }

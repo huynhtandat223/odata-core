@@ -1,6 +1,0 @@
-@CFW.EntityMimimalApi.Samples_HostAddress = http://localhost:5089
-
-GET {{CFW.EntityMimimalApi.Samples_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

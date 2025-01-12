@@ -4,13 +4,13 @@ using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations;
 
-public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
+public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
 {
     private readonly Type multiAuthorizationType = typeof(MultiAuthorization);
     private const string testApi = "test-api";
 
-    public MultiAuthorizationTests(ITestOutputHelper testOutputHelper, NonInitAppFactory appFactory)
-        : base(testOutputHelper, appFactory, testApi, typeof(MultiAuthorization))
+    public MultiAuthorizationTests(ITestOutputHelper testOutputHelper, AppFactory appFactory)
+        : base(testOutputHelper, appFactory, testApi, types: [typeof(MultiAuthorization)])
     {
 
     }

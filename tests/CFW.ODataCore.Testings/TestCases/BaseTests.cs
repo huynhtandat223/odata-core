@@ -1,9 +1,11 @@
-﻿using CFW.CoreTestings.Logging;
+﻿using CFW.Core.Entities;
+using CFW.CoreTestings.Logging;
 using CFW.ODataCore.Projectors.EFCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.OData.ModelBuilder;
 
 namespace CFW.ODataCore.Testings.TestCases;
 
@@ -24,99 +26,47 @@ public abstract class BaseTests
 
     public const string DefaultPassword = "123!@#abcABC";
 
-    public BaseTests(ITestOutputHelper testOutputHelper, WebApplicationFactory<Program> factory)
+    public const string DefaultIdProp = nameof(IEntity<Guid>.Id);
+
+    public BaseTests(ITestOutputHelper testOutputHelper, AppFactory factory
+        , string? odataPrefix = null, Type[]? types = null)
     {
         _testOutputHelper = testOutputHelper;
         _factory = factory.WithWebHostBuilder(builder =>
         {
-            builder
-                .ConfigureTestServices(services =>
+            builder.ConfigureTestServices(services =>
+            {
+                var currentDirectory = Directory.GetCurrentDirectory();
+                var dbDir = Path.Combine(currentDirectory, "testDbs");
+                if (!Directory.Exists(dbDir))
                 {
-                    var currentDirectory = Directory.GetCurrentDirectory();
-                    var dbDir = Path.Combine(currentDirectory, "testDbs");
-                    if (!Directory.Exists(dbDir))
+                    Directory.CreateDirectory(dbDir);
+                }
+                var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
+                services.AddDbContext<TestingDbContext>(
+                           options => options
+                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
+                           .EnableSensitiveDataLogging()
+                           .UseSqlite($"Data Source={dbPath}"));
+
+                services
+                    .AddEntityMinimalApi(o =>
                     {
-                        Directory.CreateDirectory(dbDir);
-                    }
+                        o.UseDefaultDbContext<TestingDbContext>()
+                        .ConfigureODataModelBuilder(b => b.EnableLowerCamelCase());
 
-                    var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
-                    services.AddDbContext<TestingDbContext>(
-                       options => options
-                       .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
-                       .EnableSensitiveDataLogging()
-                       .UseSqlite($"Data Source={dbPath}"));
-
-
-                    services.AddEntityMinimalApi(o => o.UseDefaultDbContext<TestingDbContext>());
-                    services.AddSingleton(requestObjects);
-                })
-                .ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                    logging.Services.AddSingleton<ILoggerProvider>(r
-                        => new XunitLoggerProvider(_testOutputHelper, "Testing"));
-                });
-        });
-    }
-
-    public BaseTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory
-        , params Type[] types)
-    {
-        _testOutputHelper = testOutputHelper;
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                var currentDirectory = Directory.GetCurrentDirectory();
-                var dbDir = Path.Combine(currentDirectory, "testDbs");
-                if (!Directory.Exists(dbDir))
-                {
-                    Directory.CreateDirectory(dbDir);
-                }
-                var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
-                services.AddDbContext<TestingDbContext>(
-                           options => options
-                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
-                           .EnableSensitiveDataLogging()
-                           .UseSqlite($"Data Source={dbPath}"));
-
-                services
-                    .AddEntityMinimalApi(o => o
-                        .UseDefaultDbContext<TestingDbContext>()
-                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types)));
+                        if (types != null)
+                        {
+                            o.UseMetadataContainerFactory(new TestMetadataContainerFactory(types));
+                        }
+                    }, defaultRoutePrefix: odataPrefix ?? Constants.DefaultODataRoutePrefix);
                 services.AddSingleton(requestObjects);
-            });
-        });
-    }
-
-    public BaseTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory
-        , string odataPrefix, params Type[] types)
-    {
-        _testOutputHelper = testOutputHelper;
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
+            }).ConfigureLogging(logging =>
             {
-                var currentDirectory = Directory.GetCurrentDirectory();
-                var dbDir = Path.Combine(currentDirectory, "testDbs");
-                if (!Directory.Exists(dbDir))
-                {
-                    Directory.CreateDirectory(dbDir);
-                }
-                var dbPath = Path.Combine(dbDir, $"appdbcontext_{Guid.NewGuid()}.db");
-                services.AddDbContext<TestingDbContext>(
-                           options => options
-                           .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
-                           .EnableSensitiveDataLogging()
-                           .UseSqlite($"Data Source={dbPath}"));
-
-                services
-                    .AddEntityMinimalApi(o => o
-                        .UseDefaultDbContext<TestingDbContext>()
-                        .UseMetadataContainerFactory(new TestMetadataContainerFactory(types))
-                        , defaultRoutePrefix: odataPrefix);
-                services.AddSingleton(requestObjects);
-            });
+                logging.ClearProviders();
+                logging.Services.AddSingleton<ILoggerProvider>(r
+                    => new XunitLoggerProvider(_testOutputHelper, "Testing"));
+            }); ;
         });
     }
 
@@ -166,4 +116,28 @@ public abstract class BaseTests
     {
         return _factory.Services.CreateScope().ServiceProvider.GetRequiredService<TestingDbContext>();
     }
+
+    public async Task<List<object>> SeedData(Type dbType, int count, TestingDbContext? db = null)
+    {
+        db ??= GetDbContext();
+        var data = DataGenerator.CreateList(dbType, count);
+        foreach (var item in data)
+        {
+            db.Add(item);
+        }
+        await db.SaveChangesAsync();
+        return data.OfType<object>().ToList();
+    }
+
+    public List<object> SeedData(Type dbModelType, int dataCount, IServiceCollection services)
+    {
+        var db = services.BuildServiceProvider().GetService<TestingDbContext>();
+        if (!db!.Database.CanConnect())
+            db.Database.EnsureCreated();
+        var task = SeedData(dbModelType, dataCount, db);
+        task.Wait();
+
+        return task.Result;
+    }
+
 }

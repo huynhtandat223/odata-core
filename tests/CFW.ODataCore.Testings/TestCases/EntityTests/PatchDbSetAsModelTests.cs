@@ -3,7 +3,7 @@ using CFW.ODataCore.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
-public class PatchByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
+public class PatchByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<AppFactory>
 {
     [Entity(nameof(PatchByKeyEntity), Methods = [EntityMethod.Patch])]
     public class PatchByKeyEntity : IEntity<Guid>
@@ -13,8 +13,8 @@ public class PatchByKeyDbSetAsModelTests : BaseTests, IAssemblyFixture<NonInitAp
         public string Name { get; set; } = string.Empty;
     }
 
-    public PatchByKeyDbSetAsModelTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory)
-        : base(testOutputHelper, factory, typeof(PatchByKeyEntity))
+    public PatchByKeyDbSetAsModelTests(ITestOutputHelper testOutputHelper, AppFactory factory)
+        : base(testOutputHelper, factory, types: [typeof(PatchByKeyEntity)])
     {
 
     }

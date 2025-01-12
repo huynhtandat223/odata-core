@@ -2,6 +2,27 @@
 
 namespace CFW.ODataCore.Attributes;
 
+public abstract class EntityV2Attribute : Attribute
+{
+    public string? RoutePrefix { get; set; }
+
+    public Type? TargetType { get; set; }
+
+    public string Name { get; }
+
+    public EntityMethod[] Methods { get; set; } = Enum.GetValues<EntityMethod>().ToArray();
+
+    public EntityV2Attribute(string name)
+    {
+        if (name.IsNullOrWhiteSpace())
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        Name = name;
+    }
+}
+
 /// <summary>
 /// The class marked with this attribute will be used to create an entity set segment.
 /// If entity class: the CRUD operations will be generated base on all.
@@ -12,6 +33,7 @@ public class EntityAttribute : BaseRoutingAttribute
 {
     public string Name { get; }
 
+    [Obsolete($"Use {nameof(ConfigurationType)} with type {nameof(DefaultEfCoreConfiguration<object>)} instead")]
     public Type? DbType { get; set; }
 
     /// <summary>
@@ -19,20 +41,32 @@ public class EntityAttribute : BaseRoutingAttribute
     /// </summary>
     public EntityMethod[] Methods { get; set; } = Array.Empty<EntityMethod>();
 
-    public EntityAttribute(string name)
-    {
-        Name = name;
-    }
+    /// <summary>
+    /// Advanced configuration for entity, the type must implement <see cref="EntityConfiguration{TEntity}"/>.
+    /// </summary>
+    public Type? ConfigurationType { get; set; }
 
-    public EntityAttribute(string name, params string[] odataHttpMethods)
+    public EntityAttribute(string name)
     {
         Name = name;
     }
 }
 
-public class BasicProjectorAttribute<TDbModel> : Attribute
+[Obsolete("End investigation")]
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+public class ConfigurableEntityAttribute : BaseRoutingAttribute
 {
-    public BasicProjectorAttribute()
+    public string Name { get; }
+
+    /// <summary>
+    /// Advanced configuration for entity, the type must implement <see cref="EntityConfiguration{TEntity}"/>.
+    /// </summary>
+    public Type? ConfigurationType { get; set; }
+
+    public EntityMethod[] Methods { get; set; } = Enum.GetValues<EntityMethod>().ToArray();
+
+    public ConfigurableEntityAttribute(string name)
     {
+        Name = name;
     }
 }

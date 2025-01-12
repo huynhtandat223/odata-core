@@ -24,7 +24,12 @@ public class CommonGenerator : IObjectGenerator
         var processingType = generatorMetadata.GeneratingType;
 
         if (processingType.IsEnum)
-            return _faker.PickRandom(processingType.GetEnumValues()).GetValue(0)!;
+        {
+            var random = new Random();
+            var enumValues = Enum.GetValues(processingType);
+            var randomValue = enumValues.GetValue(random.Next(enumValues.Length));
+            return randomValue!;
+        }
 
         throw new NotImplementedException();
     }

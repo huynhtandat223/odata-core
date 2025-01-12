@@ -1,49 +1,16 @@
-﻿using CFW.ODataCore.Projectors.EFCore;
+﻿using CFW.ODataCore.Models;
+using CFW.ODataCore.Projectors.EFCore;
 using CFW.ODataCore.RequestHandlers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Parser;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OData.ModelBuilder;
-using System.Diagnostics;
 
 namespace CFW.ODataCore;
-
-public class EntityMimimalApiOptions
-{
-    internal Type DefaultDbContext { get; set; } = default!;
-
-    internal ServiceLifetime DbServiceLifetime { get; set; } = ServiceLifetime.Scoped;
-
-    public Action<ODataOptions> ODataOptions { get; set; } = (options) => options.EnableQueryFeatures();
-
-    public MetadataContainerFactory MetadataContainerFactory { get; set; } = new MetadataContainerFactory();
-
-    public EntityMimimalApiOptions UseDefaultDbContext<TDbContext>(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
-        where TDbContext : DbContext
-    {
-        DefaultDbContext = typeof(TDbContext);
-        DbServiceLifetime = serviceLifetime;
-
-        return this;
-    }
-
-    public EntityMimimalApiOptions UseODataOptions(Action<ODataOptions> odataOptions)
-    {
-        ODataOptions = odataOptions;
-        return this;
-    }
-
-    public EntityMimimalApiOptions UseMetadataContainerFactory(MetadataContainerFactory metadataContainerFactory)
-    {
-        MetadataContainerFactory = metadataContainerFactory;
-        return this;
-    }
-}
 
 public static class ServicesCollectionExtensions
 {
@@ -55,13 +22,13 @@ public static class ServicesCollectionExtensions
         if (setupAction is not null)
             setupAction(coreOptions);
 
-        defaultRoutePrefix = SanitizeRoutePrefix(defaultRoutePrefix);
+        var sanitizedRoutePrefix = StringUtils.SanitizeRoute(defaultRoutePrefix);
+        var containerFactory = coreOptions.MetadataContainerFactory;
 
-        var containers = coreOptions.MetadataContainerFactory
-            .CreateContainers(services, defaultRoutePrefix)
-            .ToList();
+        var entityEndpointAttributes = containerFactory.PopulateEntityEndpointAttributes(sanitizedRoutePrefix);
 
-        services.AddSingleton<IMapper, JsonMapper>();
+
+        services.AddOptions<ODataOptions>().Configure(odataOptions => coreOptions.ODataOptions(odataOptions));
 
         //input, output formatters
         var outputFormaters = ODataOutputFormatterFactory.Create();
@@ -93,21 +60,9 @@ public static class ServicesCollectionExtensions
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IODataQueryRequestParser, DefaultODataQueryRequestParser>());
 
-        services.TryAddSingleton<IAssemblyResolver, DefaultAssemblyResolver>();
+        services.TryAddSingleton<IAssemblyResolver>(containerFactory);
         services.TryAddSingleton<IODataPathTemplateParser, DefaultODataPathTemplateParser>();
         //End AddODataCore
-
-
-        services.AddOptions<ODataOptions>().Configure(odataOptions =>
-        {
-            coreOptions.ODataOptions(odataOptions);
-            foreach (var container in containers)
-            {
-                odataOptions.AddRouteComponents(
-                    routePrefix: container.RoutePrefix
-                    , model: container.EdmModel);
-            }
-        });
 
         if (coreOptions.DefaultDbContext is not null)
         {
@@ -115,33 +70,26 @@ public static class ServicesCollectionExtensions
             services.Add(new ServiceDescriptor(typeof(IODataDbContextProvider)
                 , contextProvider, coreOptions.DbServiceLifetime));
         }
+
         return services;
     }
 
     public static void UseEntityMinimalApi(this WebApplication app)
     {
+        var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
+        var containers = app.Services.GetRequiredService<List<ODataMetadataContainer>>();
+        foreach (var container in containers)
+        {
+            odataOptions.AddRouteComponents(
+                routePrefix: container.RoutePrefix
+                , model: container.EdmModel);
+        }
+
+
         var httpRequestHandlers = app.Services.GetServices<IHttpRequestHandler>();
         foreach (var requestHandler in httpRequestHandlers)
         {
             requestHandler.MappRouters(app);
         }
-    }
-
-    /// <summary>
-    /// From Microsoft.AspNetCore.OData source code
-    /// Sanitizes the route prefix by stripping leading and trailing forward slashes.
-    /// </summary>
-    /// <param name="routePrefix">Route prefix to sanitize.</param>
-    /// <returns>Sanitized route prefix.</returns>
-    private static string SanitizeRoutePrefix(string routePrefix)
-    {
-        Debug.Assert(routePrefix != null);
-
-        if (routePrefix.Length > 0 && routePrefix[0] != '/' && routePrefix[^1] != '/')
-        {
-            return routePrefix;
-        }
-
-        return routePrefix.Trim('/');
     }
 }

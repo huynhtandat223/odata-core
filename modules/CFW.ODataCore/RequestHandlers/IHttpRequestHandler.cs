@@ -2,7 +2,7 @@
 
 public interface IHttpRequestHandler
 {
-    Task MappRouters(WebApplication webApplication);
+    Task MappRouters(WebApplication app);
 }
 
 

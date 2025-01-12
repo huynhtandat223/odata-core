@@ -3,10 +3,10 @@ using CFW.ODataCore.Models;
 
 namespace CFW.ODataCore.Testings.TestCases.EntityTests.EntitySetsQuery;
 
-public class NoRelationshipQueryTests : BaseTests, IClassFixture<NonInitAppFactory>
+public class NoRelationshipQueryTests : BaseTests, IClassFixture<AppFactory>
 {
-    public NoRelationshipQueryTests(ITestOutputHelper testOutputHelper, NonInitAppFactory factory)
-        : base(testOutputHelper, factory, typeof(NoRelationshipQueryViewModel))
+    public NoRelationshipQueryTests(ITestOutputHelper testOutputHelper, AppFactory factory)
+        : base(testOutputHelper, factory, types: [typeof(NoRelationshipQueryViewModel)])
     {
 
     }

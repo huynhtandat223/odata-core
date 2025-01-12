@@ -8,7 +8,6 @@ using System.Reflection;
 
 namespace CFW.ODataCore.DefaultHandlers;
 
-
 public class EntityCreateDefaultHandler<TODataViewModel, TDbModel> : IEntityCreateHandler<TODataViewModel>
     where TODataViewModel : class
 {

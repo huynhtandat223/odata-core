@@ -52,6 +52,7 @@ public class EntityGetByKeyDefaultHandler<TODataViewModel, TKey>
         };
     }
 
+    [Obsolete("This method is obsolete and delete soon")]
     public static string GetKeyName<TEntity>(DbContext dbContext)
     where TEntity : class
     {

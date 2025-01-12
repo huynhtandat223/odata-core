@@ -1,24 +1,39 @@
-﻿using CFW.ODataCore.Attributes;
+﻿using CFW.ODataCore.Models;
 using CFW.ODataCore.Testings;
 using FluentAssertions.Equivalency;
+using System.Collections;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Web;
 
 namespace CFW.ODataCore.Testings;
 
 public static class TestUtils
 {
-    public static string GetBaseUrl(this Type resourceType, string? routePrefix = null)
+    public static string GetBaseUrl(this Type resourceType, string? routePrefix = null, EntityMethod? excludedMethod = null)
     {
         var odataRouting = resourceType
             .GetCustomAttributes<EntityAttribute>()
             .GroupBy(x => new { x.Name, x.RoutePrefix })
             .Select(x => x.Key)
             .SingleOrDefault();
+
+        var defaultMethods = Enum.GetValues<EntityMethod>();
         if (odataRouting is null)
         {
-            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have ODataAPIRoutingAttribute");
+            odataRouting = resourceType
+                .GetCustomAttributes<ConfigurableEntityAttribute>()
+                .GroupBy(x => new { x.Name, x.RoutePrefix })
+                .WhereIf(excludedMethod.HasValue, x => !x.Any(y => y.Methods.Contains(excludedMethod!.Value)))
+                .WhereIf(excludedMethod is null, x => x.Any(f => f.Methods.Length == Enum.GetValues<EntityMethod>().Length))
+                .Select(x => x.Key)
+                .SingleOrDefault();
+        }
+
+        if (odataRouting is null)
+        {
+            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have RoutePrefix");
         }
 
         return $"{routePrefix ?? odataRouting.RoutePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
@@ -127,4 +142,84 @@ public static class TestUtils
     {
         public string AccessToken { get; set; } = string.Empty;
     }
+
+    public static ODataQueryResult<object> GetODataQueryResult(this HttpResponseMessage response, Type elementType)
+    {
+        var content = response.Content.ReadAsStringAsync().Result;
+        var odataQueryResultType = typeof(ODataQueryResult<>).MakeGenericType(elementType);
+        var responseQueryResult = content.ToType(odataQueryResultType)!;
+
+        var totalCount = nameof(ODataQueryResult<object>.TotalCount);
+        var value = nameof(ODataQueryResult<object>.Value);
+
+        return new ODataQueryResult<object>
+        {
+            TotalCount = responseQueryResult.GetPropertyValue(totalCount) as int?,
+            Value = (responseQueryResult.GetPropertyValue(value) as IEnumerable)!.OfType<object>()
+        };
+    }
+
+    public static object GetResponseResult(this HttpResponseMessage response, Type responseType)
+    {
+        var content = response.Content.ReadAsStringAsync().Result;
+        return content.JsonConvert(responseType);
+    }
+
+    /// <summary>
+    /// Get the JSON element properties of an array in the response message
+    /// </summary>
+    /// <param name="httpResponseMessage"></param>
+    /// <param name="jsonPropertyName"></param>
+    /// <returns></returns>
+    public static List<string> GetJsonElementPropertiesInArray(this HttpResponseMessage httpResponseMessage, string arrayProperty)
+    {
+        var content = httpResponseMessage.Content.ReadAsStringAsync().Result;
+
+        // Validate the JSON body only contains the selected properties
+        var responseJson = JsonDocument.Parse(content);
+        var responseJsonRoot = responseJson.RootElement;
+
+        if (responseJsonRoot.ValueKind != JsonValueKind.Object)
+            throw new InvalidOperationException("The response body is not a JSON object");
+
+        var santityArraryProperty = arrayProperty.ToLower();
+        var arrayJson = responseJsonRoot.EnumerateObject().FirstOrDefault(x => x.Name.ToLower() == santityArraryProperty);
+
+        if (arrayJson.Value.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException($"The property {arrayProperty} is not an array");
+
+        return arrayJson.Value.EnumerateArray().First().EnumerateObject().Select(x => x.Name).ToList();
+    }
+
+    public static Dictionary<string, object> ParseToDictionary(this HttpResponseMessage httpResponseMessage
+        , bool isExcludeODataContextProp = true)
+    {
+        var content = httpResponseMessage.Content.ReadAsStringAsync().Result;
+        var dic = content.JsonConvert<Dictionary<string, object>>();
+
+        if (isExcludeODataContextProp)
+        {
+            dic.Remove("@odata.context");
+        }
+        return dic;
+    }
+
+    public static string[] GetComplexTypeProperties(this Type type)
+    {
+        return type.GetProperties()
+            .Where(x => x.PropertyType.IsClass && x.PropertyType.Namespace!.StartsWith("CFW."))
+            .Select(x => x.Name)
+            .ToArray();
+    }
+
+    public static string[] GetCollectionTypeProperties(this Type type)
+    {
+        var collectionProperties = type.GetProperties()
+            .Where(x => x.PropertyType.IsCommonGenericCollectionType())
+            .Select(x => x.Name)
+            .ToArray();
+
+        return collectionProperties;
+    }
 }
+
