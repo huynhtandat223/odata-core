@@ -1,4 +1,5 @@
 using CFW.ODataCore;
+using CFW.ODataCore.Projectors.EFCore;
 using CFW.ODataCore.Testings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,8 @@ if (!isTesting)
     builder.Services.AddDbContext<TestingDbContext>(
                options => options
                .EnableSensitiveDataLogging()
-               .UseSqlite($@"Data Source=appdbcontext.db"));
+                .ReplaceService<IModelCustomizer, AutoScanModelCustomizer<TestingDbContext>>()
+                .UseSqlite($@"Data Source=appdbcontext.db"));
 
     //Fix testing mock service
     builder.Services.AddSingleton(new List<object>());

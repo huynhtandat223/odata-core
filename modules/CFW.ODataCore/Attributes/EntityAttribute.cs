@@ -2,10 +2,8 @@
 
 namespace CFW.ODataCore.Attributes;
 
-public abstract class EntityV2Attribute : Attribute
+public class EntityV2Attribute : BaseRoutingAttribute
 {
-    public string? RoutePrefix { get; set; }
-
     public Type? TargetType { get; set; }
 
     public string Name { get; }

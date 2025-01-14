@@ -5,13 +5,6 @@ using System.Reflection;
 
 namespace CFW.ODataCore.Core;
 
-public record EntityEndpointKey
-{
-    public string RoutePrefix { get; init; } = string.Empty;
-
-    public string Name { get; init; } = string.Empty;
-}
-
 public class MetadataContainerFactory : IAssemblyResolver
 {
     private static readonly List<Type> _cachedType = AppDomain.CurrentDomain.GetAssemblies()
@@ -24,23 +17,52 @@ public class MetadataContainerFactory : IAssemblyResolver
 
     public IEnumerable<Assembly> Assemblies => _cachedType.Select(x => x.Assembly).Distinct();
 
-    public Dictionary<EntityEndpointKey, List<EntityV2Attribute>> PopulateEntityEndpointAttributes(string sanitizedRoutePrefix)
+    public IEnumerable<MetadataContainer> CreateMetadataContainers(string sanitizedRoutePrefix
+        , EntityMimimalApiOptions mimimalApiOptions)
     {
         var entityEndpoinConfigs = CacheType
             .SelectMany(x => x.GetCustomAttributes<EntityV2Attribute>()
             .Aggregate(new List<EntityV2Attribute>(), (list, attr) =>
             {
                 attr.TargetType = x;
+                attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
                 list.Add(attr);
                 return list;
-            }))
-            .GroupBy(x => new EntityEndpointKey
-            {
-                RoutePrefix = x.RoutePrefix ?? sanitizedRoutePrefix,
-                Name = x.Name
-            }).ToDictionary(x => x.Key, x => x.ToList());
+            }));
 
-        return entityEndpoinConfigs;
+        foreach (var containerGroup in entityEndpoinConfigs.GroupBy(x => x.RoutePrefix))
+        {
+            var metadataContainer = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
+
+            var entityEndpoints = containerGroup.SelectMany(x => x.Methods.Select(m => new { Attribute = x, Method = m }))
+                .GroupBy(x => new { x.Attribute.Name, x.Attribute.TargetType });
+
+            foreach (var key in entityEndpoints)
+            {
+                var duplicateMethods = key.GroupBy(x => x.Method)
+                    .Where(x => x.Count() > 1)
+                    .Select(x => x.Key)
+                    .ToArray();
+                if (duplicateMethods.Any())
+                {
+                    throw new InvalidOperationException($"Duplicate methods {string.Join(",", duplicateMethods)} for entity {key.Key.Name}");
+                }
+
+                var endpoint = key.Key.Name;
+                var sourceType = key.Key.TargetType!;
+
+                var metadataEntity = new MetadataEntity
+                {
+                    Name = endpoint,
+                    Methods = key.Select(x => x.Method).ToArray(),
+                    SourceType = sourceType,
+                    Container = metadataContainer
+                };
+                metadataContainer.MetadataEntities.Add(metadataEntity);
+            }
+
+            yield return metadataContainer;
+        }
     }
 
     public IEnumerable<ODataMetadataContainer> CreateContainers(IServiceCollection services

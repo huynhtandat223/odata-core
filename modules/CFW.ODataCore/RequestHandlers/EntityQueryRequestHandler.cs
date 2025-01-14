@@ -1,42 +1,34 @@
-﻿using Microsoft.AspNetCore.OData.Query;
+﻿namespace CFW.ODataCore.RequestHandlers;
 
-namespace CFW.ODataCore.RequestHandlers;
-
-public class EntityQueryRequestHandler<TSource, TViewModel, TKey> : IHttpRequestHandler
+public class EntityQueryRequestHandler<TSource, TViewModel, TKey> : IRouteMapper
 {
-    private readonly EntityMetadata<TSource, TViewModel, TKey> _entityMetadata;
+    private readonly MetadataEntity _metadataEntity;
 
-    public EntityQueryRequestHandler(EntityMetadata<TSource, TViewModel, TKey> entityMetadata)
+    public EntityQueryRequestHandler(MetadataEntity metadataEntity)
     {
-        _entityMetadata = entityMetadata;
+        _metadataEntity = metadataEntity;
     }
 
-    public Task MappRouters(WebApplication app)
+    public Task MappRoutes(RouteGroupBuilder routeGroupBuilder, WebApplication app)
     {
-        var entityGroup = _entityMetadata.Container.CreateOrGetEntityGroup(app, _entityMetadata);
-        var endpoint = _entityMetadata.EntityEndpoint;
-
-        var entitySourceFactory = endpoint.EntityQueryableFactory;
-        if (entitySourceFactory is null)
-            throw new InvalidOperationException("EntitySourceFactory must be set");
-
-        var ignoreQueryOptions = _entityMetadata.IgnoreQueryOptions;
-        var viewModelSelector = _entityMetadata.ViewModelSelector;
-
-        entityGroup.MapGet($"/", (HttpContext httpContext
+        routeGroupBuilder.MapGet($"/", (HttpContext httpContext
         , CancellationToken cancellationToken) =>
         {
-            httpContext.Features.Set(_entityMetadata.Feature);
-            var odataQueryContext = new ODataQueryContext(_entityMetadata.Feature.Model, typeof(TViewModel)
-                , _entityMetadata.Feature.Path);
-            var options = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
+            //var entitySourceFactory = _metadataEntity.EntityQueryableFactory;
+            //var ignoreQueryOptions = _metadataEntity.IgnoreQueryOptions;
+            //var viewModelSelector = _metadataEntity.ViewModelSelector;
 
-            var queryable = entitySourceFactory(httpContext.RequestServices);
-            var viewModelQueryable = queryable.Select(viewModelSelector);
+            //httpContext.Features.Set(_metadataEntity.Feature);
+            //var odataQueryContext = new ODataQueryContext(_metadataEntity.Feature.Model, typeof(TViewModel)
+            //    , _metadataEntity.Feature.Path);
+            //var options = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
 
-            var result = options.ApplyTo(viewModelQueryable, ignoreQueryOptions);
+            //var queryable = entitySourceFactory(httpContext.RequestServices);
+            //var viewModelQueryable = queryable.Select(viewModelSelector);
 
-            return result.Success().ToODataResults();
+            //var result = options.ApplyTo(viewModelQueryable, ignoreQueryOptions);
+
+            //return result.Success().ToODataResults();
 
         }).Produces<TViewModel>();
 

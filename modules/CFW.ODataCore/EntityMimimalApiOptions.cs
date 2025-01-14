@@ -16,6 +16,8 @@ public class EntityMimimalApiOptions
 
     internal Action<ODataConventionModelBuilder>? ConfigureModelBuilder { get; set; }
 
+    internal Action<RouteGroupBuilder>? ConfigureContainerRouteGroup { get; set; }
+
     /// <summary>
     /// Use default DbContext when use EntityAttribute without specify entity configuration
     /// </summary>
@@ -61,6 +63,12 @@ public class EntityMimimalApiOptions
     public EntityMimimalApiOptions ConfigureODataModelBuilder(Action<ODataConventionModelBuilder> configureModelBuilder)
     {
         ConfigureModelBuilder = configureModelBuilder;
+        return this;
+    }
+
+    public EntityMimimalApiOptions ConfigureMinimalApiContainerRouteGroup(Action<RouteGroupBuilder> configureContainerRouteGroup)
+    {
+        ConfigureContainerRouteGroup = configureContainerRouteGroup;
         return this;
     }
 }
