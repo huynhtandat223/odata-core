@@ -4,7 +4,7 @@ namespace CFW.ODataCore.Projectors.EFCore;
 
 public interface IODataDbContextProvider
 {
-    DbContext GetContext();
+    DbContext GetDbContext();
 }
 
 public class ContextProvider<TDbContext> : IODataDbContextProvider
@@ -15,7 +15,7 @@ public class ContextProvider<TDbContext> : IODataDbContextProvider
     {
         _dbContext = dbContext;
     }
-    public DbContext GetContext()
+    public DbContext GetDbContext()
     {
         return _dbContext;
     }

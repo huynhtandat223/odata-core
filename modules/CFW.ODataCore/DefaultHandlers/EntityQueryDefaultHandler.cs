@@ -184,7 +184,7 @@ public class EntityQueryDefaultHandler<TODataViewModel> : IEntityQueryHandler<TO
     public async Task<Result<IQueryable>> Handle(ODataQueryOptions<TODataViewModel> options
         , CancellationToken cancellationToken)
     {
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
 
         var query = GetQueryable(db);
         var appliedQuery = options.ApplyTo(query);

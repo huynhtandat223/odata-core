@@ -12,8 +12,6 @@ public class EntityCRUDRoutingMetadata
 {
     public required Type EntityType { set; get; }
 
-    public required Type DbType { set; get; }
-
     public required Type KeyType { set; get; }
 
     public required string Name { set; get; }
@@ -118,7 +116,7 @@ public class EntityCRUDRoutingMetadata
         var metadata = new EntityCRUDRoutingMetadata
         {
             EntityType = entityType,
-            DbType = entityAttribute.DbType ?? entityType,
+            //DbType = entityAttribute.DbType ?? entityType,
             KeyType = keyType,
             Name = entityAttribute.Name,
             TargetTypeIsHandler = targetTypeIsHandler,
@@ -126,9 +124,7 @@ public class EntityCRUDRoutingMetadata
         };
 
         Type? serviceType = null, implementationType = null;
-        Type dbType = entityAttribute.DbType
-            ?? entityType
-            ?? throw new ArgumentNullException(nameof(dbType));
+        Type dbType = entityType;
 
         foreach (var availableMethod in availableMethods)
         {

@@ -61,7 +61,9 @@ public class ViewModelPatchTests : BaseTests, IAssemblyFixture<AppFactory>
         public string Description { get; set; } = string.Empty;
     }
 
-    [Entity(nameof(PatchViewModel), DbType = typeof(PatchDbModel))]
+    [Entity(nameof(PatchViewModel)
+        //, DbType = typeof(PatchDbModel)
+        )]
     public class PatchViewModel
     {
         public Guid Id { get; set; }

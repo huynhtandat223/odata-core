@@ -1,36 +1,53 @@
-﻿namespace CFW.ODataCore.RequestHandlers;
+﻿using CFW.ODataCore.Projectors.EFCore;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OData;
+using System.Text;
 
-public class EntityQueryRequestHandler<TSource, TViewModel, TKey> : IRouteMapper
+namespace CFW.ODataCore.RequestHandlers;
+
+public interface IEntityQueryRequestHandler
 {
-    private readonly MetadataEntity _metadataEntity;
+    Task MappRoutes(EntityRequestContext entityRequestContext);
+}
 
-    public EntityQueryRequestHandler(MetadataEntity metadataEntity)
+public class DefaultEntityQueryRequestHandler<TSource> : IEntityQueryRequestHandler
+    where TSource : class
+{
+    public Task MappRoutes(EntityRequestContext entityRequestContext)
     {
-        _metadataEntity = metadataEntity;
-    }
+        var entityMetadata = entityRequestContext.MetadataEntity;
 
-    public Task MappRoutes(RouteGroupBuilder routeGroupBuilder, WebApplication app)
-    {
-        routeGroupBuilder.MapGet($"/", (HttpContext httpContext
-        , CancellationToken cancellationToken) =>
+        entityRequestContext.EntityRouteGroupBuider.MapGet($"/", async (HttpContext httpContext
+                , CancellationToken cancellationToken) =>
         {
-            //var entitySourceFactory = _metadataEntity.EntityQueryableFactory;
-            //var ignoreQueryOptions = _metadataEntity.IgnoreQueryOptions;
-            //var viewModelSelector = _metadataEntity.ViewModelSelector;
+            var feature = entityMetadata.CreateOrGetODataFeature<TSource>();
+            httpContext.Features.Set(feature);
 
-            //httpContext.Features.Set(_metadataEntity.Feature);
-            //var odataQueryContext = new ODataQueryContext(_metadataEntity.Feature.Model, typeof(TViewModel)
-            //    , _metadataEntity.Feature.Path);
-            //var options = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
+            var dbContextProvider = httpContext.RequestServices.GetRequiredService<IODataDbContextProvider>();
+            var db = dbContextProvider.GetDbContext();
+            var queryable = db.Set<TSource>().AsNoTracking();
 
-            //var queryable = entitySourceFactory(httpContext.RequestServices);
-            //var viewModelQueryable = queryable.Select(viewModelSelector);
+            var odataQueryContext = new ODataQueryContext(feature.Model, typeof(TSource), feature.Path);
+            var options = new ODataQueryOptions<TSource>(odataQueryContext, httpContext.Request);
 
-            //var result = options.ApplyTo(viewModelQueryable, ignoreQueryOptions);
+            //TODO: missing ignore query options
+            var result = options.ApplyTo(queryable);
 
-            //return result.Success().ToODataResults();
+            var formatterContext = new OutputFormatterWriteContext(httpContext,
+                (stream, encoding) => new StreamWriter(stream, encoding),
+                result.GetType() ?? typeof(object), result)
+            {
+                ContentType = "application/json;odata.metadata=none",
+            };
 
-        }).Produces<TViewModel>();
+            var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
+            formatter.SupportedEncodings.Add(Encoding.UTF8);
+            await formatter.WriteAsync(formatterContext);
+
+        }).Produces<TSource>();
 
         return Task.CompletedTask;
     }

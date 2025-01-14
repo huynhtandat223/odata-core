@@ -181,33 +181,6 @@ public class ODataMetadataContainer
         return newMetadata;
     }
 
-    public Dictionary<string, EntityEndpointConfiguration> DynamicEntityEndpoints = new();
-    internal void CreateDynamicEntityMetadata(Type targetType, ConfigurableEntityAttribute routingAttribute)
-    {
-        if (DynamicEntityEndpoints.ContainsKey(routingAttribute.Name))
-            throw new InvalidOperationException($"Duplicate dynamic entity name: {routingAttribute.Name}");
-
-        if (_entityMetadata.Keys.Any(x => x.Name == routingAttribute.Name))
-            throw new InvalidOperationException($"Entity name {routingAttribute.Name} already used");
-
-        var configurationType = routingAttribute.ConfigurationType;
-        if (configurationType is null)
-        {
-            configurationType = typeof(DefaultEfCoreConfiguration<>).MakeGenericType(targetType);
-        }
-
-        var entityEndpoint = Activator.CreateInstance(configurationType) as EntityEndpointConfiguration;
-        if (entityEndpoint == null)
-            throw new InvalidOperationException($"Configuration type {configurationType.FullName} must interit from EntityEndpoint");
-
-        entityEndpoint.Name = routingAttribute.Name;
-        entityEndpoint.RoutePrefix = routingAttribute.RoutePrefix;
-        entityEndpoint.Methods = routingAttribute.Methods;
-        entityEndpoint.BuildViewModelType(_moduleBuilder);
-
-        DynamicEntityEndpoints.Add(routingAttribute.Name, entityEndpoint!);
-    }
-
     internal void BuildEdmModel(EntityMimimalApiOptions coreOptions)
     {
         var modelBuilder = new ODataConventionModelBuilder();
@@ -267,22 +240,6 @@ public class ODataMetadataContainer
                     continue;
                 }
             }
-        }
-
-        var duplicationTypes = DynamicEntityEndpoints.Values
-            .Select(x => x.ViewModelType)
-            .GroupBy(x => x)
-            .Where(x => x.Count() > 1)
-            .Select(x => x.Key)
-            .ToList();
-        if (duplicationTypes.Any())
-            throw new InvalidOperationException($"Duplicate view model types: {string.Join(", ", duplicationTypes)}");
-
-        foreach (var (name, entityEndpoint) in DynamicEntityEndpoints)
-        {
-            var entityType = entityEndpoint.ViewModelType;
-            var odataEntityType = modelBuilder.AddEntityType(entityType);
-            modelBuilder.AddEntitySet(name, odataEntityType);
         }
 
         foreach (var operation in _unboundOperationMetadata)
@@ -363,63 +320,6 @@ public class ODataMetadataContainer
 
                 services.AddSingleton(requestHandlerType, s
                     => ActivatorUtilities.CreateInstance(s, entityOperationRequestHandlerType, this, boundOperation));
-            }
-        }
-
-        foreach (var (name, entityEndpoint) in DynamicEntityEndpoints)
-        {
-            var viewModelType = entityEndpoint.ViewModelType;
-            var sourceType = entityEndpoint.SourceType;
-
-            var entitySet = EdmModel.EntityContainer.FindEntitySet(name);
-            var key = entitySet.EntityType().Key().Single();
-            var keyType = defaultMapper.GetClrType(EdmModel, key.Type);
-            entityEndpoint.KeyType = keyType;
-            entityEndpoint.KeyPropertyName = key.Name;
-
-            var navigationProperties = entitySet.EntityType().DeclaredNavigationProperties();
-            entityEndpoint.NestedTypes = navigationProperties
-                .Where(x => !x.Type.IsCollection())
-                .ToDictionary(x => x.Name, x => defaultMapper.GetClrType(EdmModel, x.Type));
-
-            entityEndpoint.CollectionTypes = navigationProperties
-                .Where(x => x.Type.IsCollection())
-                .ToDictionary(x => x.Name, x => defaultMapper.GetClrType(EdmModel
-                , (x.Type.Definition as EdmCollectionType).ElementType));
-
-            //Add to DI to support testing. Test project can modify the configuration
-            var configurationType = typeof(EntityConfiguration<>).MakeGenericType(sourceType);
-            services.AddSingleton(configurationType, entityEndpoint);
-
-            //Purpose: hold metadata for entity
-            var metadataType = typeof(EntityMetadata<,,>).MakeGenericType(sourceType, viewModelType, keyType);
-            services.AddSingleton(metadataType, s => ActivatorUtilities
-                .CreateInstance(s, metadataType, this, entityEndpoint));
-
-            if (entityEndpoint.Methods.Contains(EntityMethod.Query))
-            {
-                //Add minimal api query request handler
-                var dynamicEntityRequestHandlerType = typeof(EntityQueryRequestHandler<,,>)
-                .MakeGenericType(sourceType, viewModelType, keyType);
-
-                services.AddSingleton(requestHandlerType, s
-                    => ActivatorUtilities.CreateInstance(s, dynamicEntityRequestHandlerType));
-            }
-
-            if (entityEndpoint.Methods.Contains(EntityMethod.GetByKey))
-            {
-                var dynamicEntityCreateRequestHandlerType = typeof(EntityGetByKeyRequestHandler<,,>)
-                    .MakeGenericType(sourceType, viewModelType, keyType);
-                services.AddSingleton(requestHandlerType, s
-                    => ActivatorUtilities.CreateInstance(s, dynamicEntityCreateRequestHandlerType));
-            }
-
-            if (entityEndpoint.Methods.Contains(EntityMethod.Post))
-            {
-                var dynamicEntityCreateRequestHandlerType = typeof(EntityCreateRequestHandler<,,>)
-                    .MakeGenericType(sourceType, viewModelType, keyType);
-                services.AddSingleton(requestHandlerType, s
-                    => ActivatorUtilities.CreateInstance(s, dynamicEntityCreateRequestHandlerType));
             }
         }
 

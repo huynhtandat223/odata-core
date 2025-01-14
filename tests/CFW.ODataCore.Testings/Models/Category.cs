@@ -3,8 +3,8 @@ using CFW.ODataCore.Models;
 
 namespace CFW.ODataCore.Testings.Models;
 
-[EntityV2("categories")]
-[ConfigurableEntity("only-post-categories", Methods = [EntityMethod.Post])]
+[Entity("categories")]
+[Entity("only-post-categories", Methods = [EntityMethod.Post])]
 public class Category : IEntity<Guid>
 {
     public Guid Id { get; set; }

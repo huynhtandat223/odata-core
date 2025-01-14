@@ -13,7 +13,7 @@ public class EntityDeleteDefaultHandler<TODataViewModel, TKey> : IEntityDeleteHa
     }
     public async Task<Result> Handle(TKey key, CancellationToken cancellationToken)
     {
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
         var entity = await db.FindAsync<TODataViewModel>([key], cancellationToken);
 
         if (entity is null)

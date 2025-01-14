@@ -23,7 +23,7 @@ public class EntityCreateDefaultHandler<TODataViewModel, TDbModel> : IEntityCrea
 
     public async Task<Result<TODataViewModel>> Handle(TODataViewModel model, CancellationToken cancellationToken)
     {
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
 
         Result<TODataViewModel>? result = null;
         var dbModel = Map(model);

@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[EntityV2("orders")]
+[Entity("orders")]
 public class Order : IEntity<Guid>
 {
     public Guid Id { get; set; }

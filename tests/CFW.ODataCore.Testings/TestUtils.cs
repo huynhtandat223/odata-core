@@ -15,28 +15,21 @@ public static class TestUtils
     {
         var odataRouting = resourceType
             .GetCustomAttributes<EntityAttribute>()
-            .GroupBy(x => new { x.Name, x.RoutePrefix })
-            .Select(x => x.Key)
-            .SingleOrDefault();
+            .GroupBy(x => new { x.Name, RoutePrefix = x.RoutePrefix ?? Constants.DefaultODataRoutePrefix, x.Methods })
+            .Select(x => x.Key);
 
         var defaultMethods = Enum.GetValues<EntityMethod>();
-        if (odataRouting is null)
-        {
-            odataRouting = resourceType
-                .GetCustomAttributes<ConfigurableEntityAttribute>()
-                .GroupBy(x => new { x.Name, x.RoutePrefix })
-                .WhereIf(excludedMethod.HasValue, x => !x.Any(y => y.Methods.Contains(excludedMethod!.Value)))
-                .WhereIf(excludedMethod is null, x => x.Any(f => f.Methods.Length == Enum.GetValues<EntityMethod>().Length))
-                .Select(x => x.Key)
-                .SingleOrDefault();
-        }
+        var defaultRoutePrefix = routePrefix ?? Constants.DefaultODataRoutePrefix;
 
-        if (odataRouting is null)
-        {
-            throw new InvalidOperationException($"The resource type {resourceType.Name} does not have RoutePrefix");
-        }
-
-        return $"{routePrefix ?? odataRouting.RoutePrefix ?? Constants.DefaultODataRoutePrefix}/{odataRouting!.Name}";
+        return excludedMethod is null
+            ? odataRouting
+                .Where(x => x.RoutePrefix == defaultRoutePrefix && x.Methods.Length == defaultMethods.Length)
+                .Select(x => $"{x.RoutePrefix}/{x.Name}")
+                .First()
+            : odataRouting
+                .Where(x => x.RoutePrefix == defaultRoutePrefix && !x.Methods.Contains(excludedMethod.Value))
+                .Select(x => $"{x.RoutePrefix}/{x.Name}")
+                .First();
     }
 
     public static string GetNonKeyActionUrl(this Type resourceType, Type handlerType, string? routePrefix = null)

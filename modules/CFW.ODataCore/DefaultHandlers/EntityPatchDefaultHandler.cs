@@ -20,7 +20,7 @@ public class EntityPatchDefaultHandler<TODataViewModel, TDbModel, TKey>
 
     public async Task<Result> Handle(TKey key, Delta<TDbModel> delta, CancellationToken cancellationToken)
     {
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
         var entity = await db.Set<TDbModel>().FindAsync(key);
 
         if (entity == null)
@@ -46,7 +46,7 @@ public class EntityPatchDefaultHandler<TODataViewModel, TDbModel, TKey>
         if (delta is Delta<TDbModel> dbDelta)
             return await Handle(key, dbDelta, cancellationToken);
 
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
         var entity = await db.Set<TDbModel>().FindAsync(key);
 
         if (entity == null)

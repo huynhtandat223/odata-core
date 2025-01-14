@@ -21,8 +21,8 @@ public class MetadataContainerFactory : IAssemblyResolver
         , EntityMimimalApiOptions mimimalApiOptions)
     {
         var entityEndpoinConfigs = CacheType
-            .SelectMany(x => x.GetCustomAttributes<EntityV2Attribute>()
-            .Aggregate(new List<EntityV2Attribute>(), (list, attr) =>
+            .SelectMany(x => x.GetCustomAttributes<EntityAttribute>()
+            .Aggregate(new List<EntityAttribute>(), (list, attr) =>
             {
                 attr.TargetType = x;
                 attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
@@ -99,14 +99,6 @@ public class MetadataContainerFactory : IAssemblyResolver
                     currentContainer.CreateUnboundOperation(x.TargetType, (UnboundOperationAttribute)x.RoutingAttribute);
                     return currentContainer;
                 });
-
-            routingInfoInContainer
-               .Where(x => x.RoutingAttribute is ConfigurableEntityAttribute)
-               .Aggregate(container, (currentContainer, x) =>
-               {
-                   currentContainer.CreateDynamicEntityMetadata(x.TargetType, (ConfigurableEntityAttribute)x.RoutingAttribute);
-                   return currentContainer;
-               });
 
             container.BuildEdmModel(coreOptions);
 

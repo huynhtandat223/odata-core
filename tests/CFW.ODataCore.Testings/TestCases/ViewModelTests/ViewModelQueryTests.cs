@@ -57,7 +57,9 @@ public class ViewModelQueryTests : BaseTests, IAssemblyFixture<AppFactory>
         public string Name { get; set; } = string.Empty;
     }
 
-    [Entity(nameof(BasicViewModel), DbType = typeof(BasicDbModel))]
+    [Entity(nameof(BasicViewModel)
+        //, DbType = typeof(BasicDbModel)
+        )]
     public class BasicViewModel
     {
         public Guid Id { get; set; }

@@ -1,16 +1,15 @@
 ﻿using CFW.ODataCore.Models;
 using CFW.ODataCore.Projectors.EFCore;
-using Microsoft.AspNetCore.Mvc;
+using CFW.ODataCore.RequestHandlers;
 using Microsoft.AspNetCore.OData;
-using Microsoft.AspNetCore.OData.Formatter;
-using Microsoft.AspNetCore.OData.Query;
-using Microsoft.AspNetCore.OData.Routing.Parser;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.Extensions.Options;
-using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
+using Microsoft.OData.UriParser;
 
 namespace CFW.ODataCore;
+
+public record EntityRouteKey(string RoutePrefix, string Name);
 
 public class MetadataEntity
 {
@@ -22,9 +21,50 @@ public class MetadataEntity
 
     public required MetadataContainer Container { get; init; }
 
-    public Type? KeyType { get; internal set; }
+    private static object _lockToken = new();
+    private IODataFeature? _cachedFeature;
+    public IODataFeature CreateOrGetODataFeature<TSource>()
+        where TSource : class
+    {
+        if (_cachedFeature is not null)
+        {
+            return _cachedFeature;
+        }
 
-    public Type? ViewModelType { get; internal set; }
+        if (SourceType != typeof(TSource))
+        {
+            throw new InvalidOperationException($"Invalid source type {SourceType} for {typeof(TSource)}");
+        }
+
+        lock (_lockToken)
+        {
+            // Double-check if the feature was created while waiting for the lock.
+            if (_cachedFeature is not null)
+            {
+                return _cachedFeature;
+            }
+
+            var builder = new ODataConventionModelBuilder();
+            builder.EntitySet<TSource>(Name);
+            builder.EnableLowerCamelCaseForPropertiesAndEnums();
+
+            var model = builder.GetEdmModel();
+            var edmEntitySet = model.EntityContainer.FindEntitySet(Name);
+            var entitySetSegment = new EntitySetSegment(edmEntitySet);
+            var segments = new List<ODataPathSegment> { entitySetSegment };
+
+            var path = new ODataPath(segments);
+            _cachedFeature = new ODataFeature
+            {
+                Path = path,
+                Model = model,
+                RoutePrefix = Container.RoutePrefix,
+                Services = Container.ODataInternalServiceProvider
+            };
+        }
+
+        return _cachedFeature;
+    }
 }
 
 public class MetadataContainer
@@ -35,24 +75,12 @@ public class MetadataContainer
 
     public EntityMimimalApiOptions Options { get; init; }
 
+    public IServiceProvider? ODataInternalServiceProvider { get; set; }
+
     public MetadataContainer(string routePrefix, EntityMimimalApiOptions options)
     {
         RoutePrefix = routePrefix;
         Options = options;
-    }
-
-    public IEdmModel EdmModel
-    {
-        get
-        {
-            var builder = new ODataConventionModelBuilder();
-            foreach (var entity in MetadataEntities)
-            {
-                var entityType = builder.AddEntityType(entity.SourceType);
-                builder.AddEntitySet(entity.Name, entityType);
-            }
-            return builder.GetEdmModel();
-        }
     }
 }
 
@@ -78,43 +106,10 @@ public static class ServicesCollectionExtensions
         var containerFactory = coreOptions.MetadataContainerFactory;
 
         var metadataContainers = containerFactory.CreateMetadataContainers(sanitizedRoutePrefix, coreOptions);
+
         services.AddSingleton(metadataContainers);
 
         services.AddSingleton(coreOptions);
-
-        //input, output formatters
-        var outputFormaters = ODataOutputFormatterFactory.Create();
-        foreach (var formatter in outputFormaters)
-        {
-            // Fix for issue where JSON formatter does include charset in the Content-Type header
-            if (formatter.SupportedMediaTypes.Contains("application/json")
-                && !formatter.SupportedMediaTypes.Contains("application/json; charset=utf-8"))
-                formatter.SupportedMediaTypes.Add("application/json; charset=utf-8");
-        }
-        services.AddSingleton<IEnumerable<ODataOutputFormatter>>(outputFormaters);
-
-        var inputFormatters = ODataInputFormatterFactory.Create().Reverse();
-        services.AddSingleton(inputFormatters);
-
-        //services.AddODataCore();
-        services.TryAddEnumerable(
-            ServiceDescriptor.Transient<IConfigureOptions<ODataOptions>, ODataOptionsSetup>());
-
-        services.TryAddEnumerable(
-            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, ODataMvcOptionsSetup>());
-
-        services.TryAddEnumerable(
-            ServiceDescriptor.Transient<IConfigureOptions<JsonOptions>, ODataJsonOptionsSetup>());
-
-        //
-        // Parser & Resolver & Provider
-        //
-        services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<IODataQueryRequestParser, DefaultODataQueryRequestParser>());
-
-        services.TryAddSingleton<IAssemblyResolver>(containerFactory);
-        services.TryAddSingleton<IODataPathTemplateParser, DefaultODataPathTemplateParser>();
-        //End AddODataCore
 
         if (coreOptions.DefaultDbContext is not null)
         {
@@ -131,65 +126,67 @@ public static class ServicesCollectionExtensions
         var minimalApiOptions = app.Services.GetRequiredService<EntityMimimalApiOptions>();
         var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
         var containers = app.Services.GetRequiredService<IEnumerable<MetadataContainer>>();
-        using var scope = app.Services.CreateScope();
-        var dbContextProvider = scope.ServiceProvider.GetRequiredService<IODataDbContextProvider>();
-        var dbContext = dbContextProvider.GetContext();
 
         foreach (var container in containers)
         {
-            if (!container.MetadataEntities.Any())
-                continue;
+            if (container.MetadataEntities.Any(x => !x.Methods.Any()))
+                throw new NotImplementedException($"Entity no methods, maybe operation, need implement this case");
 
-            var containerRoute = app.MapGroup(container.RoutePrefix);
-            container.Options.ConfigureContainerRouteGroup?.Invoke(containerRoute);
+            var containerGroupRoute = app.MapGroup(container.RoutePrefix);
+            container.Options.ConfigureContainerRouteGroup?.Invoke(containerGroupRoute);
 
-            foreach (var metadataEntity in container.MetadataEntities)
+            foreach (var entityMetadata in container.MetadataEntities)
             {
-                if (!metadataEntity.Methods.Any())
-                    throw new NotImplementedException($"Handle operations");
-
-                var sourceType = metadataEntity.SourceType;
-                var dbEntityType = dbContext.Model.FindEntityType(sourceType);
-
-                if (dbEntityType is null)
-                    throw new NotImplementedException($"Only support EF core entities");
-
-                //Find primary key type
-                var key = dbEntityType.GetKeys().SingleOrDefault(x => x.IsPrimaryKey());
-                if (key is null)
-                    throw new InvalidOperationException($"Entity {sourceType.Name} must have primary key");
-                metadataEntity.KeyType = key.GetKeyType();
-                metadataEntity.ViewModelType = sourceType;
-
-                var entityRoute = containerRoute
-                    .MapGroup(metadataEntity.Name)
-                    .WithTags(metadataEntity.Name);
-
-                if (metadataEntity.Methods.Contains(EntityMethod.GetByKey) || metadataEntity.Methods.Contains(EntityMethod.Query))
-                {
-                    var navigations = dbEntityType
-                        .GetNavigations();
-
-                    var complextTypes = dbEntityType.GetComplexProperties();
-                }
+                RegisterEntityComponents(app, entityMetadata, containerGroupRoute);
             }
 
-            //odataOptions.AddRouteComponents(
-            //    routePrefix: container.RoutePrefix
-            //    , model: container.EdmModel);
+            //Add internal odata service providers
+            odataOptions.AddRouteComponents(container.RoutePrefix, new ODataConventionModelBuilder().GetEdmModel());
+            container.ODataInternalServiceProvider = odataOptions.RouteComponents[container.RoutePrefix].ServiceProvider;
         }
-
-        //foreach (var container in containers)
-        //{
-        //    odataOptions.AddRouteComponents(
-        //        routePrefix: container.RoutePrefix
-        //        , model: container.EdmModel);
-        //}
-
-        //var httpRequestHandlers = app.Services.GetServices<IHttpRequestHandler>();
-        //foreach (var requestHandler in httpRequestHandlers)
-        //{
-        //    requestHandler.MappRouters(app);
-        //}
     }
+
+    private static void RegisterEntityComponents(WebApplication app
+        , MetadataEntity metadataEntity, RouteGroupBuilder containerGroupRoute)
+    {
+        var sourceType = metadataEntity.SourceType;
+
+        var entityRoute = containerGroupRoute
+            .MapGroup(metadataEntity.Name)
+            .WithTags(metadataEntity.Name);
+
+        foreach (var method in metadataEntity.Methods)
+        {
+            var routeKey = new EntityRouteKey(metadataEntity.Container.RoutePrefix, metadataEntity.Name);
+            if (method == EntityMethod.Query)
+            {
+                var queryRequestHandler = app.Services.GetKeyedService<IEntityQueryRequestHandler>(routeKey);
+                if (queryRequestHandler is null)
+                {
+                    var defaultQueryRequestHandlerType = typeof(DefaultEntityQueryRequestHandler<>).MakeGenericType(sourceType);
+                    queryRequestHandler = (IEntityQueryRequestHandler)Activator.CreateInstance(defaultQueryRequestHandlerType)!;
+                }
+
+                queryRequestHandler.MappRoutes(new EntityRequestContext
+                {
+                    MetadataEntity = metadataEntity,
+                    App = app,
+                    EntityRouteGroupBuider = entityRoute,
+                    ContainerRouteGroupBuider = containerGroupRoute
+                });
+            }
+
+        }
+    }
+}
+
+public class EntityRequestContext
+{
+    public required MetadataEntity MetadataEntity { get; init; }
+
+    public required WebApplication App { get; init; }
+
+    public required RouteGroupBuilder EntityRouteGroupBuider { get; init; }
+
+    public required RouteGroupBuilder ContainerRouteGroupBuider { get; init; }
 }

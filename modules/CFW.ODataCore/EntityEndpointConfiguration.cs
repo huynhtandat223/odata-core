@@ -216,7 +216,7 @@ public class DefaultEfCoreConfiguration<TDbSet> : EntityConfiguration<TDbSet>
         {
             EnableQuery((IODataDbContextProvider dbContextProvider) =>
             {
-                var db = dbContextProvider.GetContext();
+                var db = dbContextProvider.GetDbContext();
                 return db.Set<TDbSet>().AsNoTracking();
             });
         }
@@ -228,7 +228,7 @@ public class DefaultEfCoreConfiguration<TDbSet> : EntityConfiguration<TDbSet>
                 var entity = Activator.CreateInstance<TDbSet>();
                 try
                 {
-                    var db = dbContextProvider.GetContext();
+                    var db = dbContextProvider.GetDbContext();
 
                     var dbEntityEntry = db.Entry(entity);
                     foreach (var (propertyName, value) in properties)

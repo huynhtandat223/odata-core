@@ -2,7 +2,7 @@
 
 namespace CFW.ODataCore.Testings.Models;
 
-[EntityV2("customers")]
+[Entity("customers")]
 public class Customer : IEntity<int>
 {
     public int Id { get; set; }

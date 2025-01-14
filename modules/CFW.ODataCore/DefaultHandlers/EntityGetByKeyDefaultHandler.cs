@@ -20,7 +20,7 @@ public class EntityGetByKeyDefaultHandler<TODataViewModel, TKey>
 
     public async Task<Result<dynamic>> Handle(TKey key, ODataQueryOptions<TODataViewModel> options, CancellationToken cancellationToken)
     {
-        var db = _dbContextProvider.GetContext();
+        var db = _dbContextProvider.GetDbContext();
         var keyName = GetKeyName<TODataViewModel>(db);
 
         // Dynamically build the query

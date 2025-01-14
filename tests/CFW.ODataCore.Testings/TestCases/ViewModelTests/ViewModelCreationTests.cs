@@ -42,7 +42,9 @@ public class ViewModelCreationTests : BaseTests, IAssemblyFixture<AppFactory>
         public string Name { get; set; } = string.Empty;
     }
 
-    [Entity(nameof(BasicCreationViewModel), DbType = typeof(BasicCreationDbModel))]
+    [Entity(nameof(BasicCreationViewModel)
+        //, DbType = typeof(BasicCreationDbModel)
+        )]
     public class BasicCreationViewModel
     {
         public Guid Id { get; set; }
