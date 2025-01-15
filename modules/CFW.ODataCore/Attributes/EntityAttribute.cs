@@ -1,4 +1,5 @@
 ﻿using CFW.ODataCore.Models;
+using Microsoft.AspNetCore.OData.Query;
 
 namespace CFW.ODataCore.Attributes;
 
@@ -15,6 +16,11 @@ public class EntityAttribute : BaseRoutingAttribute
     public string Name { get; }
 
     public EntityMethod[] Methods { get; set; } = Enum.GetValues<EntityMethod>().ToArray();
+
+    /// <summary>
+    /// OData query options for method <see cref="EntityMethod.Query"/> or <see cref="EntityMethod.GetByKey"/>
+    /// </summary>
+    public AllowedQueryOptions? AllowedQueryOptions { get; set; }
 
     public EntityAttribute(string name)
     {

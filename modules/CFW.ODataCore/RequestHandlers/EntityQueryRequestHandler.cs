@@ -19,6 +19,7 @@ public class DefaultEntityQueryRequestHandler<TSource> : IEntityQueryRequestHand
     public Task MappRoutes(EntityRequestContext entityRequestContext)
     {
         var entityMetadata = entityRequestContext.MetadataEntity;
+        var ignoreQueryOptions = entityMetadata.ODataQueryOptions.IgnoreQueryOptions;
 
         entityRequestContext.EntityRouteGroupBuider.MapGet($"/", async (HttpContext httpContext
                 , CancellationToken cancellationToken) =>
@@ -33,8 +34,7 @@ public class DefaultEntityQueryRequestHandler<TSource> : IEntityQueryRequestHand
             var odataQueryContext = new ODataQueryContext(feature.Model, typeof(TSource), feature.Path);
             var options = new ODataQueryOptions<TSource>(odataQueryContext, httpContext.Request);
 
-            //TODO: missing ignore query options
-            var result = options.ApplyTo(queryable);
+            var result = options.ApplyTo(queryable, ignoreQueryOptions);
 
             var formatterContext = new OutputFormatterWriteContext(httpContext,
                 (stream, encoding) => new StreamWriter(stream, encoding),

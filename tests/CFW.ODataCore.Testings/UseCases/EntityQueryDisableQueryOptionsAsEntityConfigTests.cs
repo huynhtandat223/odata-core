@@ -21,19 +21,24 @@ public class EntityQueryDisableQueryOptionsAsEntityConfigTests : BaseTests, IAss
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    var entityConfigurationType = typeof(EntityConfiguration<>).MakeGenericType(dbModelType);
-                    var entityConfigurationServiceDesc = services.First(s => s.ServiceType == entityConfigurationType);
+                    var containersDescriptor = services
+                    .Single(x => x.ServiceType == typeof(IEnumerable<MetadataContainer>));
 
-                    if (entityConfigurationServiceDesc.ImplementationInstance is not EntityEndpointConfiguration entityEndpoint)
-                        throw new Exception("EntityEndpoint should be EntityConfiguration");
-
-                    if (entityEndpoint.QueryOptionConfig != null)
-                        throw new Exception("QueryOptionConfig should be null");
-
-                    entityEndpoint.QueryOptionConfig = x =>
+                    var containers = (IEnumerable<MetadataContainer>)containersDescriptor.ImplementationInstance!;
+                    var newContainers = containers.ToList();
+                    foreach (var container in newContainers)
                     {
-                        x.AllowedQueryOptions = allowedQueryOptions;
-                    };
+                        foreach (var entityMetadata in container.MetadataEntities)
+                        {
+                            if (entityMetadata.SourceType == dbModelType)
+                            {
+                                entityMetadata.ODataQueryOptions.InternalAllowedQueryOptions = allowedQueryOptions;
+                            }
+                        }
+                    }
+
+                    services.Remove(containersDescriptor);
+                    services.AddSingleton<IEnumerable<MetadataContainer>>(newContainers);
 
                     if (seedDataNumber is not null)
                         initialData = SeedData(dbModelType, seedDataNumber.Value, services);
@@ -219,18 +224,27 @@ public class EntityQueryDisableQueryOptionsAsEntityConfigTests : BaseTests, IAss
     {
         // Arrange
         var dataCount = 6;
-        var expandProp = dbModelType.GetComplexTypeProperties().Single();
+        var expandProps = dbModelType.GetComplexTypeProperties();
         var (client, initialData) = SetupAllowQueryOptions(~AllowedQueryOptions.Expand, dbModelType, dataCount);
         var baseUrl = dbModelType.GetBaseUrl();
 
         // Act
-        var response = await client.GetAsync($"{baseUrl}?$expand={expandProp}");
+        var expandQuery = string.Join(",", expandProps);
+        var response = await client.GetAsync($"{baseUrl}?$expand={expandQuery}");
 
         // Assert
         response.Should().BeSuccessful();
-        var content = await response.Content.ReadAsStringAsync();
         var actual = response.GetODataQueryResult(dbModelType);
 
-        actual.Value.Should().BeEquivalentTo(initialData);
+        //Assert - Returned expand data should be null
+        var actualDataWithExpandProps = actual.Value
+            .Select(expandProps);
+        foreach (var actualDataWithExpandProp in actualDataWithExpandProps)
+        {
+            actualDataWithExpandProp.Values.Should().AllSatisfy(x => x.Should().BeNull());
+        }
+
+        //Rest of the data should be valid
+        actual.Value.Should().BeEquivalentTo(initialData, o => o.Excluding(e => expandProps.Contains(e.Name)));
     }
 }

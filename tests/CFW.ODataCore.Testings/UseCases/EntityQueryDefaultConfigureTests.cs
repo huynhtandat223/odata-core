@@ -212,7 +212,8 @@ public class EntityQueryDefaultConfigureTests : BaseTests, IAssemblyFixture<AppF
         var complexProps = dbModelType.GetComplexTypeProperties();
 
         // Act
-        var response = await client.GetAsync($"{baseUrl}?$expand={complexProps.Single()}");
+        var expandQuery = string.Join(",", complexProps);
+        var response = await client.GetAsync($"{baseUrl}?$expand={expandQuery}");
 
         // Assert
         response.Should().BeSuccessful();

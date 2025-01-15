@@ -193,17 +193,28 @@ public class EntityQueryDisableQueryOptionsAsGlobalTests : BaseTests, IAssemblyF
         // Arrange
         var complexTypes = dbModelType.GetComplexTypeProperties();
         var dataCount = 6;
-        var expandProp = complexTypes.Single();
+        var expandProps = complexTypes;
         var (client, initialData) = SetupAllowQueryOptions(o => o.EnableExpand = false, dbModelType, dataCount);
         var baseUrl = dbModelType.GetBaseUrl();
 
         // Act
-        var response = await client.GetAsync($"{baseUrl}?$expand={expandProp}");
+        var expandQuery = "?$expand=" + string.Join(",", expandProps);
+        var propertyNames = dbModelType.GetProperties().Select(x => x.Name);
+        var selectQuery = "&$select=" + string.Join(",", propertyNames);
+        var response = await client.GetAsync($"{baseUrl}{expandQuery}{selectQuery}");
 
         // Assert
         response.Should().BeSuccessful();
         var actual = response.GetODataQueryResult(dbModelType);
 
-        actual.Value.Should().BeEquivalentTo(initialData);
+        //actual expand properties should be null
+        var expandPropsList = actual.Value.Select(expandProps);
+        foreach (var expandProp in expandPropsList)
+        {
+            expandProp.Should().AllSatisfy(expandValue => expandValue.Value.Should().BeNull());
+        }
+
+        //Disable Expand, so only the primitive properties should be returned
+        actual.Value.Should().BeEquivalentTo(initialData, o => o.Excluding(e => expandProps.Contains(e.Name)));
     }
 }

@@ -172,6 +172,7 @@ public abstract class EntityEndpointConfiguration
     }
 }
 
+[Obsolete("End investigation")]
 public abstract class EntityConfiguration<TEntity> : EntityEndpointConfiguration
 {
     protected void EnableQuery<TService>(Func<TService, IQueryable<TEntity>> entitySourceFactory
@@ -292,6 +293,7 @@ public class DefaultEfCoreConfiguration<TDbSet> : EntityConfiguration<TDbSet>
 
 }
 
+[Obsolete("End investigation")]
 public class QueryOptions
 {
     // public ODataQuerySettings ODataQuerySettings { set; get; } = new ODataQuerySettings();
