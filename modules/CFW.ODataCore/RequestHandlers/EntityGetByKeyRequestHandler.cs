@@ -1,60 +1,63 @@
-﻿using Microsoft.AspNetCore.OData.Query;
-using System.Net;
+﻿using CFW.ODataCore.Projectors.EFCore;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OData;
+using System.Text;
 
 namespace CFW.ODataCore.RequestHandlers;
 
-public class EntityGetByKeyRequestHandler<TSource, TViewModel, TKey> : IHttpRequestHandler
+public interface IEntityGetByKeyRequestHandler
 {
-    private readonly EntityMetadata<TSource, TViewModel, TKey> _entityMetadata;
+    Task MappRoutes(EntityRequestContext entityRequestContext);
+}
 
-    public EntityGetByKeyRequestHandler(EntityMetadata<TSource, TViewModel, TKey> entityMetadata)
+public class DefaultEntityGetByKeyRequestHandler<TSource> : IEntityGetByKeyRequestHandler
+    where TSource : class
+{
+    public Task MappRoutes(EntityRequestContext entityRequestContext)
     {
-        _entityMetadata = entityMetadata;
-    }
+        var entityMetadata = entityRequestContext.MetadataEntity;
+        var ignoreQueryOptions = entityMetadata.ODataQueryOptions.IgnoreQueryOptions;
+        var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
+        formatter.SupportedEncodings.Add(Encoding.UTF8);
 
-    public Task MappRouters(WebApplication app)
-    {
-        var entityGroup = _entityMetadata.Container.CreateOrGetEntityGroup(app, _entityMetadata);
-        var endpoint = _entityMetadata.EntityEndpoint;
-
-        var entitySourceFactory = endpoint.EntityQueryableFactory;
-
-        var ignoreQueryOptions = _entityMetadata.IgnoreQueryOptions;
-        var viewModelSelector = _entityMetadata.ViewModelSelector;
-
-        entityGroup.MapGet("/{key}", (HttpContext httpContext, TKey key
-        , CancellationToken cancellationToken) =>
+        entityRequestContext.EntityRouteGroupBuider.MapGet("/{key}", async (HttpContext httpContext
+                , string key
+                , CancellationToken cancellationToken) =>
         {
-            httpContext.Features.Set(_entityMetadata.Feature);
-            var odataQueryContext = new ODataQueryContext(_entityMetadata.Feature.Model, typeof(TViewModel)
-                , _entityMetadata.Feature.Path);
-            var options = new ODataQueryOptions<TViewModel>(odataQueryContext, httpContext.Request);
+            var dbContextProvider = httpContext.RequestServices.GetRequiredService<IODataDbContextProvider>();
+            var db = dbContextProvider.GetDbContext();
 
-            var queryable = entitySourceFactory(httpContext.RequestServices);
-            var equalKeyExpression = _entityMetadata.GetByKeyExpression(key);
+            var queryable = db.Set<TSource>().AsNoTracking();
 
-            var viewModelQueryable = queryable
-            .Select(viewModelSelector)
-            .Where(equalKeyExpression);
+            var feature = entityMetadata.CreateOrGetODataFeature<TSource>();
+            var predicate = entityMetadata.BuilderEqualExpression(db.Set<TSource>(), key);
 
-            var appliedQuery = options.ApplyTo(viewModelQueryable, ignoreQueryOptions);
+            httpContext.Features.Set(feature);
+
+            queryable = queryable.Where(predicate);
+
+            //apply query options
+            var odataQueryContext = new ODataQueryContext(feature.Model, typeof(TSource), feature.Path);
+            var options = new ODataQueryOptions<TSource>(odataQueryContext, httpContext.Request);
+            var appliedQuery = options.ApplyTo(queryable, ignoreQueryOptions);
+
             var result = appliedQuery.Cast<object>().SingleOrDefault();
 
-            if (result == null)
-                return new Result<dynamic>
-                {
-                    HttpStatusCode = HttpStatusCode.NotFound,
-                    IsSuccess = false,
-                }.ToODataResults();
-
-            return new Result<dynamic>
+            //write response
+            var formatterContext = new OutputFormatterWriteContext(httpContext,
+                (stream, encoding) => new StreamWriter(stream, encoding),
+                typeof(object), result)
             {
-                HttpStatusCode = HttpStatusCode.OK,
-                IsSuccess = true,
-                Data = result,
-            }.ToODataResults();
+                ContentType = "application/json;odata.metadata=none",
+            };
 
-        }).Produces<TViewModel>();
+
+            await formatter.WriteAsync(formatterContext);
+
+        }).Produces<TSource>();
 
         return Task.CompletedTask;
     }

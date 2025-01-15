@@ -162,7 +162,7 @@ public static class ObjectUtils
         return setterLambda.Compile();
     }
 
-    public static object FilterProperties(this object obj, IEnumerable<string> propertiesToInclude)
+    public static IDictionary<string, object?> FilterProperties(this object obj, IEnumerable<string> propertiesToInclude)
     {
         var filtered = new ExpandoObject() as IDictionary<string, object?>;
         var objType = obj.GetType();
@@ -180,7 +180,7 @@ public static class ObjectUtils
     }
 
 
-    public static IEnumerable<object> Select(this IEnumerable list, IEnumerable<string> propertiesToInclude)
+    public static IEnumerable<IDictionary<string, object?>> Select(this IEnumerable list, IEnumerable<string> propertiesToInclude)
     {
         foreach (var obj in list)
         {

@@ -35,7 +35,7 @@ public class MetadataContainerFactory : IAssemblyResolver
             var metadataContainer = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
 
             var entityEndpoints = containerGroup.SelectMany(x => x.Methods.Select(m => new { Attribute = x, Method = m }))
-                .GroupBy(x => new { x.Attribute.Name, x.Attribute.TargetType });
+                .GroupBy(x => new { x.Attribute.Name, x.Attribute.TargetType, x.Attribute.AllowedQueryOptions });
 
             foreach (var key in entityEndpoints)
             {
@@ -50,13 +50,15 @@ public class MetadataContainerFactory : IAssemblyResolver
 
                 var endpoint = key.Key.Name;
                 var sourceType = key.Key.TargetType!;
+                var allowedQueryOptions = key.Key.AllowedQueryOptions;
 
                 var metadataEntity = new MetadataEntity
                 {
                     Name = endpoint,
                     Methods = key.Select(x => x.Method).ToArray(),
                     SourceType = sourceType,
-                    Container = metadataContainer
+                    Container = metadataContainer,
+                    ODataQueryOptions = new ODataQueryOptions { InternalAllowedQueryOptions = allowedQueryOptions }
                 };
                 metadataContainer.MetadataEntities.Add(metadataEntity);
             }

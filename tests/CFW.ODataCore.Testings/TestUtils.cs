@@ -184,6 +184,13 @@ public static class TestUtils
         return arrayJson.Value.EnumerateArray().First().EnumerateObject().Select(x => x.Name).ToList();
     }
 
+
+    /// <summary>
+    /// Parse the response OBJECT properties to a dictionary
+    /// </summary>
+    /// <param name="httpResponseMessage"></param>
+    /// <param name="isExcludeODataContextProp"></param>
+    /// <returns></returns>
     public static Dictionary<string, object> ParseToDictionary(this HttpResponseMessage httpResponseMessage
         , bool isExcludeODataContextProp = true)
     {
