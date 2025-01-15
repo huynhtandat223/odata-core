@@ -7,6 +7,7 @@ using System.Reflection;
 
 namespace CFW.ODataCore.ODataMetadata;
 
+[Obsolete]
 public class EntityOperationMetadata
 {
     public required OperationType OperationType { get; set; }
@@ -49,7 +50,6 @@ public class EntityOperationMetadata
             throw new InvalidOperationException($"Operation handler {targetType.FullName} " +
                 $"not implement any operation interface");
 
-        var operationType = attribute.OperationType;
         var interfaceGenericArgs = implemnationInterface.GetGenericArguments();
         var isNonResponse = interfaceGenericArgs.Count() == 2;
         var requestType = interfaceGenericArgs[1];
@@ -60,15 +60,16 @@ public class EntityOperationMetadata
 
         var serviceDescriptor = new ServiceDescriptor(serviceType, targetType, ServiceLifetime.Transient);
 
-        return new EntityOperationMetadata
-        {
-            ResponseType = responseType,
-            RequestType = requestType,
-            OperationType = operationType,
-            EntityRoutingName = entytRoutingName,
-            OperationName = attribute.OperationName,
-            ServiceDescriptor = serviceDescriptor,
-        };
+        throw new NotImplementedException();
+
+        //return new EntityOperationMetadata
+        //{
+        //    ResponseType = responseType,
+        //    RequestType = requestType,
+        //    EntityRoutingName = entytRoutingName,
+        //    OperationName = attribute.Name,
+        //    ServiceDescriptor = serviceDescriptor,
+        //};
     }
 }
 

@@ -1,13 +1,14 @@
-﻿
-using CFW.Core.Entities;
+﻿using CFW.Core.Entities;
+using CFW.ODataCore.Testings.TestCases;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
-namespace CFW.ODataCore.Testings.TestCases.Operations;
+namespace CFW.ODataCore.Testings.UseCases;
 
 public class BoundKeyedActionTests : BaseTests, IAssemblyFixture<AppFactory>
 {
-    public BoundKeyedActionTests(ITestOutputHelper testOutputHelper, AppFactory factory) : base(testOutputHelper, factory)
+    public BoundKeyedActionTests(ITestOutputHelper testOutputHelper, AppFactory factory)
+        : base(testOutputHelper, factory)
     {
     }
 

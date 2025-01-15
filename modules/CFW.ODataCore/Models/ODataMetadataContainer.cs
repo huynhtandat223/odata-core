@@ -152,8 +152,8 @@ public class ODataMetadataContainer
         var entityOperationKey = new EntityOperationKey
         {
             EntityType = entityType,
-            OperationName = attribute.OperationName,
-            OperationType = attribute.OperationType,
+            OperationName = attribute.Name,
+            OperationType = OperationType.Action
         };
 
         if (_boundOperations.ContainsKey(entityOperationKey))

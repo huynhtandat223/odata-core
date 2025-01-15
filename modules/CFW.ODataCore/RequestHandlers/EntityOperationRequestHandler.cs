@@ -5,6 +5,67 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CFW.ODataCore.RequestHandlers;
 
+public class EntityActionRequestContext : EntityRequestContext
+{
+    public required MetadataEntityAction EntityActionMetadata { get; init; }
+}
+
+public interface IEntityActionRequestHandler
+{
+    Task MappRoutes(EntityActionRequestContext entityRequestContext);
+}
+
+public interface IEntityActionRequestHandler<TRequest, TResponse> : IEntityActionRequestHandler
+{
+}
+
+public interface IEntityActionRequestHandler<TRequest>
+{
+}
+
+public class DefaultEntityActionRequestHandler<TRequest> :
+    IEntityActionRequestHandler<TRequest>
+{
+    public Task MappRoutes(EntityActionRequestContext entityRequestContext)
+    {
+        var entityGroup = entityRequestContext.EntityRouteGroupBuider;
+        var actionName = entityRequestContext.EntityActionMetadata.ActionName;
+
+        entityGroup.MapMethods(actionName, [entityRequestContext.EntityActionMetadata.HttpMethod.Method], async (
+            TRequest request,
+            [FromServices] IOperationHandler<TRequest> handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(request, cancellationToken);
+            return result.ToResults();
+        });
+
+        return Task.CompletedTask;
+    }
+}
+
+public class DefaultEntityActionRequestHandler<TRequest, TResponse> :
+    IEntityActionRequestHandler<TRequest, TResponse>,
+    IEntityActionRequestHandler<TRequest>
+{
+    public Task MappRoutes(EntityActionRequestContext entityRequestContext)
+    {
+        var entityGroup = entityRequestContext.EntityRouteGroupBuider;
+        var actionName = entityRequestContext.EntityActionMetadata.ActionName;
+
+        entityGroup.MapMethods(actionName, [entityRequestContext.EntityActionMetadata.HttpMethod.Method], async (
+            TRequest request,
+            [FromServices] IOperationHandler<TRequest, TResponse> handler, CancellationToken cancellationToken) =>
+        {
+            var result = await handler.Handle(request, cancellationToken);
+            return result.ToResults();
+        });
+
+        return Task.CompletedTask;
+    }
+}
+
+
+[Obsolete]
 public class EntityOperationRequestHandler<TODataViewModel, TKey, TRequest> : IHttpRequestHandler
 where TODataViewModel : class
 {

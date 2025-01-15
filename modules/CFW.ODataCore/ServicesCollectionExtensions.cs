@@ -12,6 +12,8 @@ namespace CFW.ODataCore;
 
 public record EntityRouteKey(string RoutePrefix, string Name);
 
+public record EntityActionRouteKey(string RoutePrefix, string Name, string ActionName);
+
 public class ODataQueryOptions
 {
     public required AllowedQueryOptions? InternalAllowedQueryOptions { get; set; }
@@ -72,6 +74,37 @@ public class ODataQueryOptions
     }
 }
 
+public class MetadataEntityAction
+{
+    public required Type TargetType { get; init; }
+
+    public required string ActionName { get; init; }
+
+    public required Type BoundEntityType { get; init; }
+
+    public required string? EntityName { get; init; }
+
+    public HttpMethod HttpMethod { get; set; } = HttpMethod.Post;
+
+    public required string RoutePrefix { get; init; }
+
+    public required Type ImplementedInterface { get; init; }
+
+    public Type? RequestType { get; private set; }
+
+    public Type? ResponseType { get; private set; }
+
+    public void InitRequestResponseTypes()
+    {
+        var args = ImplementedInterface.GetGenericArguments();
+        if (args.Length > 2)
+            throw new InvalidOperationException($"Invalid generic arguments count {args.Length} for {ImplementedInterface.FullName}");
+
+        RequestType = args[1];
+        ResponseType = args.Length == 1 ? typeof(Result) : args[2];
+    }
+}
+
 public class MetadataEntity
 {
     public required string Name { get; init; }
@@ -83,6 +116,8 @@ public class MetadataEntity
     public required MetadataContainer Container { get; init; }
 
     public required ODataQueryOptions ODataQueryOptions { get; init; }
+
+    public IList<MetadataEntityAction> Operations { get; } = new List<MetadataEntityAction>();
 
     private static object _lockToken = new();
     private IODataFeature? _cachedFeature;
@@ -242,7 +277,31 @@ public static class ServicesCollectionExtensions
                     ContainerRouteGroupBuider = containerGroupRoute
                 });
             }
+        }
 
+        foreach (var operation in metadataEntity.Operations)
+        {
+            var routeKey = new EntityActionRouteKey(metadataEntity.Container.RoutePrefix, metadataEntity.Name, operation.ActionName);
+            var operationRequestHandler = app.Services.GetKeyedService<IEntityActionRequestHandler>(routeKey);
+            if (operationRequestHandler is null)
+            {
+                operation.InitRequestResponseTypes();
+
+                var defaultOperationRequestHandlerType = operation.ResponseType == typeof(Result)
+                    ? typeof(DefaultEntityActionRequestHandler<>).MakeGenericType(operation.RequestType!)
+                    : typeof(DefaultEntityActionRequestHandler<,>).MakeGenericType(operation.RequestType!, operation.ResponseType!);
+
+                operationRequestHandler = (IEntityActionRequestHandler)Activator.CreateInstance(defaultOperationRequestHandlerType)!;
+            }
+
+            operationRequestHandler.MappRoutes(new EntityActionRequestContext
+            {
+                MetadataEntity = metadataEntity,
+                App = app,
+                EntityRouteGroupBuider = entityRoute,
+                ContainerRouteGroupBuider = containerGroupRoute,
+                EntityActionMetadata = operation
+            });
         }
     }
 }

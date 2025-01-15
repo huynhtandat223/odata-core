@@ -1,5 +1,17 @@
 ﻿namespace CFW.ODataCore.Intefaces;
 
+public interface IOperationHandler { }
+
+public interface IOperationHandler<TRequest> : IOperationHandler
+{
+    Task<Result> Handle(TRequest request, CancellationToken cancellationToken);
+}
+
+public interface IOperationHandler<TRequest, TResponse> : IOperationHandler
+{
+    Task<Result<TResponse>> Handle(TRequest request, CancellationToken cancellationToken);
+}
+
 /// <summary>
 /// Support handle type for multi entity.
 /// </summary>
