@@ -88,4 +88,17 @@ public static class StringUtils
 
         return routePrefix.Trim('/');
     }
+
+    public static object? Parse(this string str, Type type)
+    {
+        if (str.IsNullOrWhiteSpace())
+            return default;
+
+        if (type == typeof(Guid))
+        {
+            return Guid.Parse(str);
+        }
+
+        return Convert.ChangeType(str, type);
+    }
 }

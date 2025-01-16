@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CFW.ODataCore.Testings;
 
-[Entity(RoutingName, Methods = [EntityMethod.Post])]
+[Entity(RoutingName, Methods = [ApiMethod.Post])]
 public class ConfiguredDbSet
 {
     public Guid Id { set; get; }

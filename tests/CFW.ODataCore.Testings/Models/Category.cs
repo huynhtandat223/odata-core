@@ -4,7 +4,7 @@ using CFW.ODataCore.Models;
 namespace CFW.ODataCore.Testings.Models;
 
 [Entity("categories")]
-[Entity("only-post-categories", Methods = [EntityMethod.Post])]
+[Entity("only-post-categories", Methods = [ApiMethod.Post])]
 public class Category : IEntity<Guid>
 {
     public Guid Id { get; set; }

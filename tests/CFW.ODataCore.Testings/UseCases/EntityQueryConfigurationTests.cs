@@ -17,7 +17,7 @@ public class EntityQueryConfigurationTests : BaseTests, IAssemblyFixture<AppFact
     {
         // Arrange
         var client = _factory.CreateClient();
-        var baseUrl = dbModelType.GetBaseUrl(excludedMethod: EntityMethod.Query);
+        var baseUrl = dbModelType.GetBaseUrl(excludedMethod: ApiMethod.Query);
 
         // Act
         var response = await client.GetAsync($"{baseUrl}");

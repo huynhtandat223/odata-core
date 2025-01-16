@@ -9,7 +9,9 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Options;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace CFW.ODataCore;
 
@@ -86,7 +88,7 @@ public class MetadataEntityAction
 
     public required string? EntityName { get; init; }
 
-    public HttpMethod HttpMethod { get; set; } = HttpMethod.Post;
+    public ApiMethod HttpMethod { get; set; } = ApiMethod.Post;
 
     public required string RoutePrefix { get; init; }
 
@@ -96,14 +98,20 @@ public class MetadataEntityAction
 
     public Type? ResponseType { get; private set; }
 
+    public PropertyInfo? KeyProperty { get; private set; }
+
+    [Obsolete("Use lazy")]
     public void InitRequestResponseTypes()
     {
         var args = ImplementedInterface.GetGenericArguments();
         if (args.Length > 2)
             throw new InvalidOperationException($"Invalid generic arguments count {args.Length} for {ImplementedInterface.FullName}");
 
-        RequestType = args[1];
-        ResponseType = args.Length == 1 ? typeof(Result) : args[2];
+        RequestType = args[0];
+        ResponseType = args.Length == 1 ? typeof(Result) : args[1];
+
+        KeyProperty = RequestType.GetProperties()
+            .SingleOrDefault(x => x.GetCustomAttribute<KeyAttribute>() is not null);
     }
 }
 
@@ -113,7 +121,7 @@ public class MetadataEntity
 
     public required Type SourceType { get; init; }
 
-    public required EntityMethod[] Methods { get; init; }
+    public required ApiMethod[] Methods { get; init; }
 
     public required MetadataContainer Container { get; init; }
 
@@ -167,8 +175,9 @@ public class MetadataEntity
     }
 
 
-    private IProperty? _keyProperty;
-    internal Expression<Func<TSource, bool>> BuilderEqualExpression<TSource>(DbSet<TSource> dbSet, string key)
+    internal IProperty? KeyProperty { get; set; }
+
+    internal Expression<Func<TSource, bool>> BuilderEqualExpression<TSource>(DbSet<TSource> dbSet, object key)
         where TSource : class
     {
         if (SourceType != typeof(TSource))
@@ -176,35 +185,54 @@ public class MetadataEntity
             throw new InvalidOperationException($"Invalid source type {SourceType} for {typeof(TSource)}");
         }
 
-        if (_keyProperty is null)
-        {
-            var primaryKey = dbSet.EntityType.GetKeys().SingleOrDefault(x => x.IsPrimaryKey());
-            if (primaryKey is null)
-            {
-                throw new InvalidOperationException($"Primary key not found for {typeof(TSource)}");
-            }
-
-            _keyProperty = primaryKey.Properties.Single();
-        }
-
         //build equal expression
         var parameter = Expression.Parameter(typeof(TSource), "x");
-        var propertyExpr = Expression.Property(parameter, _keyProperty.Name);
+        var propertyExpr = Expression.Property(parameter, KeyProperty!.Name);
 
-        object keyValue = default!;
-        if (_keyProperty.ClrType == typeof(Guid))
-        {
-            keyValue = Guid.Parse(key);
-        }
-        else
-        {
-            keyValue = Convert.ChangeType(key, _keyProperty.ClrType);
-        }
-        var valueExpr = Expression.Constant(keyValue, _keyProperty.ClrType);
+        var valueExpr = Expression.Constant(key);
         var equal = Expression.Equal(propertyExpr, valueExpr);
         var predicate = Expression.Lambda<Func<TSource, bool>>(equal, parameter);
 
         return predicate;
+    }
+
+    internal void FindKeyType(DbContext dbContext)
+    {
+        var entityType = dbContext.Model.FindEntityType(SourceType);
+        if (entityType is null)
+        {
+            throw new InvalidOperationException($"Entity type {SourceType} not found in DbContext");
+        }
+        var keyProperty = entityType.FindPrimaryKey();
+        if (keyProperty is null)
+        {
+            throw new InvalidOperationException($"Primary key not found for {SourceType}");
+        }
+
+        KeyProperty = keyProperty.Properties.Single();
+    }
+
+    /// <summary>
+    /// https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-9.0
+    /// </summary>
+    private static readonly Dictionary<Type, string> _typeToConstraintMap = new()
+    {
+        { typeof(int), "int" },
+        { typeof(bool), "bool" },
+        { typeof(DateTime), "datetime" },
+        { typeof(decimal), "decimal" },
+        { typeof(double), "double" },
+        { typeof(float), "float" },
+        { typeof(Guid), "guid" },
+        { typeof(long), "long" },
+        { typeof(string), "alpha" } // Example: alpha for alphabetic strings
+    };
+
+    internal string GetKeyPattern()
+    {
+        return _typeToConstraintMap.TryGetValue(KeyProperty!.ClrType, out var constraint)
+            ? $"{{key:{constraint}}}"
+            : "{key}";
     }
 }
 
@@ -261,7 +289,6 @@ public static class ServicesCollectionExtensions
                 , contextProvider, coreOptions.DbServiceLifetime));
         }
 
-
         return services;
     }
 
@@ -270,6 +297,7 @@ public static class ServicesCollectionExtensions
         var minimalApiOptions = app.Services.GetRequiredService<EntityMimimalApiOptions>();
         var odataOptions = app.Services.GetRequiredService<IOptions<ODataOptions>>().Value;
         var containers = app.Services.GetRequiredService<IEnumerable<MetadataContainer>>();
+        var dbContext = app.Services.GetService<IODataDbContextProvider>()!.GetDbContext();
 
         foreach (var container in containers)
         {
@@ -282,7 +310,7 @@ public static class ServicesCollectionExtensions
             foreach (var entityMetadata in container.MetadataEntities)
             {
                 entityMetadata.ODataQueryOptions.SetIgnoreQueryOptions(odataOptions.QueryConfigurations);
-                RegisterEntityComponents(app, entityMetadata, containerGroupRoute);
+                RegisterEntityComponents(app, entityMetadata, containerGroupRoute, dbContext);
             }
 
             //Add internal odata service providers
@@ -292,9 +320,11 @@ public static class ServicesCollectionExtensions
     }
 
     private static void RegisterEntityComponents(WebApplication app
-        , MetadataEntity metadataEntity, RouteGroupBuilder containerGroupRoute)
+        , MetadataEntity metadataEntity, RouteGroupBuilder containerGroupRoute, DbContext dbContext)
     {
         var sourceType = metadataEntity.SourceType;
+
+        Type? keyType = null;
 
         var entityRoute = containerGroupRoute
             .MapGroup(metadataEntity.Name)
@@ -311,32 +341,36 @@ public static class ServicesCollectionExtensions
                 ContainerRouteGroupBuider = containerGroupRoute
             };
 
-            if (method == EntityMethod.Query)
+            if (method == ApiMethod.Query)
             {
                 var requestHandler = app.Services.GetKeyedService<IEntityQueryRequestHandler>(routeKey);
                 if (requestHandler is null)
                 {
-                    var defaultQueryRequestHandlerType = typeof(DefaultEntityQueryRequestHandler<>).MakeGenericType(sourceType);
+                    var defaultQueryRequestHandlerType = typeof(DefaultEntityQueryRequestHandler<>)
+                        .MakeGenericType(sourceType);
                     requestHandler = (IEntityQueryRequestHandler)Activator.CreateInstance(defaultQueryRequestHandlerType)!;
                 }
 
                 requestHandler.MappRoutes(requestContext);
             }
 
-            if (method == EntityMethod.GetByKey)
+            if (method == ApiMethod.GetByKey)
             {
+                if (metadataEntity.KeyProperty is null)
+                    metadataEntity.FindKeyType(dbContext);
+
                 var requestHandler = app.Services.GetKeyedService<IEntityGetByKeyRequestHandler>(routeKey);
                 if (requestHandler is null)
                 {
-                    var defaultQueryRequestHandlerType = typeof(DefaultEntityGetByKeyRequestHandler<>)
-                        .MakeGenericType(sourceType);
+                    var defaultQueryRequestHandlerType = typeof(DefaultEntityGetByKeyRequestHandler<,>)
+                        .MakeGenericType(sourceType, metadataEntity.KeyProperty!.ClrType);
                     requestHandler = (IEntityGetByKeyRequestHandler)Activator.CreateInstance(defaultQueryRequestHandlerType)!;
                 }
 
                 requestHandler.MappRoutes(requestContext);
             }
 
-            if (method == EntityMethod.Post)
+            if (method == ApiMethod.Post)
             {
                 var requestHandler = app.Services.GetKeyedService<IEntityCreateRequestHandler>(routeKey);
                 if (requestHandler is null)
@@ -349,6 +383,7 @@ public static class ServicesCollectionExtensions
             }
         }
 
+        //Operation api order first to prevent api priority order
         foreach (var operation in metadataEntity.Operations)
         {
             var routeKey = new EntityActionRouteKey(metadataEntity.Container.RoutePrefix, metadataEntity.Name, operation.ActionName);
@@ -373,6 +408,7 @@ public static class ServicesCollectionExtensions
                 EntityActionMetadata = operation
             });
         }
+
     }
 }
 

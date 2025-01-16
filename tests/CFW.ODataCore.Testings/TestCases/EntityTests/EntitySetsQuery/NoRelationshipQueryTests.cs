@@ -11,7 +11,7 @@ public class NoRelationshipQueryTests : BaseTests, IClassFixture<AppFactory>
 
     }
 
-    [Entity(nameof(NoRelationshipQueryViewModel), Methods = [EntityMethod.Query])]
+    [Entity(nameof(NoRelationshipQueryViewModel), Methods = [ApiMethod.Query])]
     public class NoRelationshipQueryViewModel : IEntity<Guid>
     {
         public Guid Id { get; set; }

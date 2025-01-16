@@ -6,7 +6,7 @@ namespace CFW.ODataCore.Testings.TestCases.EntityTests;
 
 public class QueryDbSetAsModelTests : BaseTests, IAssemblyFixture<AppFactory>
 {
-    [Entity(nameof(SimpleQueryEntity), Methods = [EntityMethod.Query])]
+    [Entity(nameof(SimpleQueryEntity), Methods = [ApiMethod.Query])]
     public class SimpleQueryEntity : IEntity<Guid>
     {
         public Guid Id { get; set; }

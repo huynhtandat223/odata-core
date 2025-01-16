@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CFW.ODataCore.Testings.Features.Categories;
 
-public class CategoriesPingPongWithKeyAttribute
+public class CategoriesPingPongWithNonKey
 {
     public record RequestPing
     {
@@ -19,7 +19,7 @@ public class CategoriesPingPongWithKeyAttribute
         public string Name { get; set; } = string.Empty;
     }
 
-    [EntityAction<Category>(nameof(CategoriesPingPongWithKeyAttribute))]
+    [EntityAction<Category>(nameof(CategoriesPingPongWithNonKey), EntityName = "categories")]
     public class Handler : IOperationHandler<RequestPing, ResponsePong>
     {
         public Task<Result<ResponsePong>> Handle(RequestPing request, CancellationToken cancellationToken)

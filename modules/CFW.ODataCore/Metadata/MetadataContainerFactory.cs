@@ -27,7 +27,7 @@ public class MetadataContainerFactory : IAssemblyResolver
             {
                 attr.TargetType = x;
                 attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
-                attr.Methods ??= Enum.GetValues<EntityMethod>().ToArray();
+                attr.Methods ??= Enum.GetValues<ApiMethod>().ToArray();
                 list.Add(attr);
                 return list;
             }));
@@ -37,7 +37,7 @@ public class MetadataContainerFactory : IAssemblyResolver
         {
             var metadataContainer = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
 
-            var entityEndpoints = containerGroup.SelectMany(x => x.Methods.Select(m => new { Attribute = x, Method = m }))
+            var entityEndpoints = containerGroup.SelectMany(x => x.Methods!.Select(m => new { Attribute = x, Method = m }))
                 .GroupBy(x => new { x.Attribute.Name, x.Attribute.TargetType, x.Attribute.AllowedQueryOptions });
 
             foreach (var key in entityEndpoints)
@@ -66,12 +66,16 @@ public class MetadataContainerFactory : IAssemblyResolver
             containers.Add(metadataContainer);
         }
 
+        var operationHandlerTypes = new[] { typeof(IOperationHandler<>), typeof(IOperationHandler<,>) };
         var boundOperationConfigs = CacheType
             .SelectMany(x => x.GetCustomAttributes<EntityActionAttribute>()
             .Aggregate(new List<MetadataEntityAction>(), (list, attr) =>
             {
+                if (x.IsAbstract)
+                    return list;
+
                 var interfaces = x.GetInterfaces().Where(i => i.IsGenericType
-                    && i.BaseType == typeof(IOperationHandler));
+                    && operationHandlerTypes.Contains(i.GetGenericTypeDefinition()));
 
                 if (!interfaces.Any())
                     throw new InvalidOperationException($"Entity action {attr.ActionName} " +
@@ -87,7 +91,7 @@ public class MetadataContainerFactory : IAssemblyResolver
                     RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix,
                     TargetType = x,
                     ActionName = attr.ActionName,
-                    HttpMethod = attr.HttpMethod,
+                    HttpMethod = attr.ActionMethod,
                     BoundEntityType = attr.BoundEntityType,
                     EntityName = attr.EntityName
                 };

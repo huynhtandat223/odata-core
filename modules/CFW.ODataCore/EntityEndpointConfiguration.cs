@@ -14,7 +14,7 @@ namespace CFW.ODataCore;
 
 public abstract class EntityEndpointConfiguration
 {
-    public EntityMethod[] Methods { set; get; }
+    public ApiMethod[] Methods { set; get; }
 
     public string Name { get; set; }
 
@@ -213,7 +213,7 @@ public class DefaultEfCoreConfiguration<TDbSet> : EntityConfiguration<TDbSet>
 
         base.BuildViewModelType(modelBuilder);
 
-        if (Methods.Contains(EntityMethod.Query) || Methods.Contains(EntityMethod.GetByKey))
+        if (Methods.Contains(ApiMethod.Query) || Methods.Contains(ApiMethod.GetByKey))
         {
             EnableQuery((IODataDbContextProvider dbContextProvider) =>
             {
@@ -222,7 +222,7 @@ public class DefaultEfCoreConfiguration<TDbSet> : EntityConfiguration<TDbSet>
             });
         }
 
-        if (Methods.Contains(EntityMethod.Post))
+        if (Methods.Contains(ApiMethod.Post))
         {
             EnableCreate(async (IODataDbContextProvider dbContextProvider, IDictionary<string, object?> properties) =>
             {

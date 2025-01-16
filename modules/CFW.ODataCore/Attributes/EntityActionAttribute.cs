@@ -1,4 +1,6 @@
-﻿namespace CFW.ODataCore.Attributes;
+﻿using CFW.ODataCore.Models;
+
+namespace CFW.ODataCore.Attributes;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public abstract class EntityActionAttribute : BaseRoutingAttribute
@@ -13,7 +15,10 @@ public abstract class EntityActionAttribute : BaseRoutingAttribute
     /// </summary>
     public string? EntityName { get; set; }
 
-    public HttpMethod HttpMethod { get; set; } = HttpMethod.Post;
+    /// <summary>
+    /// HttpMethod for action.
+    /// </summary>
+    public ApiMethod ActionMethod { get; set; } = ApiMethod.Post;
 
     public Type? TargetType { get; set; }
 

@@ -32,7 +32,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
         foreach (var method in _metadata.ServiceDescriptors.Keys)
         {
             RouteHandlerBuilder? routeHandlerBuilder = null;
-            if (method == EntityMethod.GetByKey)
+            if (method == ApiMethod.GetByKey)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/{key}", async (HttpContext httpContext
                     , [FromServices] IEntityGetByKeyHandler<TViewModel, TKey> handler
@@ -49,7 +49,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 }).Produces<TViewModel>();
             }
 
-            if (method == EntityMethod.Patch)
+            if (method == ApiMethod.Patch)
             {
                 routeHandlerBuilder = entityGroup.MapPatch("/{key}", async (HttpRequest httpRequest
                     , ODataModel<TViewModel, TKey, Delta<TViewModel>> model
@@ -65,7 +65,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 }).Produces(201);
             }
 
-            if (method == EntityMethod.Post)
+            if (method == ApiMethod.Post)
             {
                 routeHandlerBuilder = entityGroup.MapPost("/", async (TViewModel viewModel
                     , [FromServices] IEntityCreateHandler<TViewModel> handler
@@ -76,7 +76,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 }).Produces<TViewModel>();
             }
 
-            if (method == EntityMethod.Query)
+            if (method == ApiMethod.Query)
             {
                 routeHandlerBuilder = entityGroup.MapGet("/", async (HttpContext httpContext
                     , [FromServices] IEntityQueryHandler<TViewModel> handler
@@ -93,7 +93,7 @@ public class EntityRequestHandler<TViewModel, TKey> : IHttpRequestHandler
                 }).Produces<ODataQueryResult<TViewModel>>();
             }
 
-            if (method == EntityMethod.Delete)
+            if (method == ApiMethod.Delete)
             {
                 routeHandlerBuilder = entityGroup.MapDelete("/{key}", async (HttpRequest httpRequest
                     , TKey key

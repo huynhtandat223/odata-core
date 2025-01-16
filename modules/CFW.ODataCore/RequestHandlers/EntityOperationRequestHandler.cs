@@ -2,6 +2,9 @@
 using CFW.ODataCore.Models;
 using CFW.ODataCore.ODataMetadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using System.Text.Json;
+using System.Web;
 
 namespace CFW.ODataCore.RequestHandlers;
 
@@ -19,49 +22,182 @@ public interface IEntityActionRequestHandler<TRequest, TResponse> : IEntityActio
 {
 }
 
-public interface IEntityActionRequestHandler<TRequest>
+public interface IEntityActionRequestHandler<TRequest> : IEntityActionRequestHandler
 {
 }
 
-public class DefaultEntityActionRequestHandler<TRequest> :
-    IEntityActionRequestHandler<TRequest>
+public class QueryRequest<TRequest>
 {
-    public Task MappRoutes(EntityActionRequestContext entityRequestContext)
-    {
-        var entityGroup = entityRequestContext.EntityRouteGroupBuider;
-        var actionName = entityRequestContext.EntityActionMetadata.ActionName;
+    public TRequest? Request { get; set; } = default!;
 
-        entityGroup.MapMethods(actionName, [entityRequestContext.EntityActionMetadata.HttpMethod.Method], async (
-            TRequest request,
-            [FromServices] IOperationHandler<TRequest> handler, CancellationToken cancellationToken) =>
+    public static ValueTask<QueryRequest<TRequest>> BindAsync(HttpContext context)
+    {
+        var request = context.Request;
+        var jsonOptions = context.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value;
+
+        if (!request.QueryString.HasValue)
         {
-            var result = await handler.Handle(request, cancellationToken);
-            return result.ToResults();
-        });
+            return default;
+        }
+
+        var dict = HttpUtility.ParseQueryString(request.QueryString.Value);
+        string json = JsonSerializer.Serialize(dict.Cast<string>().ToDictionary(k => k, v => dict[v]));
+        var model = JsonSerializer.Deserialize<TRequest>(json, jsonOptions.JsonSerializerOptions);
+
+        var result = new QueryRequest<TRequest>
+        {
+            Request = model
+        };
+        return new ValueTask<QueryRequest<TRequest>>(result);
+    }
+
+}
+
+public abstract class DefaultEntityActionRequestHandler
+{
+    private string[] MapHttpMethods(ApiMethod apiMethod)
+    {
+        return apiMethod switch
+        {
+            ApiMethod.Get => ["GET"],
+            ApiMethod.Post => ["POST"],
+            ApiMethod.Put => ["PUT"],
+            ApiMethod.Patch => ["PATCH"],
+            ApiMethod.Delete => ["DELETE"],
+            _ => throw new InvalidOperationException("Invalid Method")
+        };
+    }
+
+    public Task MappRoutes<TRequest>(EntityActionRequestContext entityActionRequestContext)
+    {
+        var entityGroup = entityActionRequestContext.EntityRouteGroupBuider;
+        var actionName = entityActionRequestContext.EntityActionMetadata.ActionName;
+        var mappedMethods = MapHttpMethods(entityActionRequestContext.EntityActionMetadata.HttpMethod);
+        var keyProperty = entityActionRequestContext.EntityActionMetadata.KeyProperty;
+
+        if (keyProperty is not null)
+        {
+            entityGroup.MapMethods($"{{key}}/{actionName}", mappedMethods, async (
+                [FromBody] TRequest request, QueryRequest<TRequest> queryRequest
+                , string key
+                , HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                var keyValue = key.Parse(keyProperty.PropertyType);
+                keyProperty.SetValue(request, keyValue);
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , entityActionRequestContext.EntityActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+        else
+        {
+            entityGroup.MapMethods(actionName, mappedMethods, async (
+                [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
+                , HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , entityActionRequestContext.EntityActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task MappRoutes<TRequest, TResponse>(EntityActionRequestContext entityActionRequestContext)
+    {
+        var entityGroup = entityActionRequestContext.EntityRouteGroupBuider;
+        var actionName = entityActionRequestContext.EntityActionMetadata.ActionName;
+        var keyProperty = entityActionRequestContext.EntityActionMetadata.KeyProperty;
+        var mappedMethods = MapHttpMethods(entityActionRequestContext.EntityActionMetadata.HttpMethod);
+
+        var app = entityActionRequestContext.App;
+
+        if (keyProperty is not null)
+        {
+            entityGroup.MapMethods($"{{key}}/{actionName}", mappedMethods, async (
+            [FromBody] TRequest request, QueryRequest<TRequest> queryRequest,
+            string key,
+            HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+                var keyValue = key.Parse(keyProperty.PropertyType);
+                keyProperty.SetValue(request, keyValue);
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , entityActionRequestContext.EntityActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest, TResponse> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+        else
+        {
+            entityGroup.MapMethods(actionName, mappedMethods, async (
+            [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest,
+            HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , entityActionRequestContext.EntityActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest, TResponse> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
 
         return Task.CompletedTask;
     }
 }
 
-public class DefaultEntityActionRequestHandler<TRequest, TResponse> :
-    IEntityActionRequestHandler<TRequest, TResponse>,
+public class DefaultEntityActionRequestHandler<TRequest> : DefaultEntityActionRequestHandler,
     IEntityActionRequestHandler<TRequest>
 {
-    public Task MappRoutes(EntityActionRequestContext entityRequestContext)
-    {
-        var entityGroup = entityRequestContext.EntityRouteGroupBuider;
-        var actionName = entityRequestContext.EntityActionMetadata.ActionName;
+    public Task MappRoutes(EntityActionRequestContext entityActionRequestContext)
+        => MappRoutes<TRequest>(entityActionRequestContext);
+}
 
-        entityGroup.MapMethods(actionName, [entityRequestContext.EntityActionMetadata.HttpMethod.Method], async (
-            TRequest request,
-            [FromServices] IOperationHandler<TRequest, TResponse> handler, CancellationToken cancellationToken) =>
-        {
-            var result = await handler.Handle(request, cancellationToken);
-            return result.ToResults();
-        });
-
-        return Task.CompletedTask;
-    }
+public class DefaultEntityActionRequestHandler<TRequest, TResponse> : DefaultEntityActionRequestHandler,
+    IEntityActionRequestHandler<TRequest, TResponse>
+{
+    public Task MappRoutes(EntityActionRequestContext entityActionRequestContext)
+        => MappRoutes<TRequest, TResponse>(entityActionRequestContext);
 }
 
 

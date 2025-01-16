@@ -4,10 +4,10 @@ using CFW.ODataCore.Models;
 namespace CFW.ODataCore.Testings.TestCases.Authorizations.Models;
 
 [Entity("multi-authorizations")]
-[EntityAuthorize(ApplyMethods = [EntityMethod.Query])]
-[EntityAuthorize(ApplyMethods = [EntityMethod.GetByKey], Roles = TestUtils.AdminRole)]
-[EntityAuthorize(ApplyMethods = [EntityMethod.Post], Roles = $"{TestUtils.AdminRole},{TestUtils.SupperAdminRole}")]
-[EntityAuthorize(ApplyMethods = [EntityMethod.Delete], Roles = TestUtils.SupperAdminRole)]
+[EntityAuthorize(ApplyMethods = [ApiMethod.Query])]
+[EntityAuthorize(ApplyMethods = [ApiMethod.GetByKey], Roles = TestUtils.AdminRole)]
+[EntityAuthorize(ApplyMethods = [ApiMethod.Post], Roles = $"{TestUtils.AdminRole},{TestUtils.SupperAdminRole}")]
+[EntityAuthorize(ApplyMethods = [ApiMethod.Delete], Roles = TestUtils.SupperAdminRole)]
 public class MultiAuthorization : IEntity<Guid>
 {
     public Guid Id { get; set; }

@@ -14,14 +14,14 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
     {
     }
 
-    [Entity("restrictions", Methods = [EntityMethod.Query, EntityMethod.GetByKey])]
+    [Entity("restrictions", Methods = [ApiMethod.Query, ApiMethod.GetByKey])]
     public class Restriction : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
     }
 
-    [Entity("restrictions-postcreates", Methods = [EntityMethod.Post, EntityMethod.Patch, EntityMethod.Delete])]
+    [Entity("restrictions-postcreates", Methods = [ApiMethod.Post, ApiMethod.Patch, ApiMethod.Delete])]
     public class RestrictionPostCreate : IEntity<Guid>
     {
         public Guid Id { get; set; }
@@ -58,7 +58,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
 
         foreach (var method in methodsArray)
         {
-            if (method == EntityMethod.Query)
+            if (method == ApiMethod.Query)
             {
                 // Act
                 var odataFilterIds = $"$filter=id in ({string.Join(", ", ids.Select(id => $"'{id}'"))})";
@@ -74,7 +74,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 value!.Cast<object>().Count().Should().Be(data.Count);
             }
 
-            if (method == EntityMethod.GetByKey)
+            if (method == ApiMethod.GetByKey)
             {
                 var expectedEntity = data.Cast<object>().Random();
                 var keyValue = expectedEntity.GetPropertyValue(keyProp);
@@ -88,7 +88,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 actualEntity.Should().BeEquivalentTo(expectedEntity);
             }
 
-            if (method == EntityMethod.Post)
+            if (method == ApiMethod.Post)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
 
@@ -101,7 +101,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 data = data.Cast<object>().Append(newEntity).ToList();
             }
 
-            if (method == EntityMethod.Patch)
+            if (method == ApiMethod.Patch)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -117,7 +117,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
 
             }
 
-            if (method == EntityMethod.Delete)
+            if (method == ApiMethod.Delete)
             {
                 var randomEntity = data.Cast<object>().Random();
                 var keyValue = randomEntity.GetPropertyValue(keyProp);
@@ -146,7 +146,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
             throw new Exception("Test data invalid. Methods are allowed for this endpoint.");
         }
 
-        var notAllowedMethods = Enum.GetValues<EntityMethod>().Except(methodsArray).ToArray();
+        var notAllowedMethods = Enum.GetValues<ApiMethod>().Except(methodsArray).ToArray();
         if (notAllowedMethods.Length == 0)
         {
             throw new Exception("Test data invalid. No methods are not allowed for this endpoint.");
@@ -162,7 +162,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
         var client = _factory.CreateClient();
         foreach (var method in notAllowedMethods)
         {
-            if (method == EntityMethod.Query)
+            if (method == ApiMethod.Query)
             {
                 // Act
                 var queryResponseMessage = await client.GetAsync(baseUrl);
@@ -171,7 +171,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 queryResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == EntityMethod.GetByKey)
+            if (method == ApiMethod.GetByKey)
             {
                 var getByKeyResponseMessage = await client.GetAsync($"{baseUrl}/{keyValue}");
                 // Assert
@@ -179,7 +179,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 getByKeyResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == EntityMethod.Post)
+            if (method == ApiMethod.Post)
             {
                 var newEntity = DataGenerator.Create(odataViewModelType);
                 // Act
@@ -189,7 +189,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 postResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == EntityMethod.Patch)
+            if (method == ApiMethod.Patch)
             {
                 var updatingEntity = DataGenerator.Create(odataViewModelType)
                     .SetPropertyValue(nameof(IEntity<object>.Id), keyValue);
@@ -200,7 +200,7 @@ public class EndpointRestrictionTests : BaseTests, IAssemblyFixture<AppFactory>
                 patchResponseMessage.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             }
 
-            if (method == EntityMethod.Delete)
+            if (method == ApiMethod.Delete)
             {
                 // Act
                 var deleteResponseMessage = await client.DeleteAsync($"{baseUrl}/{keyValue}");

@@ -13,7 +13,7 @@ public interface IEntityGetByKeyRequestHandler
     Task MappRoutes(EntityRequestContext entityRequestContext);
 }
 
-public class DefaultEntityGetByKeyRequestHandler<TSource> : IEntityGetByKeyRequestHandler
+public class DefaultEntityGetByKeyRequestHandler<TSource, TKey> : IEntityGetByKeyRequestHandler
     where TSource : class
 {
     public Task MappRoutes(EntityRequestContext entityRequestContext)
@@ -23,8 +23,10 @@ public class DefaultEntityGetByKeyRequestHandler<TSource> : IEntityGetByKeyReque
         var formatter = new ODataOutputFormatter([ODataPayloadKind.ResourceSet]);
         formatter.SupportedEncodings.Add(Encoding.UTF8);
 
-        entityRequestContext.EntityRouteGroupBuider.MapGet("/{key}", async (HttpContext httpContext
-                , string key
+        var routePattern = entityMetadata.GetKeyPattern();
+
+        entityRequestContext.EntityRouteGroupBuider.MapGet(routePattern, async (HttpContext httpContext
+                , TKey key
                 , CancellationToken cancellationToken) =>
         {
             var dbContextProvider = httpContext.RequestServices.GetRequiredService<IODataDbContextProvider>();
@@ -33,7 +35,7 @@ public class DefaultEntityGetByKeyRequestHandler<TSource> : IEntityGetByKeyReque
             var queryable = db.Set<TSource>().AsNoTracking();
 
             var feature = entityMetadata.CreateOrGetODataFeature<TSource>();
-            var predicate = entityMetadata.BuilderEqualExpression(db.Set<TSource>(), key);
+            var predicate = entityMetadata.BuilderEqualExpression(db.Set<TSource>(), key!);
 
             httpContext.Features.Set(feature);
 
@@ -54,10 +56,9 @@ public class DefaultEntityGetByKeyRequestHandler<TSource> : IEntityGetByKeyReque
                 ContentType = "application/json;odata.metadata=none",
             };
 
-
             await formatter.WriteAsync(formatterContext);
 
-        }).Produces<TSource>();
+        }).WithName(entityMetadata.Name);
 
         return Task.CompletedTask;
     }

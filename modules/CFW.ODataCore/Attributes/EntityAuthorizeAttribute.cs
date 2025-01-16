@@ -6,5 +6,5 @@ namespace CFW.ODataCore.Attributes;
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class EntityAuthorizeAttribute : AuthorizeAttribute
 {
-    public EntityMethod[] ApplyMethods { get; set; } = Enum.GetValues<EntityMethod>();
+    public ApiMethod[] ApplyMethods { get; set; } = Enum.GetValues<ApiMethod>();
 }

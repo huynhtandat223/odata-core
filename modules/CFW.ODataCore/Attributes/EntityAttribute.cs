@@ -15,10 +15,10 @@ public class EntityAttribute : BaseRoutingAttribute
 
     public string Name { get; }
 
-    public EntityMethod[]? Methods { get; set; }
+    public ApiMethod[]? Methods { get; set; }
 
     /// <summary>
-    /// OData query options for method <see cref="EntityMethod.Query"/> or <see cref="EntityMethod.GetByKey"/>
+    /// OData query options for method <see cref="ApiMethod.Query"/> or <see cref="ApiMethod.GetByKey"/>
     /// </summary>
     public AllowedQueryOptions? AllowedQueryOptions { get; set; }
 

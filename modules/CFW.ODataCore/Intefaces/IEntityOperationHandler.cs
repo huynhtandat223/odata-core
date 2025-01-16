@@ -1,13 +1,11 @@
 ﻿namespace CFW.ODataCore.Intefaces;
 
-public interface IOperationHandler { }
-
-public interface IOperationHandler<TRequest> : IOperationHandler
+public interface IOperationHandler<TRequest>
 {
     Task<Result> Handle(TRequest request, CancellationToken cancellationToken);
 }
 
-public interface IOperationHandler<TRequest, TResponse> : IOperationHandler
+public interface IOperationHandler<TRequest, TResponse>
 {
     Task<Result<TResponse>> Handle(TRequest request, CancellationToken cancellationToken);
 }
@@ -17,12 +15,14 @@ public interface IOperationHandler<TRequest, TResponse> : IOperationHandler
 /// </summary>
 /// <typeparam name="TViewModelType"></typeparam>
 /// <typeparam name="TRequest"></typeparam>
+[Obsolete]
 public interface IEntityOperationHandler<TViewModelType, TRequest>
     where TViewModelType : class
 {
     Task<Result> Handle(TRequest request, CancellationToken cancellationToken);
 }
 
+[Obsolete]
 public interface IEntityOperationHandler<TViewModelType, TRequest, TResponse>
     where TViewModelType : class
 {
