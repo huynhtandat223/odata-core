@@ -1,19 +1,17 @@
-﻿using CFW.ODataCore.Models;
+﻿namespace CFW.ODataCore.Attributes;
 
-namespace CFW.ODataCore.Attributes;
-
+[Obsolete]
 public abstract class BoundOperationAttribute : BaseRoutingAttribute
 {
-    public string OperationName { get; init; }
+    public string Name { get; init; }
 
     public Type EntityType { get; init; }
 
-    public OperationType OperationType { get; set; } = OperationType.Action;
+    public HttpMethod HttpMethod { get; set; } = HttpMethod.Post;
 
-    public BoundOperationAttribute(string operationName, Type entityType, OperationType operationType)
+    public BoundOperationAttribute(string operationName, Type entityType)
     {
-        OperationName = operationName;
+        Name = operationName;
         EntityType = entityType;
-        OperationType = operationType;
     }
 }

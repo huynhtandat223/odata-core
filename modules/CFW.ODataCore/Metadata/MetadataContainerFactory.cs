@@ -1,4 +1,5 @@
 ﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
 using Microsoft.OData.ModelBuilder;
 using System.Reflection;
@@ -26,10 +27,12 @@ public class MetadataContainerFactory : IAssemblyResolver
             {
                 attr.TargetType = x;
                 attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
+                attr.Methods ??= Enum.GetValues<EntityMethod>().ToArray();
                 list.Add(attr);
                 return list;
             }));
 
+        var containers = new List<MetadataContainer>();
         foreach (var containerGroup in entityEndpoinConfigs.GroupBy(x => x.RoutePrefix))
         {
             var metadataContainer = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
@@ -44,9 +47,7 @@ public class MetadataContainerFactory : IAssemblyResolver
                     .Select(x => x.Key)
                     .ToArray();
                 if (duplicateMethods.Any())
-                {
                     throw new InvalidOperationException($"Duplicate methods {string.Join(",", duplicateMethods)} for entity {key.Key.Name}");
-                }
 
                 var endpoint = key.Key.Name;
                 var sourceType = key.Key.TargetType!;
@@ -62,9 +63,80 @@ public class MetadataContainerFactory : IAssemblyResolver
                 };
                 metadataContainer.MetadataEntities.Add(metadataEntity);
             }
-
-            yield return metadataContainer;
+            containers.Add(metadataContainer);
         }
+
+        var boundOperationConfigs = CacheType
+            .SelectMany(x => x.GetCustomAttributes<EntityActionAttribute>()
+            .Aggregate(new List<MetadataEntityAction>(), (list, attr) =>
+            {
+                var interfaces = x.GetInterfaces().Where(i => i.IsGenericType
+                    && i.BaseType == typeof(IOperationHandler));
+
+                if (!interfaces.Any())
+                    throw new InvalidOperationException($"Entity action {attr.ActionName} " +
+                        $"handler {x.FullName} not implement any operation interface");
+
+                if (interfaces.Count() > 1)
+                    throw new InvalidOperationException($"Entity action {attr.ActionName} " +
+                        $"handler {x.FullName} implement multiple operation interface");
+
+                var metadata = new MetadataEntityAction
+                {
+                    ImplementedInterface = interfaces.First(),
+                    RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix,
+                    TargetType = x,
+                    ActionName = attr.ActionName,
+                    HttpMethod = attr.HttpMethod,
+                    BoundEntityType = attr.BoundEntityType,
+                    EntityName = attr.EntityName
+                };
+
+                list.Add(metadata);
+                return list;
+            }));
+        foreach (var containerGroup in boundOperationConfigs.GroupBy(x => x.RoutePrefix))
+        {
+            var container = containers.FirstOrDefault(x => x.RoutePrefix == containerGroup.Key);
+            if (container is null)
+                container = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
+
+            var entityOperations = containerGroup
+                .GroupBy(x => new { x.EntityName, x.BoundEntityType, x.TargetType, x.ActionName });
+            foreach (var entityOperationMetadata in entityOperations)
+            {
+                if (entityOperationMetadata.Count() > 1)
+                    throw new NotImplementedException($"Duplicate entity operation {entityOperationMetadata.Key.ActionName} for entity {entityOperationMetadata.Key.BoundEntityType}");
+                var entityActionMetadataItem = entityOperationMetadata.Single();
+
+                var entityName = entityOperationMetadata.Key.EntityName;
+                var boundEntityType = entityOperationMetadata.Key.BoundEntityType;
+
+                var entityMetadataList = container.MetadataEntities
+                    .Where(x => x.SourceType == boundEntityType);
+                MetadataEntity? boundedEntityMetadata = null;
+                if (entityMetadataList.Any())
+                {
+                    if (entityMetadataList.Count() > 1 && entityName.IsNullOrWhiteSpace())
+                        throw new InvalidOperationException($"Entity {entityOperationMetadata.Key.BoundEntityType} has " +
+                            $"multiple entity attribute apply on it, please specify entity name");
+
+                    boundedEntityMetadata = entityMetadataList.SingleOrDefault(x => x.Name == entityName);
+
+                    if (boundedEntityMetadata is null)
+                        throw new InvalidOperationException($"Entity {entityOperationMetadata.Key.BoundEntityType} has " +
+                            $"no entity attribute with name {entityName}");
+                }
+
+                if (boundedEntityMetadata is null)
+                    throw new InvalidOperationException($"Entity {entityOperationMetadata.Key.BoundEntityType} has " +
+                        $"no entity attribute apply on it");
+
+                boundedEntityMetadata.Operations.Add(entityActionMetadataItem);
+            }
+        }
+
+        return containers;
     }
 
     public IEnumerable<ODataMetadataContainer> CreateContainers(IServiceCollection services

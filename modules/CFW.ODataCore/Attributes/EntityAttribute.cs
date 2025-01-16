@@ -15,7 +15,7 @@ public class EntityAttribute : BaseRoutingAttribute
 
     public string Name { get; }
 
-    public EntityMethod[] Methods { get; set; } = Enum.GetValues<EntityMethod>().ToArray();
+    public EntityMethod[]? Methods { get; set; }
 
     /// <summary>
     /// OData query options for method <see cref="EntityMethod.Query"/> or <see cref="EntityMethod.GetByKey"/>
