@@ -301,6 +301,18 @@ public static class ServicesCollectionExtensions
 
                 requestHandler.MappRoutes(requestContext);
             }
+
+            if (method == EntityMethod.Post)
+            {
+                var requestHandler = app.Services.GetKeyedService<IEntityCreateRequestHandler>(routeKey);
+                if (requestHandler is null)
+                {
+                    var defaultQueryRequestHandlerType = typeof(DefaultEntityCreateRequestHandler<>)
+                        .MakeGenericType(sourceType);
+                    requestHandler = (IEntityCreateRequestHandler)Activator.CreateInstance(defaultQueryRequestHandlerType)!;
+                }
+                requestHandler.MappRoutes(requestContext);
+            }
         }
     }
 }
