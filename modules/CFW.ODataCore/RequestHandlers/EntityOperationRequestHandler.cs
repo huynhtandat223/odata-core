@@ -8,9 +8,31 @@ using System.Web;
 
 namespace CFW.ODataCore.RequestHandlers;
 
+public class UnboundActionRequestContext
+{
+    public required WebApplication App { get; init; }
+
+    public required RouteGroupBuilder ContainerRouteGroupBuider { get; init; }
+
+    public required MetadataUnboundAction UnboundActionMetadata { get; init; }
+}
+
 public class EntityActionRequestContext : EntityRequestContext
 {
     public required MetadataEntityAction EntityActionMetadata { get; init; }
+}
+
+public interface IUnboundActionRequestHandler
+{
+    Task MappRoutes(UnboundActionRequestContext unboundActionRequestContext);
+}
+
+public interface IUnboundActionRequestHandler<TRequest, TResponse> : IUnboundActionRequestHandler
+{
+}
+
+public interface IUnboundActionRequestHandler<TRequest> : IUnboundActionRequestHandler
+{
 }
 
 public interface IEntityActionRequestHandler
@@ -25,6 +47,8 @@ public interface IEntityActionRequestHandler<TRequest, TResponse> : IEntityActio
 public interface IEntityActionRequestHandler<TRequest> : IEntityActionRequestHandler
 {
 }
+
+
 
 public class QueryRequest<TRequest>
 {
@@ -53,7 +77,7 @@ public class QueryRequest<TRequest>
 
 }
 
-public abstract class DefaultEntityActionRequestHandler
+public abstract class DefaultActionRequestHandler
 {
     private string[] MapHttpMethods(ApiMethod apiMethod)
     {
@@ -66,6 +90,121 @@ public abstract class DefaultEntityActionRequestHandler
             ApiMethod.Delete => ["DELETE"],
             _ => throw new InvalidOperationException("Invalid Method")
         };
+    }
+
+    public Task MappRoutes<TRequest>(UnboundActionRequestContext requestContext)
+    {
+        var actionName = requestContext.UnboundActionMetadata.ActionName;
+        var mappedMethods = MapHttpMethods(requestContext.UnboundActionMetadata.HttpMethod);
+        var keyProperty = requestContext.UnboundActionMetadata.KeyProperty;
+        var containerGroup = requestContext.ContainerRouteGroupBuider;
+
+        if (keyProperty is not null)
+        {
+            containerGroup.MapMethods($"{actionName}/{{key}}", mappedMethods, async (
+                [FromBody] TRequest request, QueryRequest<TRequest> queryRequest
+                , string key
+                , HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                var keyValue = key.Parse(keyProperty.PropertyType);
+                keyProperty.SetValue(request, keyValue);
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , requestContext.UnboundActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+        else
+        {
+            containerGroup.MapMethods(actionName, mappedMethods, async (
+                [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest
+                , HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , requestContext.UnboundActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task MappRoutes<TRequest, TResponse>(UnboundActionRequestContext requestContext)
+    {
+        var actionName = requestContext.UnboundActionMetadata.ActionName;
+        var keyProperty = requestContext.UnboundActionMetadata.KeyProperty;
+        var mappedMethods = MapHttpMethods(requestContext.UnboundActionMetadata.HttpMethod);
+        var containerGroup = requestContext.ContainerRouteGroupBuider;
+
+        if (keyProperty is not null)
+        {
+            containerGroup.MapMethods($"{actionName}/{{key}}", mappedMethods, async (
+            [FromBody] TRequest request, QueryRequest<TRequest> queryRequest,
+            string key,
+            HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+                var keyValue = key.Parse(keyProperty.PropertyType);
+                keyProperty.SetValue(request, keyValue);
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , requestContext.UnboundActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest, TResponse> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+        else
+        {
+            containerGroup.MapMethods(actionName, mappedMethods, async (
+            [FromBody] TRequest? request, QueryRequest<TRequest> queryRequest,
+            HttpContext httpContext, CancellationToken cancellationToken) =>
+            {
+                request ??= queryRequest.Request!;
+
+                var serviceProvider = httpContext.RequestServices;
+                var handlerObj = ActivatorUtilities.CreateInstance(serviceProvider
+                    , requestContext.UnboundActionMetadata.TargetType);
+
+                if (handlerObj is not IOperationHandler<TRequest, TResponse> handler)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                if (handler is null)
+                    throw new InvalidOperationException("Invalid Handler");
+
+                var result = await handler.Handle(request, cancellationToken);
+                return result.ToResults();
+            });
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task MappRoutes<TRequest>(EntityActionRequestContext entityActionRequestContext)
@@ -186,14 +325,29 @@ public abstract class DefaultEntityActionRequestHandler
     }
 }
 
-public class DefaultEntityActionRequestHandler<TRequest> : DefaultEntityActionRequestHandler,
+public class DefaultUnboundActionRequestHandler<TRequest> : DefaultActionRequestHandler,
+    IUnboundActionRequestHandler<TRequest>
+{
+    public Task MappRoutes(UnboundActionRequestContext requestContext)
+        => MappRoutes<TRequest>(requestContext);
+}
+
+public class DefaultUnboundActionRequestHandler<TRequest, TResponse> : DefaultActionRequestHandler,
+    IUnboundActionRequestHandler<TRequest, TResponse>
+{
+    public Task MappRoutes(UnboundActionRequestContext requestContext)
+        => MappRoutes<TRequest, TResponse>(requestContext);
+}
+
+
+public class DefaultEntityActionRequestHandler<TRequest> : DefaultActionRequestHandler,
     IEntityActionRequestHandler<TRequest>
 {
     public Task MappRoutes(EntityActionRequestContext entityActionRequestContext)
         => MappRoutes<TRequest>(entityActionRequestContext);
 }
 
-public class DefaultEntityActionRequestHandler<TRequest, TResponse> : DefaultEntityActionRequestHandler,
+public class DefaultEntityActionRequestHandler<TRequest, TResponse> : DefaultActionRequestHandler,
     IEntityActionRequestHandler<TRequest, TResponse>
 {
     public Task MappRoutes(EntityActionRequestContext entityActionRequestContext)

@@ -7,6 +7,7 @@ using System.Reflection;
 
 namespace CFW.ODataCore.ODataMetadata;
 
+[Obsolete]
 public record class UnboundOperationMetadata
 {
     public required OperationType OperationType { get; set; }

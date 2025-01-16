@@ -20,7 +20,7 @@ public class UnboundNonKeyActionTests : BaseTests, IAssemblyFixture<AppFactory>
         public int ResponseAge { get; set; }
     }
 
-    [UnboundAction(nameof(UnboundNonKeyNoResponseActionHandler))]
+    [UnboundActionDeleting(nameof(UnboundNonKeyNoResponseActionHandler))]
     public class UnboundNonKeyNoResponseActionHandler : IUnboundOperationHandler<UnboundNonKeyActionRequest>
     {
         private readonly List<object> _requests;
@@ -55,7 +55,7 @@ public class UnboundNonKeyActionTests : BaseTests, IAssemblyFixture<AppFactory>
         handlerRequest.Should().BeEquivalentTo(request);
     }
 
-    [UnboundAction(nameof(UnboundNonKeyHasResponseActionHandler))]
+    [UnboundActionDeleting(nameof(UnboundNonKeyHasResponseActionHandler))]
     public class UnboundNonKeyHasResponseActionHandler : IUnboundOperationHandler<UnboundNonKeyActionRequest, UnboundNonKeyActionResponse>
     {
         private readonly List<object> _requests;

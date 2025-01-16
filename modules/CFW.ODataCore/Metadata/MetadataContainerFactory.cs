@@ -140,6 +140,55 @@ public class MetadataContainerFactory : IAssemblyResolver
             }
         }
 
+
+        var unboundOperationConfigs = CacheType
+            .SelectMany(x => x.GetCustomAttributes<UnboundActionAttribute>()
+            .Aggregate(new List<MetadataUnboundAction>(), (list, attr) =>
+            {
+                if (x.IsAbstract)
+                    return list;
+
+                var interfaces = x.GetInterfaces().Where(i => i.IsGenericType
+                    && operationHandlerTypes.Contains(i.GetGenericTypeDefinition()));
+                if (!interfaces.Any())
+                    throw new InvalidOperationException($"Unbound action {attr.ActionName} " +
+                        $"handler {x.FullName} not implement any operation interface");
+
+                if (interfaces.Count() > 1)
+                    throw new InvalidOperationException($"Unbound action {attr.ActionName} " +
+                        $"handler {x.FullName} implement multiple operation interface");
+
+                var metadata = new MetadataUnboundAction
+                {
+                    ImplementedInterface = interfaces.First(),
+                    RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix,
+                    TargetType = x,
+                    ActionName = attr.ActionName,
+                    HttpMethod = attr.ActionMethod
+                };
+                list.Add(metadata);
+                return list;
+            }));
+        foreach (var containerGroup in unboundOperationConfigs.GroupBy(x => x.RoutePrefix))
+        {
+            var container = containers.FirstOrDefault(x => x.RoutePrefix == containerGroup.Key);
+            if (container is null)
+                container = new MetadataContainer(containerGroup.Key!, mimimalApiOptions);
+
+            var unboundOperations = containerGroup
+                .GroupBy(x => new { x.TargetType, x.ActionName });
+
+            foreach (var unboundOperationMetadata in unboundOperations)
+            {
+                if (unboundOperationMetadata.Count() > 1)
+                    throw new NotImplementedException($"Duplicate unbound operation {unboundOperationMetadata.Key.ActionName}");
+
+                var unboundActionMetadataItem = unboundOperationMetadata.Single();
+
+                container.UnboundOperations.Add(unboundActionMetadataItem);
+            }
+        }
+
         return containers;
     }
 

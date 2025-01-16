@@ -78,6 +78,10 @@ public class ODataQueryOptions
 }
 
 public record EntityActionRouteKey(string RoutePrefix, string Name, string ActionName);
+
+public record UnboundActionRouteKey(string RoutePrefix, string ActionName);
+
+
 public class MetadataEntityAction
 {
     public required Type TargetType { get; init; }
@@ -87,6 +91,39 @@ public class MetadataEntityAction
     public required Type BoundEntityType { get; init; }
 
     public required string? EntityName { get; init; }
+
+    public ApiMethod HttpMethod { get; set; } = ApiMethod.Post;
+
+    public required string RoutePrefix { get; init; }
+
+    public required Type ImplementedInterface { get; init; }
+
+    public Type? RequestType { get; private set; }
+
+    public Type? ResponseType { get; private set; }
+
+    public PropertyInfo? KeyProperty { get; private set; }
+
+    [Obsolete("Use lazy")]
+    public void InitRequestResponseTypes()
+    {
+        var args = ImplementedInterface.GetGenericArguments();
+        if (args.Length > 2)
+            throw new InvalidOperationException($"Invalid generic arguments count {args.Length} for {ImplementedInterface.FullName}");
+
+        RequestType = args[0];
+        ResponseType = args.Length == 1 ? typeof(Result) : args[1];
+
+        KeyProperty = RequestType.GetProperties()
+            .SingleOrDefault(x => x.GetCustomAttribute<KeyAttribute>() is not null);
+    }
+}
+
+public class MetadataUnboundAction
+{
+    public required Type TargetType { get; init; }
+
+    public required string ActionName { get; init; }
 
     public ApiMethod HttpMethod { get; set; } = ApiMethod.Post;
 
@@ -246,6 +283,9 @@ public class MetadataContainer
 
     public IServiceProvider? ODataInternalServiceProvider { get; set; }
 
+    public IList<MetadataUnboundAction> UnboundOperations { get; set; }
+        = new List<MetadataUnboundAction>();
+
     public MetadataContainer(string routePrefix, EntityMimimalApiOptions options)
     {
         RoutePrefix = routePrefix;
@@ -323,8 +363,6 @@ public static class ServicesCollectionExtensions
         , MetadataEntity metadataEntity, RouteGroupBuilder containerGroupRoute, DbContext dbContext)
     {
         var sourceType = metadataEntity.SourceType;
-
-        Type? keyType = null;
 
         var entityRoute = containerGroupRoute
             .MapGroup(metadataEntity.Name)
@@ -409,6 +447,28 @@ public static class ServicesCollectionExtensions
             });
         }
 
+        //Unbound operations
+        foreach (var operation in metadataEntity.Container.UnboundOperations)
+        {
+            var routeKey = new UnboundActionRouteKey(metadataEntity.Container.RoutePrefix, operation.ActionName);
+            var operationRequestHandler = app.Services.GetKeyedService<IUnboundActionRequestHandler>(routeKey);
+
+            if (operationRequestHandler is null)
+            {
+                operation.InitRequestResponseTypes();
+                var defaultOperationRequestHandlerType = operation.ResponseType == typeof(Result)
+                    ? typeof(DefaultUnboundActionRequestHandler<>).MakeGenericType(operation.RequestType!)
+                    : typeof(DefaultUnboundActionRequestHandler<,>).MakeGenericType(operation.RequestType!, operation.ResponseType!);
+                operationRequestHandler = (IUnboundActionRequestHandler)Activator
+                    .CreateInstance(defaultOperationRequestHandlerType)!;
+            }
+            operationRequestHandler.MappRoutes(new UnboundActionRequestContext
+            {
+                App = app,
+                ContainerRouteGroupBuider = containerGroupRoute,
+                UnboundActionMetadata = operation
+            });
+        }
     }
 }
 

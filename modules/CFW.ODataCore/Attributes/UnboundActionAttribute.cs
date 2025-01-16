@@ -2,9 +2,16 @@
 
 namespace CFW.ODataCore.Attributes;
 
-public class UnboundActionAttribute : UnboundOperationAttribute
+public class UnboundActionAttribute : BaseRoutingAttribute
 {
-    public UnboundActionAttribute(string operationName) : base(operationName, OperationType.Action)
+    public string ActionName { get; init; }
+
+    public ApiMethod ActionMethod { get; set; } = ApiMethod.Post;
+
+    public Type? TargetType { get; set; }
+
+    public UnboundActionAttribute(string actionName)
     {
+        ActionName = actionName;
     }
 }

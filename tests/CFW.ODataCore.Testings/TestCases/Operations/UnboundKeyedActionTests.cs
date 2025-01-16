@@ -23,7 +23,7 @@ public class UnboundKeyedActionTests : BaseTests, IAssemblyFixture<AppFactory>
         public string Name { get; set; } = string.Empty;
     }
 
-    [UnboundAction(nameof(UnboundKeyedActionHandler))]
+    [UnboundActionDeleting(nameof(UnboundKeyedActionHandler))]
     public class UnboundKeyedActionHandler : IUnboundOperationHandler<UnboundKeyedActionRequest>
     {
         private readonly List<object> _requests;
@@ -59,7 +59,7 @@ public class UnboundKeyedActionTests : BaseTests, IAssemblyFixture<AppFactory>
         handlerRequest.Id.Should().Be(id);
     }
 
-    [UnboundAction(nameof(UnboundKeyedActionWithResponseHandler))]
+    [UnboundActionDeleting(nameof(UnboundKeyedActionWithResponseHandler))]
     public class UnboundKeyedActionWithResponseHandler : IUnboundOperationHandler<UnboundKeyedActionRequest, UnboundKeyedActionResponse>
     {
         private readonly List<object> _requests;
