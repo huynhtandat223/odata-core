@@ -1,4 +1,7 @@
-﻿namespace CFW.Core.Utils;
+﻿using System.Collections;
+using System.Linq.Expressions;
+
+namespace CFW.Core.Utils;
 
 public static class CollectionUtils
 {
@@ -46,5 +49,27 @@ public static class CollectionUtils
         var random = new Random();
         var index = random.Next(list.Count);
         return list[index];
+    }
+
+    public static object Random(this IEnumerable source)
+    {
+        var list = new List<object>();
+        foreach (var item in source)
+        {
+            list.Add(item);
+        }
+        var random = new Random();
+        var index = random.Next(list.Count);
+        return list[index];
+    }
+
+    public static IEnumerable<T> WhereIf<T>(this IEnumerable<T> source, bool condition, Func<T, bool> predicate)
+    {
+        return condition ? source.Where(predicate) : source;
+    }
+
+    public static IQueryable<T> WhereIf<T>(this IQueryable<T> source, bool condition, Expression<Func<T, bool>> predicate)
+    {
+        return condition ? source.Where(predicate) : source;
     }
 }

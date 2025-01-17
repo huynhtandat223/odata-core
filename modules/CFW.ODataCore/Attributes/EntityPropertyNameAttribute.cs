@@ -3,7 +3,7 @@
 [AttributeUsage(AttributeTargets.Property)]
 public class EntityPropertyNameAttribute : Attribute
 {
-    public string DbModelPropertyName { get; }
+    internal string DbModelPropertyName { get; }
 
     public EntityPropertyNameAttribute(string dbModelPropertyName)
     {

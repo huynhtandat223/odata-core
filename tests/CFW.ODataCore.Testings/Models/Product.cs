@@ -12,4 +12,14 @@ public class Product : IEntity<Guid>
     public string? Description { get; set; }
 
     public Category? Category { get; set; } = default!;
+
+    public ProductType ProductType { get; set; }
+}
+
+public enum ProductType
+{
+    Unknown,
+    Physical,
+    Digital,
+    Service,
 }

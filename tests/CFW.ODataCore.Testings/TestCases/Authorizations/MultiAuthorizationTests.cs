@@ -1,16 +1,17 @@
 ﻿using CFW.Core.Entities;
-using CFW.ODataCore.Testings.TestCases.Authorizations.Models;
+using CFW.ODataCore.Testings.Models;
+using CFW.ODataCore.Testings.TestCases;
 using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations;
 
-public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<NonInitAppFactory>
+public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<AppFactory>
 {
     private readonly Type multiAuthorizationType = typeof(MultiAuthorization);
     private const string testApi = "test-api";
 
-    public MultiAuthorizationTests(ITestOutputHelper testOutputHelper, NonInitAppFactory appFactory)
-        : base(testOutputHelper, appFactory, testApi, typeof(MultiAuthorization))
+    public MultiAuthorizationTests(ITestOutputHelper testOutputHelper, AppFactory appFactory)
+        : base(testOutputHelper, appFactory, testApi, types: [typeof(MultiAuthorization)])
     {
 
     }
@@ -50,7 +51,7 @@ public class MultiAuthorizationTests : BaseTests, IAssemblyFixture<NonInitAppFac
         var superAdminClient = _factory.CreateClient();
         superAdminClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {superAdminToken}");
 
-        var baseUrl = multiAuthorizationType.GetBaseUrl(testApi);
+        var baseUrl = multiAuthorizationType.GetAllSupportableMethodBaseUrl(testApi);
         var defaultModel = DataGenerator.Create(multiAuthorizationType);
         var dbContext = _factory.Services.GetRequiredService<TestingDbContext>();
         dbContext.Add(defaultModel);

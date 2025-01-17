@@ -1,17 +1,24 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections;
+using System.Dynamic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CFW.Core.Utils;
 
 public static class ObjectUtils
 {
-    private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
+    public static readonly JsonSerializerOptions DefaultJsonSeriallizerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
+
+    public static TTarget JsonConvert<TTarget>(this object source, JsonSerializerOptions? jsonSerializerOptions = null)
+        => (TTarget)JsonConvert(source, typeof(TTarget), jsonSerializerOptions);
 
     public static object JsonConvert(this object source, Type targetType, JsonSerializerOptions? jsonSerializerOptions = null)
     {
@@ -25,7 +32,7 @@ public static class ObjectUtils
             ? str
             : source.ToJsonString();
 
-        jsonSerializerOptions ??= _serializerOptions;
+        jsonSerializerOptions ??= DefaultJsonSeriallizerOptions;
         if (string.IsNullOrEmpty(sourceStr))
             return default!;
 
@@ -38,14 +45,14 @@ public static class ObjectUtils
         if (string.IsNullOrEmpty(source))
             return default!;
 
-        jsonSerializerOptions ??= _serializerOptions;
+        jsonSerializerOptions ??= DefaultJsonSeriallizerOptions;
         var result = JsonSerializer.Deserialize(source, targetType, jsonSerializerOptions);
         return result!;
     }
 
-    public static string ToJsonString(this object source)
+    public static string ToJsonString(this object source, JsonSerializerOptions? jsonSerializerOptions = null)
     {
-        return JsonSerializer.Serialize(source);
+        return JsonSerializer.Serialize(source, jsonSerializerOptions ?? DefaultJsonSeriallizerOptions);
     }
 
     public static object? ToType(this string? value, Type type)
@@ -53,7 +60,7 @@ public static class ObjectUtils
         if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException();
 
-        return JsonSerializer.Deserialize(value, type, _serializerOptions);
+        return JsonSerializer.Deserialize(value, type, DefaultJsonSeriallizerOptions);
     }
 
     public static object? GetPropertyValue(this object target, string propName)
@@ -153,5 +160,57 @@ public static class ObjectUtils
         // Compile the setter
         var setterLambda = Expression.Lambda<Action<TModel, TKey>>(assign, targetParameter, valueParameter);
         return setterLambda.Compile();
+    }
+
+    public static IDictionary<string, object?> FilterProperties(this object obj, IEnumerable<string> propertiesToInclude)
+    {
+        var filtered = new ExpandoObject() as IDictionary<string, object?>;
+        var objType = obj.GetType();
+
+        foreach (var property in propertiesToInclude)
+        {
+            var propInfo = objType.GetProperty(property);
+            if (propInfo != null)
+            {
+                filtered[property] = propInfo.GetValue(obj);
+            }
+        }
+
+        return filtered;
+    }
+
+
+    public static IEnumerable<IDictionary<string, object?>> Select(this IEnumerable list, IEnumerable<string> propertiesToInclude)
+    {
+        foreach (var obj in list)
+        {
+            yield return FilterProperties(obj, propertiesToInclude);
+        }
+    }
+
+    public static IEnumerable<object> OrderByProperty(
+        this IEnumerable source,
+        string propertyName,
+        bool isAsc = true)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (string.IsNullOrWhiteSpace(propertyName)) throw new ArgumentNullException(nameof(propertyName));
+
+        var sourceList = source.Cast<object>().ToList();
+
+        // Get the property info from the first item's type
+        var property = sourceList.First()
+                                  .GetType()
+                                  .GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+        if (property == null)
+            throw new ArgumentException($"Property '{propertyName}' does not exist on the type '{sourceList.First().GetType().Name}'.");
+
+        // Sort using reflection to get property values
+        var sorted = isAsc
+            ? sourceList.OrderBy(x => property.GetValue(x, null))
+            : sourceList.OrderByDescending(x => property.GetValue(x, null));
+
+        return sorted;
     }
 }

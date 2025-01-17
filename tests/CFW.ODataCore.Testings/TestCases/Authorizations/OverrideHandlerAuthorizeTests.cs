@@ -1,6 +1,4 @@
-﻿
-using CFW.Core.Entities;
-using Microsoft.AspNetCore.OData.Query;
+﻿using CFW.Core.Entities;
 using System.Net;
 
 namespace CFW.ODataCore.Testings.TestCases.Authorizations;
@@ -19,16 +17,16 @@ public class OverrideHandlerAuthorizeTests : BaseTests, IAssemblyFixture<AppFact
         public string Name { get; set; } = string.Empty;
     }
 
-    [Entity(nameof(OverridedModel))]
-    [EntityAuthorize]
-    public class QueryOverrideHandler : IEntityQueryHandler<OverridedModel>
-    {
-        public async Task<Result<IQueryable>> Handle(ODataQueryOptions<OverridedModel> options, CancellationToken cancellationToken)
-        {
-            var result = Array.Empty<OverridedModel>().AsQueryable() as IQueryable;
-            return await Task.FromResult(result.Success());
-        }
-    }
+    //[Entity(nameof(OverridedModel))]
+    //[EntityAuthorize]
+    //public class QueryOverrideHandler : IEntityQueryHandler<OverridedModel>
+    //{
+    //    public async Task<Result<IQueryable>> Handle(ODataQueryOptions<OverridedModel> options, CancellationToken cancellationToken)
+    //    {
+    //        var result = Array.Empty<OverridedModel>().AsQueryable() as IQueryable;
+    //        return await Task.FromResult(result.Success());
+    //    }
+    //}
 
     [Fact]
     public async Task HasQueryHandlerAuthorize_OtherHandlerShouldOk()

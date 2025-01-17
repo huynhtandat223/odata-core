@@ -4,7 +4,8 @@ namespace CFW.ODataCore.Testings.TestCases;
 
 public class MultiRoutePrefixTests : BaseTests, IAssemblyFixture<AppFactory>
 {
-    public MultiRoutePrefixTests(ITestOutputHelper testOutputHelper, AppFactory factory) : base(testOutputHelper, factory)
+    public MultiRoutePrefixTests(ITestOutputHelper testOutputHelper, AppFactory factory)
+        : base(testOutputHelper, factory)
     {
     }
 

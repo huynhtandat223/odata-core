@@ -1,31 +1,30 @@
 ﻿using CFW.ODataCore.Models;
+using Microsoft.AspNetCore.OData.Query;
 
 namespace CFW.ODataCore.Attributes;
 
-/// <summary>
-/// The class marked with this attribute will be used to create an entity set segment.
-/// If entity class: the CRUD operations will be generated base on all.
-/// If handler class: the CRUD operations will be generated base on CRUD interfaces.
-/// </summary>
+
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
 public class EntityAttribute : BaseRoutingAttribute
 {
+    internal Type? TargetType { get; set; }
+
     public string Name { get; }
 
-    public Type? DbType { get; set; }
+    public ApiMethod[] Methods { get; set; } = [ApiMethod.GetByKey, ApiMethod.Post, ApiMethod.Put, ApiMethod.Patch, ApiMethod.Delete, ApiMethod.Query];
 
     /// <summary>
-    /// Only effective for viewModel class. Handler class methods resolved by CRUD interfaces.
+    /// OData query options for method <see cref="ApiMethod.Query"/> or <see cref="ApiMethod.GetByKey"/>
     /// </summary>
-    public EntityMethod[] Methods { get; set; } = Array.Empty<EntityMethod>();
+    public AllowedQueryOptions? AllowedQueryOptions { get; set; }
 
     public EntityAttribute(string name)
     {
-        Name = name;
-    }
+        if (name.IsNullOrWhiteSpace())
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
 
-    public EntityAttribute(string name, params string[] odataHttpMethods)
-    {
         Name = name;
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace CFW.ODataCore.Testings;
+﻿using CFW.ODataCore.Models;
+
+namespace CFW.ODataCore.Testings;
 
 public class TestMetadataContainerFactory : MetadataContainerFactory
 {
