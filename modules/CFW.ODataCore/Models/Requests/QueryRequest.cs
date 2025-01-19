@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Web;
 
-namespace CFW.ODataCore.Models;
+namespace CFW.ODataCore.Models.Requests;
 
 public class QueryRequest<TRequest>
 {

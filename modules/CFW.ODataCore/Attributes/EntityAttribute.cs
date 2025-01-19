@@ -28,3 +28,10 @@ public class EntityAttribute : BaseRoutingAttribute
         Name = name;
     }
 }
+
+public class EntityAttribute<TEntity> : EntityAttribute
+{
+    public EntityAttribute(string name) : base(name)
+    {
+    }
+}

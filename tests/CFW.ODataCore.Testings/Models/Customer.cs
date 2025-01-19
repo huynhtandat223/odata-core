@@ -14,6 +14,8 @@ public class Customer : IEntity<int>
     public IEnumerable<Order>? Orders { get; set; }
 
     public Address? ShippingAddress { get; set; }
+
+    public Address? BillingAddress { get; set; }
 }
 
 public class Address : IEntity<int>

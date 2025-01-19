@@ -2,6 +2,7 @@
 using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.Models;
 using CFW.ODataCore.Models.Metadata;
+using CFW.ODataCore.Models.Requests;
 using CFW.ODataCore.RouteMappers;
 using Microsoft.AspNetCore.Mvc;
 

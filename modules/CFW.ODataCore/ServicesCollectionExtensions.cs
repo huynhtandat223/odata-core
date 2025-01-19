@@ -65,6 +65,7 @@ public static class ServicesCollectionExtensions
                 unboundOperation.AddServices(services);
             }
         }
+
         return services;
     }
 
@@ -110,9 +111,11 @@ public static class ServicesCollectionExtensions
 
         var entityRoute = containerGroupRoute
             .MapGroup(metadataEntity.Name)
-        .WithTags(metadataEntity.Name);
+            .WithTags(metadataEntity.Name);
 
-        //register entity authorization
+
+        //register entity authorization data
+        //TODO: move to entity metadata
         var authorizeAttributes = sourceType.GetCustomAttributes<EntityAuthorizeAttribute>();
         var authorizeDataOfMethods = authorizeAttributes.SelectMany(x => x.ApplyMethods
         .Select(m => new { Method = m, Attribute = x })
@@ -127,12 +130,14 @@ public static class ServicesCollectionExtensions
             entityRoute = entityRoute.RequireAuthorization([authorizeData]);
         }
 
+
         //register CRUD routes
         var entityRouteMappers = app.Services.GetKeyedServices<IRouteMapper>(metadataEntity);
         foreach (var entityRouteMapper in entityRouteMappers)
         {
             entityRouteMapper.MapRoutes(entityRoute);
         }
+
 
         //register entity operation routes
         foreach (var operation in metadataEntity.Operations)

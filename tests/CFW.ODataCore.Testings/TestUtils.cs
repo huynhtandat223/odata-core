@@ -1,6 +1,5 @@
 ﻿using CFW.ODataCore.Models;
 using CFW.ODataCore.Testings;
-using CFW.ODataCore.Testings.Models;
 using FluentAssertions.Equivalency;
 using System.Collections;
 using System.Reflection;

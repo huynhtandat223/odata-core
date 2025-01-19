@@ -1,6 +1,8 @@
-﻿namespace CFW.ODataCore.Intefaces;
+﻿using CFW.ODataCore.Models.Requests;
+
+namespace CFW.ODataCore.Intefaces;
 
 public interface IEntityCreationHandler<TEntity>
 {
-    Task<Result> Handle(TEntity entity, CancellationToken cancellationToken);
+    Task<Result> Handle(CreationCommand<TEntity> command, CancellationToken cancellationToken);
 }

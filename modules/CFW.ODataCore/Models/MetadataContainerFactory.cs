@@ -18,6 +18,8 @@ public class MetadataContainerFactory : IAssemblyResolver
 
     public IEnumerable<Assembly> Assemblies => _cachedType.Select(x => x.Assembly).Distinct();
 
+    private static Type[] _entityHandlerTypes = [typeof(IEntityCreationHandler<>)];
+
     public IEnumerable<MetadataContainer> CreateMetadataContainers(string sanitizedRoutePrefix
         , EntityMimimalApiOptions mimimalApiOptions)
     {
@@ -26,6 +28,23 @@ public class MetadataContainerFactory : IAssemblyResolver
             .Aggregate(new List<EntityAttribute>(), (list, attr) =>
             {
                 attr.TargetType = x;
+                attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
+                list.Add(attr);
+                return list;
+            }));
+
+        var handlerAttributes = CacheType
+            .SelectMany(x => x.GetCustomAttributes<EntityHandlerAttribute>()
+            .Aggregate(new List<EntityHandlerAttribute>(), (list, attr) =>
+            {
+                var interfaces = x.GetInterfaces().Where(i => i.IsGenericType
+                    && _entityHandlerTypes.Contains(i.GetGenericTypeDefinition()));
+
+                if (!interfaces.Any())
+                    throw new InvalidOperationException($"Entity handler {x.FullName} not implement any entity handler interface");
+
+                attr.TargetType = x;
+                attr.InterfaceTypes = interfaces.ToArray();
                 attr.RoutePrefix = attr.RoutePrefix ?? sanitizedRoutePrefix;
                 list.Add(attr);
                 return list;
@@ -49,11 +68,28 @@ public class MetadataContainerFactory : IAssemblyResolver
                     throw new InvalidOperationException($"Duplicate methods {string.Join(",", duplicateMethods)} for entity {key.Key.Name}");
 
                 var endpoint = key.Key.Name;
-                var sourceType = key.Key.TargetType!;
                 var allowedQueryOptions = key.Key.AllowedQueryOptions;
+
+                //find entity type
+                var sourceType = key.Key.TargetType!;
+                Type? configurationType = null;
+                var isConfigurationType = key.Key.TargetType!.BaseType is not null
+                    && key.Key.TargetType!.BaseType.IsGenericType
+                    && key.Key.TargetType.BaseType.GetGenericTypeDefinition() == typeof(EntityEndpoint<>);
+                if (isConfigurationType)
+                {
+                    sourceType = key.Key.TargetType.BaseType!.GenericTypeArguments[0];
+                    configurationType = key.Key.TargetType;
+                }
+
+                var handlerTypes = handlerAttributes
+                    .Where(x => x.EntityType == sourceType && (x.Name.IsNullOrWhiteSpace() || x.Name == endpoint))
+                    .ToArray();
 
                 var metadataEntity = new MetadataEntity
                 {
+                    ConfigurationType = configurationType,
+                    HandlerAttributes = handlerTypes,
                     Name = endpoint,
                     Methods = key.Select(x => x.Method).ToArray(),
                     SourceType = sourceType,

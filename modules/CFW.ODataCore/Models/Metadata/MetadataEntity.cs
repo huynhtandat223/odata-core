@@ -1,6 +1,8 @@
-﻿using CFW.ODataCore.DefaultHandlers;
+﻿using CFW.ODataCore.Attributes;
+using CFW.ODataCore.DefaultHandlers;
 using CFW.ODataCore.Intefaces;
 using CFW.ODataCore.RouteMappers;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -8,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OData.UriParser;
 using System.Linq.Expressions;
+using System.Text.Json.Serialization;
 
 namespace CFW.ODataCore.Models.Metadata;
 
@@ -23,7 +26,11 @@ public class MetadataEntity
 
     public required ODataQueryOptions ODataQueryOptions { get; init; }
 
+    public required EntityHandlerAttribute[] HandlerAttributes { get; init; }
+
     public IList<MetadataEntityAction> Operations { get; } = new List<MetadataEntityAction>();
+
+    public required Type? ConfigurationType { get; init; }
 
     private static object _lockToken = new();
     private IODataFeature? _cachedFeature;
@@ -67,6 +74,13 @@ public class MetadataEntity
 
     internal IProperty? KeyProperty { get; set; }
 
+    internal IEnumerable<IComplexProperty> ComplexProperties { get; set; } = Enumerable.Empty<IComplexProperty>();
+
+    internal IEnumerable<INavigation> CollectionNavigations { get; set; } = Enumerable.Empty<INavigation>();
+
+    internal IEnumerable<IProperty> Properties { get; set; } = Enumerable.Empty<IProperty>();
+
+    [Obsolete("Move to expresion helpers")]
     internal Expression<Func<TSource, bool>> BuilderEqualExpression<TSource>(DbSet<TSource> dbSet, object key)
         where TSource : class
     {
@@ -85,12 +99,13 @@ public class MetadataEntity
     }
 
     /// <summary>
-    /// Find key property for entity type
+    /// Find key property for entity type, complext types, collections
     /// </summary>
     /// <param name="dbContext"></param>
     /// <exception cref="InvalidOperationException"></exception>
     internal void InitSourceMetadata(DbContext dbContext)
     {
+        //find key property
         if (KeyProperty is not null)
             return;
 
@@ -102,6 +117,15 @@ public class MetadataEntity
             throw new InvalidOperationException($"Primary key not found for {SourceType}");
 
         KeyProperty = keyProperty.Properties.Single();
+
+        //find complex types
+        ComplexProperties = entityType.GetComplexProperties();
+
+        //find collections
+        CollectionNavigations = entityType.GetNavigations()
+            .Where(x => x.IsCollection);
+
+        Properties = entityType.GetProperties();
     }
 
     /// <summary>
@@ -120,6 +144,7 @@ public class MetadataEntity
         { typeof(string), "alpha" } // Example: alpha for alphabetic strings
     };
 
+    [Obsolete("Remove unnecessary key pattern")]
     internal string GetKeyPattern()
     {
         return _typeToConstraintMap.TryGetValue(KeyProperty!.ClrType, out var constraint)
@@ -129,6 +154,13 @@ public class MetadataEntity
 
     internal void AddServices(IServiceCollection services)
     {
+        services.PostConfigure<JsonOptions>(options =>
+        {
+            var converter = Activator.CreateInstance(typeof(EntityDeltaConverter<>).MakeGenericType(SourceType), this)
+            as JsonConverter;
+            options.SerializerOptions.Converters.Add(converter!);
+        });
+
         foreach (var method in Methods)
         {
             if (method == ApiMethod.Query)
@@ -149,9 +181,20 @@ public class MetadataEntity
 
             if (method == ApiMethod.Post)
             {
-                services.TryAddScoped(typeof(IEntityCreationHandler<>).MakeGenericType(SourceType)
-                    , typeof(EntityCreationHandler<>).MakeGenericType(SourceType));
+                //register entity creation handler
+                var serviceType = typeof(IEntityCreationHandler<>).MakeGenericType(SourceType);
+                var implementationType = typeof(EntityCreationHandler<>).MakeGenericType(SourceType);
 
+                var customImplemenationAttribute = HandlerAttributes
+                    .SingleOrDefault(x => x.InterfaceTypes!.Contains(serviceType));
+                if (customImplemenationAttribute is not null)
+                {
+                    implementationType = customImplemenationAttribute.TargetType!;
+                }
+                services.TryAddScoped(serviceType, implementationType);
+
+
+                //register entity creation route mapper
                 var getByKeyRouteMapperType = typeof(EntityCreationRouteMapper<>)
                     .MakeGenericType(SourceType);
                 services.AddKeyedSingleton(this

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CFW.ODataCore.Testings.Models;
+namespace CFW.ODataCore.Testings;
 
 public class ODataQueryResult<TViewModel>
 {
